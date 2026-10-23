@@ -122,7 +122,7 @@ class Runtime:
     def desired_symbols(self,provider):
         suffix = '-USDC-PERP' if provider=='hyperliquid' else '-USD'
         allowed = self.catalogue.venues.get(provider,{})
-        return sorted({*(b+suffix for b in BASES),*(r['symbol'] for r in self.live_watch if r['provider']==provider and allowed.get(r['id'],{}).get('active',True))})
+        return sorted({*(b+suffix for b in BASES),*(r['symbol'] for r in self.live_watch if r['provider']==provider and allowed.get(r['id'],{}).get('active',False))})
 
     def set_market_watch(self,market_id,enabled):
         row = self.catalogue.validate_watch(market_id) if enabled else None

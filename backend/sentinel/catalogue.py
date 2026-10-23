@@ -205,7 +205,9 @@ class Catalogue:
         for provider,items in self.venues.items():
             row = items.get(market_id)
             if row and provider in self.providers and row['active'] and row['watch_symbol']:
-                if now-row['metadata_at']>24*3600:raise ValueError('Market metadata is stale; retry after the provider recovers')
+                session = self.sessions[provider]
+                connected = session['state']=='connected' and now-(session.get('received_at') or 0)<=30
+                if now-row['metadata_at']>24*3600 and not connected:raise ValueError('Market metadata is stale; retry after the provider recovers')
                 return {'id':market_id,'provider':provider,'symbol':row['watch_symbol']}
         raise ValueError('Choose an active Kraken USD spot pair or native Hyperliquid perpetual from the live directory')
 

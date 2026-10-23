@@ -111,6 +111,20 @@ class CatalogueTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Close'):runtime.set_market_watch('kraken:XRP/USD',False)
         self.assertIn('XRP-USD',runtime.desired_symbols('kraken'))
 
+    def test_delisted_watch_does_not_break_core_book_subscriptions(self):
+        runtime = Runtime(self.store,Settings(providers=('kraken',)))
+        runtime.catalogue.kraken_instruments(instruments('XRP'),time.time(),True)
+        runtime.set_market_watch('kraken:XRP/USD',True)
+        runtime.catalogue.kraken_instruments(instruments('BTC','ETH','SOL'),time.time(),True)
+        self.assertEqual(runtime.desired_symbols('kraken'),['BTC-USD','ETH-USD','SOL-USD'])
+
+    def test_open_instrument_stream_keeps_unchanged_metadata_usable(self):
+        self.cat.kraken_instruments(instruments('XRP'),NOW-90000,True)
+        self.cat.sessions['kraken']={'state':'connected','received_at':NOW}
+        self.assertEqual(self.cat.validate_watch('kraken:XRP/USD',NOW)['symbol'],'XRP-USD')
+        self.cat.sessions['kraken']['state']='reconnecting'
+        with self.assertRaises(ValueError):self.cat.validate_watch('kraken:XRP/USD',NOW)
+
     def test_subscription_batches_cover_all_instruments_without_truncation(self):
         symbols = {f'TEST{i}/USD' for i in range(1001)}
         requests = ticker_subscriptions(symbols)

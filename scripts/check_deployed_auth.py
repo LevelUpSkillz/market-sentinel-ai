@@ -1,15 +1,29 @@
 """Bounded read-only production acceptance. Never submit orders or change state."""
 import httpx
+import time
+
+
+def get(client,url,**kwargs):
+    # Render Free can need a cold start. Retry bounded transient failures without
+    # accepting an unhealthy response or turning this into a keep-alive loop.
+    for attempt in range(4):
+        try:
+            response = client.get(url,**kwargs)
+            if response.status_code not in (502,503,504) or attempt==3:return response
+        except httpx.TransportError:
+            if attempt==3:raise
+        print('PRODUCTION_ACCEPTANCE transient_retry attempt='+str(attempt+1)+' url='+url,flush=True)
+        time.sleep(2)
 
 origin = 'https://market-sentinel-ai-api.onrender.com'
 with httpx.Client(timeout=25,follow_redirects=False) as client:
-    response = client.get('https://market.getlevelupskillz.com/')
+    response = get(client,'https://market.getlevelupskillz.com/')
     if response.status_code not in (301,302,303,307,308,401,403):
         raise SystemExit('Custom hostname did not deny/redirect anonymous access: '+str(response.status_code))
     print('PRODUCTION_ACCEPTANCE custom_domain_anonymous HTTP '+str(response.status_code))
 
     for path in ['/health/live','/health/ready']:
-        response = client.get(origin+path)
+        response = get(client,origin+path)
         response.raise_for_status()
         data = response.json()
         if response.status_code!=200 or data.get('live_trading') is not False:
@@ -21,7 +35,7 @@ with httpx.Client(timeout=25,follow_redirects=False) as client:
         ('https://market-sentinel-ai.pages.dev/api/dashboard',{}),
         (origin+'/api/dashboard',{'Cf-Access-Authenticated-User-Email':'levelupskillz.store@gmail.com','Cf-Access-Jwt-Assertion':'invalid-test-token'}),
     ]:
-        response = client.get(url,headers=headers)
+        response = get(client,url,headers=headers)
         if response.status_code!=401:
             raise SystemExit('Production must reject anonymous/forged identity: '+url+' HTTP '+str(response.status_code))
         print('PRODUCTION_ACCEPTANCE protected_api HTTP 401 url='+url+' forged_identity='+str(bool(headers)))
