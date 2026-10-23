@@ -24,6 +24,7 @@ from .smart_money import intelligence
 from .catalogue import EXTRA_BOOK_LIMIT
 from .capital import save_profile,get_profile,evaluate_real_plan
 from .kraken_account import KrakenAccount, AccountError
+from .backup import export_backup, BackupError
 
 def connection_status():
     # Legacy capital-planning compatibility; never imply authenticated access.
@@ -299,6 +300,21 @@ def create_app(settings=None,store=None):
     async def kraken_account_error(request,error):
         # AccountError messages are fixed and contain no submitted credentials.
         return JSONResponse({'detail':str(error)},status_code=409)
+
+    @app.exception_handler(BackupError)
+    async def backup_error(request,error):
+        return JSONResponse({'detail':str(error)},status_code=409)
+
+    @app.post('/api/backup/export')
+    async def backup_export():
+        # Guard middleware authenticates the owner before this handler.
+        # A deliberately low limit prevents costly repeated snapshots.
+        if not store.rate('backup:owner',2,3600):
+            raise HTTPException(429,'Backup export limit reached; retry later.')
+        archive=export_backup(store)
+        return Response(content=archive,media_type='application/json',
+            headers={'Content-Disposition':'attachment; filename="market-sentinel-research-backup.json"',
+                     'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'})
 
     @app.get('/api/connections')
     async def connections():
