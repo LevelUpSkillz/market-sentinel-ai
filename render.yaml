@@ -15,7 +15,7 @@ services:
     plan: free
     numInstances: 1
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python -m compileall -q sentinel
     startCommand: python -m sentinel
     healthCheckPath: /health/ready
     autoDeployTrigger: commit
