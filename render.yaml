@@ -48,7 +48,7 @@ projects:
               - key: COLLECT_MARKETS
                 value: 'true'
               - key: APPROVED_PROVIDERS
-                value: ''
+                value: kraken,hyperliquid
               - key: HOSTING_TIER
                 value: free
               - key: DATABASE_EXPIRY

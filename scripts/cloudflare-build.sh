@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 python3 -m venv /tmp/sentinel-verification
-/tmp/sentinel-verification/bin/pip install -q -r ../backend/requirements.txt
+/tmp/sentinel-verification/bin/pip install -q -r ../backend/requirements.txt PyYAML jsonschema
+/tmp/sentinel-verification/bin/python -m compileall -q ../backend
 PYTHONPATH=../backend /tmp/sentinel-verification/bin/python -m unittest discover -s ../backend/tests -v
+/tmp/sentinel-verification/bin/python ../scripts/validate_blueprint.py
 npm audit --omit=dev --audit-level=high
 npm run typecheck
 npm run build
