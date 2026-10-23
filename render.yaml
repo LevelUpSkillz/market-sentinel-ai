@@ -1,0 +1,56 @@
+# Separate Market Sentinel resources. Never add existing Sentinel Intelligence resource names.
+previews:
+  generation: off
+projects:
+  - name: Market Sentinel AI
+    environments:
+      - name: production
+        databases:
+          - name: market-sentinel-ai-db
+            databaseName: market_sentinel
+            user: market_sentinel
+            plan: basic-256mb
+            region: ohio
+            postgresMajorVersion: '16'
+            diskSizeGB: 5
+            ipAllowList: []
+        services:
+          - type: web
+            name: market-sentinel-ai-api
+            runtime: python
+            region: ohio
+            plan: starter
+            numInstances: 1
+            rootDir: backend
+            buildCommand: pip install -r requirements.txt
+            startCommand: python -m sentinel
+            healthCheckPath: /health/ready
+            autoDeployTrigger: checksPass
+            maxShutdownDelaySeconds: 30
+            envVars:
+              - key: PYTHON_VERSION
+                value: 3.12.14
+              - key: ENVIRONMENT
+                value: production
+              - key: APP_ORIGIN
+                value: https://market.getlevelupskillz.com
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: market-sentinel-ai-db
+                  property: connectionString
+              - key: SESSION_SECRET
+                generateValue: true
+              - key: OWNER_PASSWORD_HASH
+                sync: false
+              - key: COLLECT_MARKETS
+                value: 'true'
+              - key: APPROVED_PROVIDERS
+                value: ''
+              - key: CHANGENOW_RESEARCH_APPROVED
+                value: 'false'
+              - key: CHANGENOW_API_KEY
+                sync: false
+              - key: NTFY_TOPIC
+                sync: false
+              - key: NTFY_TOKEN
+                sync: false

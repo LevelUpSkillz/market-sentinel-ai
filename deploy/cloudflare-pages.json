@@ -1,0 +1,20 @@
+{
+  "name": "market-sentinel-ai",
+  "production_branch": "main",
+  "source": {
+    "type": "github",
+    "config": {
+      "owner": "LevelUpSkillz",
+      "repo_name": "market-sentinel-ai",
+      "production_branch": "main",
+      "production_deployments_enabled": true,
+      "preview_deployment_setting": "none",
+      "pr_comments_enabled": false
+    }
+  },
+  "build_config": {"root_dir": "frontend", "build_command": "npm install --no-audit --no-fund && npm run build", "destination_dir": "out"},
+  "deployment_configs": {
+    "production": {"compatibility_date": "2026-10-23", "env_vars": {"NODE_VERSION": {"type": "plain_text", "value": "22"}, "API_ORIGIN": {"type": "plain_text", "value": "https://market-sentinel-ai-api.onrender.com"}}},
+    "preview": {"compatibility_date": "2026-10-23", "env_vars": {"NODE_VERSION": {"type": "plain_text", "value": "22"}}}
+  }
+}

@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+*.sqlite*
+__pycache__/
+.venv/
+node_modules/
+.next/
+out/
+.wrangler/
+.dev.vars*
+coverage/
+test-results/
+playwright-report/
+*.log
