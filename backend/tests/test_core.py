@@ -220,7 +220,7 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         cookie=r.headers['set-cookie'];self.assertIn('HttpOnly',cookie);self.assertIn('Secure',cookie);self.assertIn('SameSite=strict',cookie)
         data=(await self.client.get('/api/dashboard')).json()
         self.assertNotIn('session_secret',json.dumps(data))
-        self.assertEqual(len(data['markets']),6)
+        self.assertEqual(len(data['markets']),9)
         self.assertTrue(all(m['status']=='unavailable' for m in data['markets']))
     async def test_origin_rejection(self):
         self.assertEqual((await self.client.post('/api/session/login',json={'password':'x'})).status_code,403)

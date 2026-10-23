@@ -12,6 +12,9 @@ from .providers import ADAPTERS
 from .engine import investigate, anomaly_facts
 from .traders import poll_trader
 from .flow import FlowDetector
+from .smart_money import discover,THRESHOLD
+from .trader_history import fetch_history
+from .follow_evidence import resolve_samples
 
 log = logging.getLogger('sentinel')
 BOOK_STALL_SECONDS = 90
@@ -33,6 +36,7 @@ class Runtime:
         self.collector_state = 'disabled'
         self.coordinator_heartbeat = None
         self.job_status = {}
+        self.last_discovery_check = 0
 
     async def start(self):
         if not self.settings.collect:
@@ -75,7 +79,7 @@ class Runtime:
                         factories = [('stream:'+p,lambda p=p:self.stream(p)) for p in self.settings.providers]
                         factories += [('journal',self.journal),('alerts',self.alert_delivery)]
                         if 'hyperliquid' in self.settings.providers:
-                            factories.append(('traders',self.track_traders))
+                            factories += [('traders',self.track_traders),('trader_history',self.track_histories)]
                         jobs = [asyncio.create_task(self.supervise(name,factory),name=name) for name,factory in factories]
                 if any(task.done() for task in jobs):
                     self.collector_state = 'failed'
@@ -114,7 +118,7 @@ class Runtime:
             status = self.status[provider]
             status.update(state='connecting',reason=None)
             connected_at = time.time()
-            expected = ['BTC-USDC-PERP','ETH-USDC-PERP'] if provider=='hyperliquid' else ['BTC-USD','ETH-USD']
+            expected = ['BTC-USDC-PERP','ETH-USDC-PERP','SOL-USDC-PERP'] if provider=='hyperliquid' else ['BTC-USD','ETH-USD','SOL-USD']
             progress = {symbol:time.monotonic() for symbol in expected}
             logged_fresh = set()
             try:
@@ -136,6 +140,10 @@ class Runtime:
                             elif kind=='trade':
                                 self.trades.append(event)
                                 self.flow.observe(event)
+                                if provider=='hyperliquid' and event.get('public_participants') and D(event['price'])*D(event['quantity'])>=THRESHOLD and now-self.last_discovery_check>=2:
+                                    self.last_discovery_check = now
+                                    try:discover(self.store,event,now)
+                                    except Exception:log.exception('public_wallet_discovery_failed')
                             elif kind=='funding':
                                 self.funding[event['symbol']] = event
                             elif kind=='ticker':
@@ -163,7 +171,7 @@ class Runtime:
     def market_view(self):
         now = time.time()
         views = [b.view(now) for b in self.books.values()]
-        expected = [(p,s) for p in ADAPTERS for s in (['BTC-USDC-PERP','ETH-USDC-PERP'] if p=='hyperliquid' else ['BTC-USD','ETH-USD'])]
+        expected = [(p,s) for p in ADAPTERS for s in (['BTC-USDC-PERP','ETH-USDC-PERP','SOL-USDC-PERP'] if p=='hyperliquid' else ['BTC-USD','ETH-USD','SOL-USD'])]
         for p,s in expected:
             if (p,s) not in self.books:
                 views.append(Book(p,s,'perpetual' if p=='hyperliquid' else 'spot','USDC' if p=='hyperliquid' else 'USD').view(now))
@@ -172,7 +180,7 @@ class Runtime:
     def current_signals(self):
         signals = []
         stopped = self.store.get_state('control')['stopped']
-        for symbol in ['BTC-USD','ETH-USD']:
+        for symbol in ['BTC-USD','ETH-USD','SOL-USD']:
             for buy,sell in [('kraken','coinbase'),('coinbase','kraken')]:
                 a,b = self.books.get((buy,symbol)),self.books.get((sell,symbol))
                 signals.append(investigate(a or Book(buy,symbol),b or Book(sell,symbol),stopped=stopped))
@@ -212,6 +220,7 @@ class Runtime:
                                     'decision':'WAIT','status':'inbox_only','mode':'research_only',
                                     'note':'Mobile delivery is reserved for eligible GO signals; none are auto-approved.'})
                 self.resolve_outcomes()
+                resolve_samples(self.store,self.books)
                 self.last_persist = time.time()
                 self.last_error = None
                 tick += 1
@@ -246,6 +255,19 @@ class Runtime:
                 except Exception as e:
                     self.store.set_state('trader_error:'+trader['address'],{'error':type(e).__name__,'at':time.time()})
                 await asyncio.sleep(2)
+            await asyncio.sleep(10)  # Up to ten wallets with two seconds between requests: ~30 s rounds.
+
+    async def track_histories(self):
+        while True:
+            for trader in self.store.list('watchlist',10):
+                prior = self.store.get_state('trader_history:'+trader['address'])
+                if prior and time.time()-prior['received_at']<6*3600:continue
+                try:await fetch_history(self.store,trader['address'])
+                except asyncio.CancelledError:raise
+                except Exception as error:
+                    self.store.set_state('trader_history_error:'+trader['address'],{'error':type(error).__name__,'at':time.time()})
+                # Worst-case 2,000-fill responses have extra rate weight; keep requests spaced.
+                await asyncio.sleep(10)
             await asyncio.sleep(60)
 
     async def alert_delivery(self):

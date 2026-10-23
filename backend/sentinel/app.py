@@ -18,17 +18,18 @@ from .lab import walk_forward
 from .traders import ADDRESS
 from .changenow import estimate
 from .access import AccessVerifier
+from .smart_money import intelligence
 
 class Login(BaseModel):
     password: str = Field(min_length=1,max_length=256)
 class PaperOrder(BaseModel):
     provider: str = Field(pattern=r'^(kraken|coinbase)$')
-    symbol: str = Field(pattern=r'^(BTC|ETH)-USD$')
+    symbol: str = Field(pattern=r'^(BTC|ETH|SOL)-USD$')
     notional: str = Field(pattern=r'^\d{1,4}(\.\d{1,2})?$')
     idempotency_key: uuid.UUID
 class EntryPlan(BaseModel):
     provider: str = Field(pattern=r'^(kraken|coinbase)$')
-    symbol: str = Field(pattern=r'^(BTC|ETH)-USD$')
+    symbol: str = Field(pattern=r'^(BTC|ETH|SOL)-USD$')
     notional: str = Field(pattern=r'^\d{1,4}(\.\d{1,2})?$')
     stop: str = Field(pattern=r'^\d{1,9}(\.\d{1,8})?$')
     target: str = Field(pattern=r'^\d{1,9}(\.\d{1,8})?$')
@@ -66,7 +67,7 @@ def create_app(settings=None,store=None):
         finally:
             await runtime.stop()
             store.close()
-    app = FastAPI(title='Market Sentinel AI',version='0.1.0',lifespan=lifespan,
+    app = FastAPI(title='Market Sentinel AI',version='0.2.0',lifespan=lifespan,
                   docs_url='/docs' if settings.environment=='development' else None,redoc_url=None)
     app.state.store,app.state.runtime,app.state.settings = store,runtime,settings
     if settings.environment=='development':
@@ -115,7 +116,7 @@ def create_app(settings=None,store=None):
 
     @app.get('/health/live')
     async def live():
-        return {'status':'alive','live_trading':False}
+        return {'status':'alive','app_version':'0.2.0','live_trading':False}
 
     @app.get('/health/ready')
     async def ready(response:Response):
@@ -221,10 +222,16 @@ def create_app(settings=None,store=None):
         items = []
         for trader in store.list('watchlist',10):
             snapshot = store.get_state('trader:'+trader['address'])
-            items.append(dict(trader,snapshot=snapshot,error=store.get_state('trader_error:'+trader['address']),
+            history=store.get_state('trader_history:'+trader['address'])
+            if history:history={k:v for k,v in history.items() if k!='raw_fills'}
+            items.append(dict(trader,snapshot=snapshot,history=history,history_error=store.get_state('trader_history_error:'+trader['address']),error=store.get_state('trader_error:'+trader['address']),
                 freshness='live' if snapshot and time.time()-snapshot['received_at']<90 else 'stale' if snapshot else 'unavailable'))
-        return {'traders':items,'events':store.list('trader_event',100),
-            'disclosure':'User-selected public addresses; identity and trading success are not established.'}
+        return {'traders':items,'events':store.list('trader_event',100),'intelligence':intelligence(store,runtime.books),
+            'disclosure':'Manual and automatically discovered large-trade participants. Size, identity and trading success are not equivalent.'}
+
+    @app.get('/api/intelligence')
+    async def market_intelligence():
+        return intelligence(store,runtime.books)
 
     @app.post('/api/traders')
     async def add_trader(body:Watch):

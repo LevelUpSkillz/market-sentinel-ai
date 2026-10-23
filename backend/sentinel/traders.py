@@ -72,7 +72,10 @@ async def poll_trader(store, trader, books, client=None):
             book = books.get(('hyperliquid',event['coin']+'-USDC-PERP'))
             event['analysis'] = copy_decision(event,book,stopped=store.get_state('control')['stopped'])
             store.put('trader_event',event)
+            from .follow_evidence import begin_sample
+            begin_sample(store,event,book,now)
         store.set_state(key,doc)
+        store.set_state('trader_error:'+address,None)
         store.put('trader_snapshot',doc)
         return doc
     finally:

@@ -12,7 +12,7 @@ from sentinel.providers import ADAPTERS
 
 async def probe(provider):
     adapter = ADAPTERS[provider]()
-    expected = {'BTC-USDC-PERP','ETH-USDC-PERP'} if provider=='hyperliquid' else {'BTC-USD','ETH-USD'}
+    expected = {'BTC-USDC-PERP','ETH-USDC-PERP','SOL-USDC-PERP'} if provider=='hyperliquid' else {'BTC-USD','ETH-USD','SOL-USD'}
     observed = {}
     try:
         async with asyncio.timeout(25):

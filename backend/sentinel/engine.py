@@ -68,13 +68,16 @@ def copy_decision(event, book: Book | None, exposure=D(0), stopped=False, now=No
     result = {'decision':'NO-GO','strategy_version':'copy-v1.0.0','observed_event':dict(event),'reasons':reasons,'mode':'paper_only'}
     if stopped:
         reasons.append('Emergency stop is active.')
+    if event.get('action') in ['closed','reduced']:
+        reasons.append('A reduction or closure is not a new entry to follow.')
+        return result
     if book is None or not book.fresh(now):
         reasons.append('A fresh executable book is unavailable.')
         return result
     if now-float(event.get('observed_at',0)) > 60 or event.get('baseline',True):
         reasons.append('Observation is old or an initial baseline; it is not a new entry.')
         return result
-    entry = decimal(event.get('entry_price',0))
+    entry = decimal(event.get('entry_price') or 0)
     if entry <= 0:
         reasons.append('Original entry price is unavailable.')
         return result

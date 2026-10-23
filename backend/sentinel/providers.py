@@ -20,7 +20,7 @@ class Adapter:
 class Kraken(Adapter):
     name, url = 'kraken','wss://ws.kraken.com/v2'
     def subscriptions(self):
-        return [{'method':'subscribe','params':{'channel':c,'symbol':['BTC/USD','ETH/USD'],**({'depth':10} if c=='book' else {})}} for c in ['book','ticker','trade']]
+        return [{'method':'subscribe','params':{'channel':c,'symbol':['BTC/USD','ETH/USD','SOL/USD'],**({'depth':10} if c=='book' else {})}} for c in ['book','ticker','trade']]
     @staticmethod
     def checksum(book):
         def fmt(value):
@@ -57,7 +57,7 @@ class Kraken(Adapter):
 class Coinbase(Adapter):
     name,url = 'coinbase','wss://ws-feed.exchange.coinbase.com'
     def subscriptions(self):
-        return [{'type':'subscribe','product_ids':['BTC-USD','ETH-USD'],'channels':['level2_batch','ticker','matches','heartbeat']}]
+        return [{'type':'subscribe','product_ids':['BTC-USD','ETH-USD','SOL-USD'],'channels':['level2_batch','ticker','matches','heartbeat']}]
     def consume(self,m,received_at):
         kind = m.get('type')
         if kind=='error':
@@ -86,7 +86,7 @@ class Coinbase(Adapter):
 class Hyperliquid(Adapter):
     name,url = 'hyperliquid','wss://api.hyperliquid.xyz/ws'
     def subscriptions(self):
-        return [{'method':'subscribe','subscription':{'type':kind,'coin':coin}} for coin in ['BTC','ETH'] for kind in ['l2Book','trades','activeAssetCtx']]
+        return [{'method':'subscribe','subscription':{'type':kind,'coin':coin}} for coin in ['BTC','ETH','SOL'] for kind in ['l2Book','trades','activeAssetCtx']]
     def consume(self,m,received_at):
         channel,data = m.get('channel'),m.get('data')
         if channel=='error':
@@ -98,11 +98,16 @@ class Hyperliquid(Adapter):
         if channel=='trades':
             return [('trade',{'provider':self.name,'symbol':r['coin']+'-USDC-PERP','price':str(decimal(r['px'])),
                 'quantity':str(decimal(r['sz'])),'source_at':timestamp(r['time']),'received_at':received_at,
-                'side':'buy' if r['side']=='B' else 'sell','trade_id':str(r.get('tid',r.get('hash')))}) for r in data]
+                'side':'buy' if r['side']=='B' else 'sell','trade_id':str(r.get('tid',r.get('hash'))),
+                'public_participants':r.get('users',[])}) for r in data]
         if channel=='activeAssetCtx':
             return [('funding',{'provider':self.name,'symbol':data['coin']+'-USDC-PERP',
-                'received_at':received_at,'source_at':None,'funding':str(data['ctx'].get('funding')),
-                'open_interest':str(data['ctx'].get('openInterest')),'note':'Context has no event timestamp; receipt-time only.'})]
+                'received_at':received_at,'source_at':None,'funding':str(decimal(data['ctx']['funding'])) if data['ctx'].get('funding') is not None else None,
+                'open_interest':str(decimal(data['ctx']['openInterest'])) if data['ctx'].get('openInterest') is not None else None,
+                'mark_price':str(decimal(data['ctx']['markPx'])) if data['ctx'].get('markPx') is not None else None,
+                'day_notional_volume':str(decimal(data['ctx']['dayNtlVlm'])) if data['ctx'].get('dayNtlVlm') is not None else None,
+                'oracle_price':str(decimal(data['ctx']['oraclePx'])) if data['ctx'].get('oraclePx') is not None else None,
+                'note':'Context has no event timestamp; receipt-time only. OI is in base units; volume and mark/oracle are USDC-denominated.'})]
         return []
 
 ADAPTERS = {c.name:c for c in [Kraken,Coinbase,Hyperliquid]}
