@@ -259,6 +259,12 @@ def validate_backup(blob, *, max_bytes=MAX_BACKUP_BYTES):
     if not {'control', 'account'}.issubset(seen_state):
         raise BackupError('Backup lacks required account/control state.')
     state = {row['key']: row['data'] for row in payload['state']}
+    active_order = state.get('kraken_live_active')
+    if active_order is not None and (not isinstance(active_order, str) or
+            not 1 <= len(active_order) <= 512 or
+            not any(row['kind'] == 'real_order' and row['id'] == active_order
+                    for row in payload['records'])):
+        raise BackupError('Unresolved Kraken order reference lacks preserved order evidence.')
     if not isinstance(state['control'], dict) or type(state['control'].get('stopped')) is not bool or not isinstance(state['account'], dict):
         raise BackupError('Backup account/control state is invalid.')
     try:
