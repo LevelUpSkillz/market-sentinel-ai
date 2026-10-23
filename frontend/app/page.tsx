@@ -33,19 +33,44 @@ export default function Home() {
   const [traderEvents,setTraderEvents]=useState<JournalRecord[]>([]);
   const [walletFocus,setWalletFocus]=useState<string|null>(null);
   const inspectWallet=useCallback((address:string)=>{setWalletFocus(address.toLowerCase());setTab(2);setMobile(false)},[]);
-  useEffect(()=>{if(tab!==2||!walletFocus)return;const section=document.getElementById('wallet-'+walletFocus);if(section){section.scrollIntoView({behavior:'smooth',block:'start'});setWalletFocus(null)}},[tab,walletFocus,traders]);
+  useEffect(()=>{if(tab!==2||!walletFocus)return;const section=document.getElementById('wallet-'+walletFocus);if(section){section.setAttribute('tabindex','-1');section.focus({preventScroll:true});section.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});setWalletFocus(null)}},[tab,walletFocus,traders]);
   const [realPlan,setRealPlan]=useState<RealPlan|null>(null),[realInput,setRealInput]=useState<{provider:string;symbol:string;stop:string;target:string}|null>(null);
   const calculateReal=async(input:{provider:string;symbol:string;stop:string;target:string})=>{setRealPlan(await api<RealPlan>('/capital/plans',input));setRealInput(input)};
   const refreshLock=useRef(false);
+  const detailSequence=useRef(0);
   useEffect(()=>{if(!selected)return;const previous=document.activeElement as HTMLElement|null;const onKey=(e:KeyboardEvent)=>{if(e.key==='Escape')setSelected(null);if(e.key==='Tab'){e.preventDefault();document.querySelector<HTMLButtonElement>('.evidence-modal .icon-button')?.focus()}};document.addEventListener('keydown',onKey);const overflow=document.body.style.overflow;document.body.style.overflow='hidden';return()=>{document.removeEventListener('keydown',onKey);document.body.style.overflow=overflow;previous?.focus()}},[selected]);
   const refresh=useCallback(async()=>{ if(refreshLock.current)return;refreshLock.current=true;try{const d=await api<Dashboard>('/dashboard');setData(d);setAuth(true);setOnline(true);setError('')}catch(e){setOnline(false);if((e as {status?:number}).status===401){setAuth(false);setData(null);setIntel(null);setRealPlan(null);setRealInput(null);setTraders([]);setTraderEvents([]);setHistory([]);setRecords([]);setSelected(null);setLab(null);setPlanResult(null);setSwapQuote(null)}else setError((e as Error).message)}finally{setChecking(false);refreshLock.current=false}},[]);
   useEffect(()=>{const tick=()=>{setNow(Date.now()/1000);if(document.visibilityState==='visible')refresh()};tick();const timer=setInterval(tick,2000);const visible=()=>{if(document.visibilityState==='visible')tick()};document.addEventListener('visibilitychange',visible);return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',visible)}},[refresh]);
-  const loadDetail=useCallback(async()=>{ if(!auth)return;try{if(tab===2){const r=await api<{traders:Trader[];events:JournalRecord[];intelligence:Intelligence}>('/traders');setTraders(r.traders);setTraderEvents(r.events);setIntel(r.intelligence)}else if([3,5,8,9].includes(tab)){const kind=({3:'opportunity',5:'forensic',8:'alert',9:'audit'} as Record<number,string>)[tab];const r=await api<{records:JournalRecord[]}>('/records/'+kind+'?q='+encodeURIComponent(query));setRecords(r.records)}if(tab===0||tab===1){const r=await api<{records:Market[]}>('/records/market_snapshot?limit=300&q='+encodeURIComponent(chartSymbol));setHistory(r.records.filter(m=>m.provider===chartProvider).reverse())}}catch(e){setError((e as Error).message)}},[auth,tab,query,chartSymbol,chartProvider]);
-  useEffect(()=>{setRecords([]);loadDetail();const timer=setInterval(loadDetail,10000);return()=>clearInterval(timer)},[loadDetail]);
+  const loadDetail=useCallback(async()=>{
+    if(!auth||document.visibilityState!=='visible')return;
+    const sequence=++detailSequence.current;
+    const current=()=>sequence===detailSequence.current&&document.visibilityState==='visible';
+    try{
+      if(tab===2){
+        const r=await api<{traders:Trader[];events:JournalRecord[];intelligence:Intelligence}>('/traders');
+        if(!current())return;
+        setTraders(r.traders);setTraderEvents(r.events);setIntel(previous=>!previous||r.intelligence.as_of>=previous.as_of?r.intelligence:previous);
+      }else if([3,5,8,9].includes(tab)){
+        const kind=({3:'opportunity',5:'forensic',8:'alert',9:'audit'} as Record<number,string>)[tab];
+        const r=await api<{records:JournalRecord[]}>('/records/'+kind+'?q='+encodeURIComponent(query));
+        if(current())setRecords(r.records);
+      }
+      if(tab===0||tab===1){
+        const r=await api<{records:Market[]}>('/records/market_snapshot?limit=300&q='+encodeURIComponent(chartSymbol));
+        if(current())setHistory(r.records.filter(m=>m.provider===chartProvider).reverse());
+      }
+    }catch(e){if(current())setError((e as Error).message)}
+  },[auth,tab,query,chartSymbol,chartProvider]);
+  useEffect(()=>{
+    setRecords([]);loadDetail();const timer=setInterval(loadDetail,10000);
+    const visible=()=>{detailSequence.current+=1;if(document.visibilityState==='visible')loadDetail()};
+    document.addEventListener('visibilitychange',visible);
+    return()=>{detailSequence.current+=1;clearInterval(timer);document.removeEventListener('visibilitychange',visible)};
+  },[loadDetail]);
   useEffect(()=>{
     if(!auth||![0,2,4].includes(tab))return;
     let disposed=false,running=false;
-    const update=async()=>{if(running||document.visibilityState!=='visible')return;running=true;try{const value=await api<Intelligence>('/intelligence');if(!disposed)setIntel(value)}catch(e){if(!disposed&&(e as {status?:number}).status===401)setIntel(null)}finally{running=false}};
+    const update=async()=>{if(running||document.visibilityState!=='visible')return;running=true;try{const value=await api<Intelligence>('/intelligence');if(!disposed)setIntel(previous=>!previous||value.as_of>=previous.as_of?value:previous)}catch(e){if(!disposed&&(e as {status?:number}).status===401)setIntel(null)}finally{running=false}};
     update();const timer=setInterval(update,2000);const visible=()=>{if(document.visibilityState==='visible')update()};document.addEventListener('visibilitychange',visible);
     return()=>{disposed=true;clearInterval(timer);document.removeEventListener('visibilitychange',visible)};
   },[auth,tab]);

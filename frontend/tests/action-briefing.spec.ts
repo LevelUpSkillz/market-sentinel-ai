@@ -4,6 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 // success estimates in this file come from a connected account or live market.
 const NOW=1_800_000_000;
 const ADDRESS='0x'+'7'.repeat(40);
+const OTHER_ADDRESS='0x'+'8'.repeat(40);
 
 type EvidenceFixture={estimate:number|null;completed:number;interval:[number,number]|null};
 
@@ -38,10 +39,16 @@ async function mockBriefing(page:Page,evidence:EvidenceFixture){
     else if(path==='/api/traders')body={traders:[{id:ADDRESS,address:ADDRESS,label:'SYNTHETIC TEST WALLET',freshness:'live',
       snapshot:{received_at:NOW,source_at:NOW,source:'SYNTHETIC PUBLIC DATA FIXTURE',account_value:'10000',
         data_completeness:'SYNTHETIC TEST FIXTURE',baseline:false,
-        positions:[{coin:'ETH',szi:'1',entryPx:'2500',unrealizedPnl:'-6.25',liquidationPx:'2485'}]}}],
+        positions:[{coin:'ETH',szi:'1',entryPx:'2500',unrealizedPnl:'-6.25',liquidationPx:'2485'}]}},
+      {id:OTHER_ADDRESS,address:OTHER_ADDRESS,label:'SYNTHETIC OTHER WALLET',freshness:'live',
+        snapshot:{received_at:NOW,source_at:NOW,source:'SYNTHETIC PUBLIC DATA FIXTURE',account_value:'5000',
+          data_completeness:'SYNTHETIC TEST FIXTURE',baseline:false,positions:[]}}],
       events:[{id:'SYNTHETIC_INCREASE_EVENT',recorded_at:NOW,address:ADDRESS,coin:'ETH',action:'increased',
         before_size:'0.5',after_size:'1',source:'SYNTHETIC PUBLIC DATA FIXTURE',
-        analysis:{decision:'NO-GO',reasons:['SYNTHETIC TEST: observed size increase is not a verified execution instruction.']}}],
+        analysis:{decision:'NO-GO',reasons:['SYNTHETIC TEST: observed size increase is not a verified execution instruction.']}},
+      {id:'SYNTHETIC_OTHER_WALLET_EVENT',recorded_at:NOW,address:OTHER_ADDRESS,coin:'BTC',action:'reduced',
+        before_size:'0.02',after_size:'0.01',source:'SYNTHETIC PUBLIC DATA FIXTURE',
+        analysis:{decision:'WAIT',reasons:['SYNTHETIC TEST: this historical review is not a current entry approval.']}}],
       intelligence};
     else if(path==='/api/radar')body={as_of:NOW,strategy_version:'SYNTHETIC',mode:'paper_only',status:'collecting',
       coverage:{universe:0,observed:0,warming_up:0,ready:0,candidates:0},setups:[],limitations:['SYNTHETIC TEST FIXTURE']};
@@ -59,6 +66,7 @@ test('tiny unvalidated sample hides success bounds and explains Ethereum entry i
   const briefing=page.getByRole('region',{name:'Next action briefing'});
   await expect(briefing.getByRole('heading',{name:'Ethereum (ETH)',exact:true})).toBeVisible();
   await expect(briefing.getByText('Public wallet holds a position for a price rise (long).',{exact:true})).toBeVisible();
+  await expect(briefing.getByText('Observed position size: 1 ETH. This snapshot does not establish the size of an individual execution.',{exact:true})).toBeVisible();
   await expect(briefing.getByText('Perpetual contract · USDC · not a Kraken spot order.',{exact:true})).toBeVisible();
   await expect(briefing.getByText('Not validated',{exact:true})).toHaveCount(1);
   await expect(briefing.getByText('2 of 100 minimum completed',{exact:true})).toBeVisible();
@@ -74,6 +82,9 @@ test('tiny unvalidated sample hides success bounds and explains Ethereum entry i
   await page.screenshot({path:testInfo.outputPath('synthetic-unvalidated-ethereum-mobile.png'),fullPage:true});
   await briefing.getByText(/^Source and wallet details/).click();
   await expect(briefing.getByText(ADDRESS,{exact:true})).toBeVisible();
+  const copyButton=briefing.getByRole('button',{name:'Copy public wallet address',exact:true});
+  await expect(copyButton).toBeVisible();
+  expect((await copyButton.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   await expect(briefing.getByText('Source: SYNTHETIC PUBLIC DATA FIXTURE',{exact:true})).toBeVisible();
   await briefing.getByText('How the success estimate is validated',{exact:true}).click();
   await expect(briefing.getByText(/65\.8\s*%/)).toHaveCount(0);
@@ -81,6 +92,15 @@ test('tiny unvalidated sample hides success bounds and explains Ethereum entry i
   await briefing.getByRole('button',{name:/View this wallet[’']s actions/}).click();
   await expect(page.getByRole('heading',{name:/^Smart Money \/ Whale Tracker/})).toBeVisible();
   await expect(page.getByRole('heading',{name:'SYNTHETIC TEST WALLET',exact:true})).toBeVisible();
+  const wallet=page.locator('#wallet-'+ADDRESS);
+  const otherWallet=page.locator('#wallet-'+OTHER_ADDRESS);
+  await expect(wallet.getByRole('heading',{name:'ETH · increased',exact:true})).toBeVisible();
+  await expect(wallet).toContainText('Observed quantity: 0.5 → 1');
+  await expect(wallet).toContainText('exact execution time is unknown');
+  await expect(wallet.getByRole('heading',{name:'BTC · reduced',exact:true})).toHaveCount(0);
+  await expect(otherWallet.getByRole('heading',{name:'BTC · reduced',exact:true})).toBeVisible();
+  await expect(otherWallet.getByRole('heading',{name:'ETH · increased',exact:true})).toHaveCount(0);
+  await expect(otherWallet).toContainText('WAIT · HISTORICAL');
   expect(writes).toEqual([]);
 });
 

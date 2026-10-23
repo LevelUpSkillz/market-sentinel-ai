@@ -16,7 +16,7 @@ function PublicWalletAddress({address}:{address:string}) {
     try {await navigator.clipboard.writeText(address);setCopyStatus('copied')}
     catch {setCopyStatus('failed')}
   }
-  return <><code title={address}>{address}</code><button type="button" onClick={copyAddress}>Copy public wallet address</button><small role="status">{copyStatus==='copied'?'Public wallet address copied.':copyStatus==='failed'?'Copy unavailable. Select the full address above to copy it.':''}</small></>;
+  return <><code title={address}>{address}</code><button type="button" className="secondary" onClick={copyAddress}>Copy public wallet address</button><small role="status">{copyStatus==='copied'?'Public wallet address copied.':copyStatus==='failed'?'Copy unavailable. Select the full address above to copy it.':''}</small></>;
 }
 
 export function ActionBriefing({intel,online,now,onInspectWallet}:{intel:Intelligence|null;online:boolean;now:number;onInspectWallet?:(address:string)=>void}) {
@@ -32,11 +32,13 @@ export function ActionBriefing({intel,online,now,onInspectWallet}:{intel:Intelli
       const entryDifference=a.entry_drift_bps==null?null:Number(a.entry_drift_bps);
       const hasEntryDifference=fresh&&entryDifference!=null&&Number.isFinite(entryDifference);
       const hasComparisonPrices=a.reported_average_entry_price!==undefined||a.current_executable_price!==undefined;
+      const positionSize=Math.abs(Number(a.position_size_native_units));
       const nextStep=!fresh?'Wait for fresh market observations':a.decision==='NO-GO'?'Skip this observed entry':'Research only — no validated trade recommendation';
       return <article className="action-card" key={a.address+a.symbol}>
         <div className="action-heading"><div><span className="eyebrow">PUBLIC POSITION OBSERVATION</span><h3>{assetName(a.symbol)}</h3></div><span className={'badge '+(fresh&&a.decision==='WAIT'?'wait':'no-go')}>{fresh?a.decision:'NO-GO'}</span></div>
         <p>Public wallet holds a position for a {a.side==='long'?'price rise (long)':a.side==='short'?'price fall (short)':'direction that has not been verified'}.</p>
-        <button type="button" disabled={!onInspectWallet} onClick={()=>onInspectWallet?.(a.address)}>View this wallet’s actions</button>
+        {Number.isFinite(positionSize)&&positionSize>0&&<p>Observed position size: {positionSize.toLocaleString('en-US',{maximumSignificantDigits:9})} {a.asset||a.symbol.replace(/-USDC-PERP$/,'')}. This snapshot does not establish the size of an individual execution.</p>}
+        <button type="button" className="secondary" disabled={!onInspectWallet} onClick={()=>onInspectWallet?.(a.address)}>View this wallet’s actions</button>
         <p>Perpetual contract · USDC · not a Kraken spot order.</p>
         <p>{a.timing_note||'Current public position snapshot; an opening or exact execution time is not established.'}</p>
         <h4>{nextStep}</h4>
@@ -65,6 +67,7 @@ export default function SmartMoneyView({traders,events,intel,online,now,auth,bus
     </section>
     {traders.map(t=>{
       const h=t.history;
+      const walletEvents=events.filter(r=>r.address?.toLowerCase()===t.address.toLowerCase()).slice(0,20);
       const fresh=online&&t.snapshot&&now-t.snapshot.received_at<90;
       return <section className="panel" key={t.id} id={'wallet-'+t.address} tabIndex={-1} aria-label={'Public wallet '+shortAddress(t.address)}>
         <div className="panel-head"><div><span className="eyebrow">{t.origin==='auto_large_trade'?'DISCOVERED LARGE-TRADE PARTICIPANT':'USER WATCHLIST'}</span><h2>{t.label}</h2></div><span className={'badge '+(fresh?'live':'unavailable')}>{fresh?'recent snapshot':t.snapshot?'stale':'awaiting data'}</span></div>
@@ -78,9 +81,9 @@ export default function SmartMoneyView({traders,events,intel,online,now,auth,bus
         </>:<p>Retrieving actual public fills. A win percentage will appear only if complete position cycles can be reconstructed.</p>}
         {t.history_error&&<p className="negative">History request unavailable: {t.history_error.error} at {date(t.history_error.at)}. Retained history is not refreshed by this error.</p>}
         </div>
+        <div className="history-section"><h3>Observed position changes for this wallet</h3><p>Changes occurred between position polls; exact execution time is unknown. These are historical observations, not current entry approvals.</p>{walletEvents.length?walletEvents.map(r=><article key={r.id} className="journal-item"><span className="badge no-go">{r.analysis?.decision||'NO-GO'} · HISTORICAL</span><h4>{r.coin} · {r.action}</h4><p>Observed quantity: {r.before_size} → {r.after_size}</p><small>{r.source} · {date(r.recorded_at)}</small>{r.analysis?.reasons.map(reason=><p key={reason}>{reason}</p>)}</article>):<p>No subsequent position changes for this wallet in the available event window. The first snapshot is a baseline.</p>}</div>
       </section>;
     })}
-    <section className="panel"><div className="panel-head"><h2>Observed position changes</h2></div>{events.length?events.slice(0,20).map(r=><article key={r.id} className="journal-item"><span className="badge no-go">{r.analysis?.decision||'NO-GO'}</span><h3>{r.coin} · {r.action}</h3><p>{r.before_size} → {r.after_size}</p><small>{r.source} · {date(r.recorded_at)}</small>{r.analysis?.reasons.map(reason=><p key={reason}>{reason}</p>)}</article>):<div className="wallet-details"><p>The first snapshot is a baseline. Only subsequent size changes are treated as new observations; exact execution time remains unknown.</p></div>}</section>
   </>;
 }
 

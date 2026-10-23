@@ -24,13 +24,16 @@ from .capital import save_profile,get_profile,evaluate_real_plan
 
 def connection_status():
     # A preferred venue is not an authenticated account connection.
-    return {'provider':'kraken','status':'provider_approval_required','connected':False,
+    return {'provider':'kraken','status':'secure_setup_required','connected':False,
         'order_submission_enabled':False,'withdrawals_enabled':False,
         'app_hosting_plan':'free','trading_fees':'Kraken transaction fees apply; no fee-free trading is promised.',
-        'requirements':['Kraken secure OAuth account linking requires a provider-approved client.',
+        'requirements':['Kraken supports owner-created API keys for account access and trading; OAuth is an alternative that requires a provider-approved client.',
+            'This app still needs an encrypted server-side credential flow and verified account permissions before either route can connect.',
+            'A future restricted connection must exclude funding, transfers and withdrawals. Public wallet watching does not authorize trading.',
             'Provider permission for this app’s market-data use and regional eligibility must be verified.',
             'Every future order requires verified Kraken balances/product rules, current venue costs and a separate user approval.'],
-        'documentation':'https://docs.kraken.com/',
+        'documentation':'https://support.kraken.com/au/articles/360041395271-using-the-kraken-api-with-a-third-party-service',
+        'oauth_documentation':'https://docs-legacy.kraken.com/api/docs/oauth/kraken-connect/',
         'fees_url':'https://www.kraken.com/features/fee-schedule'}
 
 class Login(BaseModel):

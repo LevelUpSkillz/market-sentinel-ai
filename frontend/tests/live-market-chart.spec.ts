@@ -6,8 +6,10 @@ const START = TIME.getTime()/1000;
 type Feed = {at:number;sourceAt:number;receivedAt:number;mid:number;outage:boolean};
 
 async function mockFeed(page:Page,feed:Feed){
+  const requests:string[]=[];
   await page.route('**/api/**',async route=>{
     const path=new URL(route.request().url()).pathname;
+    requests.push(path);
     if(path==='/api/dashboard'&&feed.outage){
       await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({detail:'SYNTHETIC provider outage'})});
       return;
@@ -21,10 +23,12 @@ async function mockFeed(page:Page,feed:Feed){
     let body:unknown={records:[]};
     if(path==='/api/dashboard')body=dashboard;
     if(path==='/api/intelligence')body={as_of:feed.at,actions:[]};
+    if(path==='/api/traders')body={traders:[],events:[],intelligence:{as_of:feed.at,actions:[]}};
     if(path==='/api/radar')body={as_of:feed.at,strategy_version:'SYNTHETIC',mode:'paper_only',status:'warming_up',coverage:{universe:0,observed:0,warming_up:0,ready:0,candidates:0},setups:[],limitations:['SYNTHETIC FIXTURE']};
     if(path==='/api/assets')body={items:[],page:1,limit:25,total:0,counts:{catalogue:0,global_prices:0,venue_markets:1,streaming_quotes:1},as_of:feed.at,watched_markets:[],extra_book_limit:6,sessions:{kraken:{state:'connected'}},errors:{},catalogue_received_at:null,global_quotes_received_at:null,coverage:'SYNTHETIC TEST FIXTURE',attribution:{label:'SYNTHETIC FIXTURE',url:'https://coinpaprika.com',license:'SYNTHETIC TEST ONLY'}};
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
   });
+  return requests;
 }
 
 async function expectSamples(chart:Locator,count:number){
@@ -97,7 +101,7 @@ test('API heartbeats and outages add no chart prices, and recovery leaves an exp
   expect(await line.getAttribute('d')).toBe(lastVerifiedPath);
   feed.outage=true;
   await page.clock.runFor(2100);
-  await expect(page.getByRole('alert')).toContainText('SYNTHETIC provider outage');
+  await expect(page.getByRole('alert').filter({hasText:'Connection issue:'})).toContainText('SYNTHETIC provider outage');
   await expectSamples(chart,2);
   expect(await line.getAttribute('d')).toBe(lastVerifiedPath);
   feed.outage=false;sourcePoint(feed,12,104);
@@ -111,4 +115,40 @@ test('API heartbeats and outages add no chart prices, and recovery leaves an exp
   // Independent path moves show disjoint observed segments across the outage.
   expect((recovered?.match(/M/g)||[]).length).toBeGreaterThanOrEqual(2);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
+});
+
+test('hidden pages stop dashboard, history and wallet polling, then refresh on return',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.clock.install({time:TIME});
+  const feed:Feed={at:START,sourceAt:START,receivedAt:START,mid:101,outage:false};
+  const requests=await mockFeed(page,feed);
+  await page.goto('/');
+  await expectSamples(page.getByRole('region',{name:'Live market chart'}),1);
+  await expect.poll(()=>requests.filter(path=>path==='/api/records/market_snapshot').length).toBeGreaterThan(0);
+  await expect.poll(()=>requests.filter(path=>path==='/api/intelligence').length).toBeGreaterThan(0);
+
+  const visibility=async(state:'visible'|'hidden')=>{
+    await page.evaluate(value=>{
+      Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>value});
+      document.dispatchEvent(new Event('visibilitychange'));
+    },state);
+  };
+  await visibility('hidden');
+  const beforeHidden=requests.length;
+  await page.clock.runFor(31_000);
+  expect(requests.length).toBe(beforeHidden);
+  const savedBeforeReturn=requests.filter(path=>path==='/api/records/market_snapshot').length;
+  sourcePoint(feed,31,102);
+  await visibility('visible');
+  await expect.poll(()=>requests.filter(path=>path==='/api/records/market_snapshot').length).toBeGreaterThan(savedBeforeReturn);
+
+  await page.getByLabel('Open navigation').click();
+  await page.getByRole('button',{name:'Smart Money',exact:true}).click();
+  await expect.poll(()=>requests.filter(path=>path==='/api/traders').length).toBeGreaterThan(0);
+  await visibility('hidden');
+  const walletsBeforeHidden=requests.filter(path=>path==='/api/traders').length;
+  await page.clock.runFor(31_000);
+  expect(requests.filter(path=>path==='/api/traders').length).toBe(walletsBeforeHidden);
+  await visibility('visible');
+  await expect.poll(()=>requests.filter(path=>path==='/api/traders').length).toBeGreaterThan(walletsBeforeHidden);
 });
