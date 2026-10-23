@@ -8,3 +8,5 @@ PYTHONPATH=../backend /tmp/sentinel-verification/bin/python -m unittest discover
 npm audit --omit=dev --audit-level=high
 npm run typecheck
 npm run build
+npx playwright install chromium
+npm run test:e2e

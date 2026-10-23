@@ -7,7 +7,7 @@
     "build": "next build",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
-    "deploy": "wrangler pages deploy out --project-name market-sentinel-ai"
+    "deploy": "npx wrangler pages deploy out --project-name market-sentinel-ai"
   },
   "dependencies": {
     "next": "16.4.2",
@@ -19,7 +19,6 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "typescript": "^5.8.3",
-    "wrangler": "^4.0.0",
     "@playwright/test": "^1.51.1",
     "serve": "14.2.4"
   }
