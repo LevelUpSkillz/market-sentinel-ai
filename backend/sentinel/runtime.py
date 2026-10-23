@@ -82,6 +82,7 @@ class Runtime:
                         self.collector_state = 'recovering'
                         log.exception('collector_lock_failed')
                     if acquired:
+                        self.live_watch = self.store.get_state('market_watch',[])
                         factories = [('stream:'+p,lambda p=p:self.stream(p)) for p in self.settings.providers]
                         factories += [('journal',self.journal),('alerts',self.alert_delivery)]
                         if self.settings.providers:
@@ -151,6 +152,7 @@ class Runtime:
         attempt = 0
         while True:
             expected = self.desired_symbols(provider)
+            core = {b+('-USDC-PERP' if provider=='hyperliquid' else '-USD') for b in BASES}
             adapter = ADAPTERS[provider](expected)
             self.flow.reset(provider)
             status = self.status[provider]
@@ -187,7 +189,9 @@ class Runtime:
                             elif kind=='ticker':
                                 self.tickers[(provider,event['symbol'])] = event
                         status['last_message_at'] = now
-                        if any(time.monotonic()-last>BOOK_STALL_SECONDS for last in progress.values()):
+                        # An illiquid selected market may legitimately be quiet.
+                        # Its timestamp expires normally; it must not reset healthy core feeds.
+                        if any(time.monotonic()-progress[s]>BOOK_STALL_SECONDS for s in core):
                             raise TimeoutError('Provider book updates stalled')
                         if now-connected_at > 60:
                             attempt = 0
