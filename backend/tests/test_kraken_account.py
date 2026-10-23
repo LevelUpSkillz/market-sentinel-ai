@@ -135,6 +135,19 @@ class KrakenAccountTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(status['withdrawals_enabled'])
         self.assertFalse(status['autonomous_trading'])
 
+    async def test_rotated_valid_vault_key_disables_connection_without_exposing_secrets(self):
+        await self.connect()
+        self.settings.kraken_vault_key = Fernet.generate_key().decode()
+        status=self.account.status()
+        self.assertFalse(status['connected'])
+        self.assertFalse(status['order_submission_enabled'])
+        self.assertEqual(status['status'],'secure_setup_required')
+        self.assertNotIn(API_KEY,json.dumps(status))
+        self.assertNotIn(API_SECRET,json.dumps(status))
+        with self.assertRaises(AccountError):
+            await self.account.account()
+        self.assertEqual(self.state.submitted,[])
+
     async def test_missing_vault_and_unconfirmed_eligibility_never_persist_credentials(self):
         for changes in [{'eligibility_confirmed':False},{'dedicated_key_confirmed':False},
                         {'country_code':'us'},{'country_code':'USA'},{'region':''}]:
