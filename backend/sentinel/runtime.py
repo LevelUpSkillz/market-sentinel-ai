@@ -17,6 +17,7 @@ from .trader_history import fetch_history,HISTORY_VERSION
 from .follow_evidence import resolve_samples
 from .catalogue import Catalogue,BASES,EXTRA_BOOK_LIMIT
 from .market_directory import directory_stream
+from .radar import Radar
 
 log = logging.getLogger('sentinel')
 BOOK_STALL_SECONDS = 90
@@ -43,6 +44,7 @@ class Runtime:
         self.last_discovery_check = 0
         self.catalogue = Catalogue(store,settings.providers)
         self.live_watch = store.get_state('market_watch',[])
+        self.radar = Radar(store)
 
     async def start(self):
         if not self.settings.collect:
@@ -87,6 +89,7 @@ class Runtime:
                         factories += [('journal',self.journal),('alerts',self.alert_delivery)]
                         if self.settings.providers:
                             factories += [('catalogue',self.catalogue.run)]
+                            factories += [('radar',self.scan_radar)]
                             factories += [('directory:'+p,lambda p=p:directory_stream(self.catalogue,p)) for p in self.settings.providers if p in ('kraken','hyperliquid')]
                         if 'hyperliquid' in self.settings.providers:
                             factories += [('traders',self.track_traders),('trader_history',self.track_histories)]
@@ -302,6 +305,26 @@ class Runtime:
                 await asyncio.sleep(2)
             await asyncio.sleep(10)  # Up to ten wallets with two seconds between requests: ~30 s rounds.
 
+    async def scan_radar(self):
+        tick = 0
+        while True:
+            payload = self.radar.tick(self.catalogue,self.books)
+            for setup in payload['setups']:
+                if setup['decision']!='GO':continue
+                key = 'radar-alert:'+setup['id']
+                with self.store.transaction():
+                    if self.store.get_state(key):continue
+                    expiry = min(setup['expires_at'],setup['entry_deadline'] or setup['expires_at'])
+                    self.store.put('alert',{'title':setup['symbol']+' paper entry conditions met; unvalidated research only.',
+                        'status':'queued' if self.settings.ntfy_topic else 'inbox_only','mode':'paper_only',
+                        'signal_id':setup['id'],'setup':setup,'expires_at':expiry,'attempts':0})
+                    self.store.set_state(key,{'at':time.time()})
+            if tick%12==0:
+                log.info('radar_scan universe=%s observed=%s ready=%s candidates=%s status=%s',
+                    payload['coverage']['universe'],payload['coverage']['observed'],payload['coverage']['ready'],payload['coverage']['candidates'],payload['status'])
+            tick += 1
+            await asyncio.sleep(5)
+
     async def track_histories(self):
         while True:
             for trader in self.store.list('watchlist',10):
@@ -321,6 +344,10 @@ class Runtime:
             if self.settings.ntfy_topic and not self.store.get_state('control')['stopped']:
                 for alert in self.store.list('alert',100):
                     if alert['status']!='queued' or alert.get('retry_at',0)>time.time():
+                        continue
+                    if alert.get('expires_at') and time.time()>=alert['expires_at']:
+                        alert.update(status='expired',expired_at=time.time())
+                        self.store.replace(alert['id'],alert)
                         continue
                     try:
                         headers = {'Title':'Market Sentinel AI','Priority':'default'}

@@ -109,11 +109,11 @@ class EngineTests(unittest.TestCase):
         r=investigate(book(),book('coinbase','100.1','101'),now=NOW)
         self.assertEqual(r['decision'],'NO-GO')
         self.assertAlmostEqual(float(r['gross_bps']),10)
-        self.assertAlmostEqual(float(r['net_bps']),-95)
+        self.assertAlmostEqual(float(r['net_bps']),-135)  # Kraken 80 + Coinbase 60 + latency 5 bps.
     def test_positive_edge_waits_for_inventory(self):
         r=investigate(book(),book('coinbase','103','104'),now=NOW)
         self.assertEqual(r['decision'],'WAIT');self.assertFalse(r['inventory_verified'])
-        self.assertAlmostEqual(float(r['net_bps']),195)
+        self.assertAlmostEqual(float(r['net_bps']),155)
     def test_emergency_stop_is_absolute(self):
         self.assertEqual(investigate(book(),book('coinbase','103','104'),now=NOW,stopped=True)['decision'],'NO-GO')
     def test_different_quote_currency_rejected(self):
@@ -142,10 +142,10 @@ class PaperTests(unittest.TestCase):
     def test_cash_and_roundtrip_costs(self):
         p=paper_open(self.s,book(),'100','test-id',NOW)
         self.assertEqual(p['quantity'],'1')
-        self.assertEqual(D(self.s.get_state('account')['cash']),D('9899.5498'))
+        self.assertEqual(D(self.s.get_state('account')['cash']),D('9899.1496'))
         closed=paper_close(self.s,'test-id',book(),NOW)
-        self.assertEqual(D(closed['net_pnl']),D('-1.895502'))
-        self.assertEqual(D(self.s.get_state('account')['cash']),D('9998.104498'))
+        self.assertEqual(D(closed['net_pnl']),D('-2.691504'))
+        self.assertEqual(D(self.s.get_state('account')['cash']),D('9997.308496'))
         self.assertEqual(paper_close(self.s,'test-id',book(),NOW),closed)
     def test_duplicate_entry_does_not_double_spend(self):
         p=paper_open(self.s,book(),'100','same',NOW)

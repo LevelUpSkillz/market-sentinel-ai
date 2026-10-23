@@ -1,0 +1,19 @@
+# Conditional-entry radar — observed-breakout-v1
+
+This is a fixed, experimental research hypothesis, not a validated trading strategy or a prediction of the next profitable trade. GO means eligibility for a virtual paper experiment only. Real-capital calculations always retain trade WAIT and execution disabled.
+
+The Render collector scans active Kraken USD crypto spot quotes independently of the dashboard. CoinPaprika aggregates, other quote currencies, Hyperliquid perpetuals and Coinbase quotes do not become USD spot execution evidence. The UI shows the actual universe, freshly observed markets, warming baselines and ready baselines.
+
+Each market needs ten consecutive completed 30-second bins built from actual new, provider-timestamped observations, with at least two observations per bin and approximately five minutes of elapsed history. Quotes must be at most five seconds old. Source gaps over 15 seconds reset the sampled baseline and invalidate an older setup. Restarted processes warm up again; persisted records are historical evidence, never fabricated uninterrupted bars. These bins are observed samples, not claimed complete exchange candles.
+
+The fixed finder requires at least 25 bps sampled five-minute momentum, a range of at least 20 bps, and a current price near that prior completed range high. These thresholds are design assumptions with no claimed profitable validation. At creation, the trigger is frozen five bps above the completed-range high, the maximum modeled entry is 20 bps above the trigger, and the stop is five bps below the observed low. The target is calculated from a minimum 2:1 modeled net reward/risk after costs. It can lie far beyond the historical range; it is an explicit hypothesis level, not an expected or probable future price.
+
+A trigger requires an actual observed crossing. The setup expires after 180 seconds and its first-trigger entry window after 30 seconds; repeated observations never extend either. Entries above the price cap, stale data, breached levels, emergency stops, inadequate current liquidity, cash/exposure/daily loss constraints and inadequate modeled economics reject the setup. A fresh matching detailed USD spot book is required. Select a shortlisted token's detailed book to investigate executable depth; indicative ticker prices cannot fill a trade. The existing free limit is six extra books, not a hidden paid collector.
+
+GO uses the existing paper risk engine and a $250 modeled notional. Entry and current potential-exit depth, spread, modeled venue fees and latency are reported. Future stop/target liquidity and gap losses remain unknown. A 2:1 modeled reward/risk is not a probability, and no success percentage is invented. The current Kraken base taker planning assumption is 80 bps per leg; actual account fees are not verified.
+
+Each setup retains its original baseline and calculated levels, source/receipt times, risk inputs, decision transitions and the first eligible paper-book snapshot. The searchable radar evidence memory explains lifecycle rejections and expiry. It does not label an unentered hypothesis as a profitable completed trade. These records do not silently change live rules. Prospective out-of-sample validation for this new strategy is still outstanding.
+
+Paper recording rechecks server-side status, fresh depth and portfolio limits and uses one stable idempotency key per signal. It cannot submit an exchange order. Real-capital sizing uses a separate owner-declared profile and has no effect on virtual cash. Short-lived in-app alerts record actual paper eligibility; optional ntfy delivery requires existing private configuration, and expired signals are not sent after a queued retry. Mobile delivery may be delayed and is not proof of an executable entry.
+
+Free Render hosting may sleep. Monitoring, warmup and alerts have gaps; the app cannot promise 24/7 operation or an exact future minute at which buying will be profitable.

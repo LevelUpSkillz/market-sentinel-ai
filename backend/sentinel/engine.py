@@ -4,9 +4,11 @@ from decimal import Decimal as D
 import time
 from .models import Book, decimal
 
-VERSION = 'spot-cross-v1.0.0'
+VERSION = 'spot-cross-v1.1.0'
 # Conservative estimates, not claimed account-specific fees. Configure via reviewed code version.
-FEES = {'kraken':D('40'),'coinbase':D('60'),'hyperliquid':D('5')}
+# Kraken published base spot taker tier reviewed 2026-10-23: 0.80%.
+# Actual account/product fees still require an authenticated venue preview.
+FEES = {'kraken':D('80'),'coinbase':D('60'),'hyperliquid':D('5')}
 
 @dataclass(frozen=True)
 class Policy:
@@ -137,7 +139,7 @@ def paper_open(store, book, notional, idempotency_key, now=None):
         store.set_state('account',account)
         position = store.put('paper',{'status':'open','mode':'SIMULATED PAPER TRADE','provider':book.provider,
             'symbol':book.symbol,'quantity':str(quantity),'entry_price':str(price),'entry_notional':str(cost),
-            'entry_fee':str(fee),'opened_at':now,'snapshot':book.view(now),'strategy_version':'manual-paper-v1',
+            'entry_fee':str(fee),'entry_fee_bps':str(FEES[book.provider]),'opened_at':now,'snapshot':book.view(now),'strategy_version':'manual-paper-v2',
             'execution_model':'Visible depth VWAP + 5 bps adverse latency on each leg; no actual fill.'},id=idempotency_key)
         store.put('audit',{'action':'paper.open','position':position['id'],'actor':'owner'})
         return position
@@ -161,7 +163,7 @@ def paper_close(store, position_id, book, now=None):
         account['cash'] = str(decimal(account['cash'])+proceeds-fee)
         account['realized_pnl'] = str(decimal(account['realized_pnl'])+pnl)
         store.set_state('account',account)
-        p.update(status='closed',closed_at=now,exit_price=str(price),exit_fee=str(fee),net_pnl=str(pnl),exit_snapshot=book.view(now))
+        p.update(status='closed',closed_at=now,exit_price=str(price),exit_fee=str(fee),exit_fee_bps=str(FEES[book.provider]),net_pnl=str(pnl),exit_snapshot=book.view(now))
         store.replace(position_id,p)
         store.put('audit',{'action':'paper.close','position':position_id,'actor':'owner'})
         return p
@@ -170,7 +172,7 @@ def evaluate_paper_plan(book, notional, stop, target, *, exposure=D(0), cash=D('
     """GO only means eligible for a simulated experiment, never an assertion of edge."""
     now=time.time() if now is None else now
     amount,stop,target=decimal(notional),decimal(stop),decimal(target)
-    result={'kind':'paper_entry_plan','strategy_version':'paper-risk-v1','mode':'SIMULATED PAPER EXPERIMENT',
+    result={'kind':'paper_entry_plan','strategy_version':'paper-risk-v2','mode':'SIMULATED PAPER EXPERIMENT',
             'decision':'NO-GO','symbol':book.symbol,'provider':book.provider,'detected_at':now,
             'notional_usd':str(amount),'stop':str(stop),'target':str(target),'snapshot':book.view(now),
             'risk_reward':None,'maximum_modeled_loss':None,'hypothesis_validated':False}

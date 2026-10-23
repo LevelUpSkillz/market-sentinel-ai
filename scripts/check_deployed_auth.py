@@ -28,7 +28,7 @@ with httpx.Client(timeout=25,follow_redirects=False) as client:
         data = response.json()
         if response.status_code!=200 or data.get('live_trading') is not False:
             raise SystemExit('Production health/mode check failed: '+path)
-        print('PRODUCTION_ACCEPTANCE '+path+' HTTP 200 live_trading=false')
+        print('PRODUCTION_ACCEPTANCE '+path+' HTTP 200 live_trading=false app_version='+str(data.get('app_version','not_in_ready_response')))
 
     for url,headers in [
         (origin+'/api/dashboard',{}),

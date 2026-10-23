@@ -20,6 +20,18 @@ from .changenow import estimate
 from .access import AccessVerifier
 from .smart_money import intelligence
 from .catalogue import EXTRA_BOOK_LIMIT
+from .capital import save_profile,get_profile,evaluate_real_plan
+
+def connection_status():
+    # A preferred venue is not an authenticated account connection.
+    return {'provider':'kraken','status':'provider_approval_required','connected':False,
+        'order_submission_enabled':False,'withdrawals_enabled':False,
+        'app_hosting_plan':'free','trading_fees':'Kraken transaction fees apply; no fee-free trading is promised.',
+        'requirements':['Kraken secure OAuth account linking requires a provider-approved client.',
+            'Provider permission for this app’s market-data use and regional eligibility must be verified.',
+            'Every future order requires verified Kraken balances/product rules, current venue costs and a separate user approval.'],
+        'documentation':'https://docs.kraken.com/',
+        'fees_url':'https://www.kraken.com/features/fee-schedule'}
 
 class Login(BaseModel):
     password: str = Field(min_length=1,max_length=256)
@@ -41,6 +53,22 @@ class MarketWatch(BaseModel):
     model_config = ConfigDict(extra='forbid')
     market_id: str = Field(min_length=1,max_length=150)
     enabled: bool = True
+class CapitalProfile(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    capital_usd: str = Field(max_length=40)
+    available_cash_usd: str = Field(max_length=40)
+    existing_crypto_exposure_usd: str = Field(max_length=40)
+    daily_realized_pnl_usd: str = Field(max_length=40)
+    risk_per_trade_pct: str = Field(max_length=20)
+    max_position_pct: str = Field(max_length=20)
+    max_crypto_exposure_pct: str = Field(max_length=20)
+    daily_loss_limit_pct: str = Field(max_length=20)
+class RealPlanRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    provider: str = Field(pattern=r'^(kraken|coinbase)$')
+    symbol: str = Field(pattern=r'^[A-Za-z0-9_.-]{1,40}-USD$')
+    stop: str = Field(pattern=r'^\d{1,12}(\.\d{1,18})?$')
+    target: str = Field(pattern=r'^\d{1,12}(\.\d{1,18})?$')
 class QuoteRequest(BaseModel):
     source: str = Field(pattern=r'^(btc|eth|usdc)$')
     destination: str = Field(pattern=r'^(btc|eth|usdc)$')
@@ -72,7 +100,7 @@ def create_app(settings=None,store=None):
         finally:
             await runtime.stop()
             store.close()
-    app = FastAPI(title='Market Sentinel AI',version='0.3.0',lifespan=lifespan,
+    app = FastAPI(title='Market Sentinel AI',version='0.4.0',lifespan=lifespan,
                   docs_url='/docs' if settings.environment=='development' else None,redoc_url=None)
     app.state.store,app.state.runtime,app.state.settings = store,runtime,settings
     if settings.environment=='development':
@@ -121,7 +149,7 @@ def create_app(settings=None,store=None):
 
     @app.get('/health/live')
     async def live():
-        return {'status':'alive','app_version':'0.3.0','live_trading':False}
+        return {'status':'alive','app_version':'0.4.0','live_trading':False}
 
     @app.get('/health/ready')
     async def ready(response:Response):
@@ -171,7 +199,7 @@ def create_app(settings=None,store=None):
 
     @app.get('/api/records/{kind}')
     async def records(kind:str,q:str='',limit:int=100):
-        if kind not in ['opportunity','paper','forensic','alert','audit','lab','market_snapshot','trader_event','quote','entry_plan']:
+        if kind not in ['opportunity','paper','forensic','alert','audit','lab','market_snapshot','trader_event','quote','entry_plan','radar_signal','real_plan']:
             raise HTTPException(404,'Unknown record type')
         return {'records':store.list(kind,max(1,min(limit,1000)),q[:200]),'as_of':time.time()}
 
@@ -187,6 +215,48 @@ def create_app(settings=None,store=None):
     @app.post('/api/markets/watch')
     async def market_watch(body:MarketWatch):
         return runtime.set_market_watch(body.market_id,body.enabled)
+
+    @app.get('/api/radar')
+    async def radar():
+        return runtime.radar.snapshot(runtime.books)
+
+    @app.post('/api/radar/{signal_id}/paper')
+    async def radar_paper(signal_id:str):
+        paper_id = str(uuid.uuid5(uuid.NAMESPACE_URL,'market-sentinel:radar:'+signal_id))
+        prior = store.get('paper',paper_id)
+        if prior:return prior
+        view = runtime.radar.snapshot(runtime.books)
+        setup = next((r for r in view['setups'] if r['id']==signal_id),None)
+        if not setup or setup['decision']!='GO':
+            raise HTTPException(409,'This paper setup is unavailable, expired or no longer passes current checks')
+        book = runtime.books.get((setup['provider'],setup['symbol']))
+        if not book:raise HTTPException(409,'A fresh detailed book is required')
+        result = paper_open(store,book,setup['notional_usd'],paper_id)
+        result.update(origin_signal_id=signal_id,radar_setup=setup,strategy_version=view['strategy_version'])
+        store.replace(result['id'],result)
+        return result
+
+    @app.get('/api/capital')
+    async def capital():
+        return {'profile':get_profile(store),'execution_enabled':False,'connection':connection_status()}
+
+    @app.post('/api/capital')
+    async def capital_update(body:CapitalProfile):
+        return {'profile':save_profile(store,body.model_dump()),'execution_enabled':False,'connection':connection_status()}
+
+    @app.post('/api/capital/plans')
+    async def real_plan(body:RealPlanRequest):
+        book = runtime.books.get((body.provider,body.symbol))
+        if not book:raise HTTPException(409,'Inspect the matching detailed market book before calculating a real-capital plan')
+        result = evaluate_real_plan(store,book,body.stop,body.target)
+        result['preferred_execution_venue'] = 'kraken'
+        result['connection'] = connection_status()
+        result['venue_warning'] = 'This plan uses the named source venue. Other venues require their own actual quotes, balances, fee tiers and product rules.'
+        return store.put('real_plan',result)
+
+    @app.get('/api/connections')
+    async def connections():
+        return connection_status()
 
     @app.get('/api/opportunities/{id}')
     async def opportunity(id:str):
