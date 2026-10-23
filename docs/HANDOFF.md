@@ -4,25 +4,24 @@ Updated 2026-10-23. Inspect newer repository refs, files, deployment commits, lo
 
 ## Current milestone
 
-**Production 0.4.0 is verified live.** Application source is `69e97de9bf33a752849118373468cd45acde233c`; main can include a later documentation-only checkpoint without another application deploy. Cloudflare production `033fe02a-33c5-4cbc-8a23-0733973479d4` succeeded 2026-10-23 18:01:15 UTC. Render `dep-dbdq0urncjis73d3pldg` reached live at 18:00:22 UTC on the existing Free service. External acceptance reported app_version0.4.0, both health endpoints200, anonymous/forged direct/proxied data requests401 and custom-domain sign-in302.
+**Production 0.4.1 is verified live.** Application source is `e30c2815f30042d111d8be6c533289d8f8d444cb`. Cloudflare production `eb316fdc-9c34-41f3-b6f1-3c46f09b258f` succeeded 2026-10-23 18:36:13 UTC. Render `dep-dbdqhb59fdbs738ase9g` reached live at 18:35:23 UTC on the existing Free service. External production acceptance at 18:36:01 UTC returned app_version0.4.1, both health endpoints200, anonymous/forged direct/proxied data requests401 and custom-domain sign-in302.
 
-Acceptance: **182 Python run,179 passed,3 isolated PostgreSQL skipped;9 Chromium passed; TypeScript, Next.js build, Blueprint schema and dependency audits passed.** Final preview `f820f94d-95da-4d38-ad06-6e8bdd1d33e9` also passed. No known dependency vulnerabilities were reported. Actual full-feed parser probe returned47,622 rows,100 retained candidates,39,183,901 bytes and17,266 peak pending JSON bytes (not whole-process memory). Actual Render logs independently confirmed the same directory load, six fresh BTC/ETH/SOL books, Kraken CRCs and independent radar scans. Process memory was about180MB within512MB. No production paper order or mobile delivery was submitted.
+The exact application commit passed **190 Python run,187 passed,3 isolated PostgreSQL skipped;15 Chromium passed;TypeScript,Next.js build,Blueprint schema and dependency audits passed** in Cloudflare. Successful preview `c2a1a40a-3b2b-4f17-a338-951c2fd2764c` finished18:33:48UTC. The first preview failed one ambiguous Playwright alert selector (Next.js also creates an alert); this was corrected before release. No application failure was bypassed.
 
-**The user's latest request is a portable continuation prompt. Work is saved; the next application update is NOT deployed.** Resume feature branch **`live-market-motion-v041-preview`**, application code checkpoint **`951f90b9b5444849fca3ec4a2eb7c7f91d182b01`**, tree `6bccded6544186a1fc7e5f5b06e640db9d2cf706`. Later checkpoint commits can advance the branch. Main/production application remains0.4.0 until the next version is tested and deliberately released.
+### Implemented, tested and deployed in 0.4.1
 
-### Prepared 0.4.1 follow-up — needs frontend acceptance
+- Selectable live charts on Mission Control and Live Markets use actual distinct provider timestamps and visible-page two-second sampling. Invalid/stale prices freeze the last verified price, bid, ask, spread and source time. Outages break chart paths; no interpolated prices or perpetual flash animation.
+- Plain-language trader cards show Ethereum/Bitcoin names, reported quantity, direction, reported average entry versus fresh quote, actual rejection cause and the next step. Current positions remain snapshots, not invented executions.
+- Direct wallet navigation focuses the correct section, supports reduced motion, and associates observed position changes with their actual wallet. Public addresses can be copied with readable mobile buttons.
+- Success percentages and95% bounds remain hidden until backend validation passes and observations stay fresh. Minimum sample count alone never validates odds.
+- Hidden tabs stop dashboard/history/wallet/intelligence polling. Older detail responses cannot replace newer intelligence.
+- Kraken connection guidance now accurately distinguishes standard owner-created API keys from partner OAuth. Coinbase own-account API keys and Crypto.com Exchange/App differences are documented in ACCOUNT_CONNECTIONS.md. **0.4.1 still has no credential-ingestion or real-order endpoint.** No account was connected or trade submitted.
 
-Latest steering: the user wants live graphics and visibly moving data, says raw “LONG ETH-USDC-PERP / Avoid chasing / 0x...” means nothing, and wants easy access to a trader's wallet/actions.
+### New user steering — active implementation after 0.4.1
 
-- New `frontend/app/live-market-chart.tsx` prominently on Mission Control and Live Markets: selectable currently detailed markets, actual timestamped sampled midpoints, real time axis, bid/ask/spread, source/receipt ages, bounded180 samples/ten minutes, discontinuous outage segments, hover/keyboard inspection and finite actual-change flashes. New points require a distinct fresh provider timestamp. The latest fix freezes all summary price/bid/ask/spread/source values to the last verified sample when stale/invalid data changes; a regression injects900 after valid103 and expects103 to remain. This fix is saved but not browser-verified.
-- Dashboard, visible all-market pages and relevant next-action intelligence poll every2seconds, using the independent backend's provider WebSockets. This is sampled live data, not every exchange tick or a new frontend WebSocket feed. Hidden pages do not fetch; no keep-alive service was added.
-- Plain-language ActionBriefing in `smart-money.tsx`: Ethereum/Bitcoin names, rise/fall meaning, perpetual/USDC versus Kraken spot context, original reported average versus current best quote before costs, actual rejection cause, signed favorable/adverse price difference, readable mobile typography. Full public wallet/source detail is expandable and copyable.
-- “View this wallet’s actions” calls root navigation to Smart Money and scrolls to that wallet's investigation after actual watchlist data loads. No wallet actions are fabricated from a current position baseline.
-- Unvalidated success odds stay “Not validated”; the95% interval card is absent unless a backend-validated estimate exists and both position and market data remain fresh. Two completed observations are not a usable forecast. The minimum100-sample threshold alone is insufficient; seven-day span, held-out calibration, coverage and uncertainty gates still apply.
-- Backend `smart_money.py` now maps headlines to actual cause: emergency stop, stale position, missing book, nearby liquidation, adverse entry, historical losses. Favorable drift is not incorrectly called chasing. New optional DTO fields contain actual reported average entry/current fresh best bid/ask, source timestamps and current-position timing caveat.
-- Local backend **190 run,187 passed,3 isolated PG skipped**. Eight new backend regression cases pass. Three new ActionBriefing and two live-chart browser cases are written (total expected14 browser cases) but **have NOT run**. The local frontend lacks node_modules/tsc; “tsc not found” is an environment limitation, not a passed typecheck.
-- Local app/public version strings say0.4.1; this does NOT mean production runs0.4.1.
-- Next step: run the full Cloudflare preview gate on the current feature-branch head, inspect TypeScript/build/Chromium and actual probes, fix failures, and only then promote/deploy the authorized free read-only/paper/manual-planning update. Check stale-source chart freezing, valid/stale odds, mobile sizing, direct-wallet navigation and API rate behavior. Do not skip this gate or call prepared code live.
+The owner explicitly wants to connect their own wallet/exchange account and place individually approved real trades from this app, and also has Coinbase and Crypto.com. They clarified that connection/trading functionality is requested, not merely a readiness screen. Kraken remains selected; no actual order is approved by this feature request.
+
+**Next code is in progress and NOT deployed or release-verified.** New Kraken REST adapter, encrypted account/execution module, account UI, protected logical-backup primitives and offline restore CLI are being developed locally. Do not claim these are available in production or enable them without the complete preview/security gate. The intended first scope is dedicated restricted Kraken owner keys, own-cash BTC/ETH/SOL USD spot IOC limit orders, immutable preview, explicit exact-order approval, durable intent/idempotency and no retry after unknown submission. No withdrawals, leverage, autonomous orders, private-key chat requests or real-money acceptance tests.
 
 ## Fixed user decisions
 
@@ -32,7 +31,7 @@ Latest steering: the user wants live graphics and visibly moving data, says raw 
 - **Free plans only.** No paid upgrades, subscriptions, workers or artificial keep-alive traffic without explicit new cost approval. Render Free can sleep; no 24/7 guarantee. Database expires **2026-11-22 at 04:35 UTC**. Unlimited permanent retention is not available on that expiring database.
 - GitHub is source storage; no GitHub Actions CI/deployment. Cloudflare runs checks and dashboard deployment; Render builds the Python backend.
 - Latest selected exchange is **Kraken**. The user wants both manual real-capital planning and a future secure connection with individual approval for each real order. No autonomous trades or withdrawals are authorized. Never request exchange private keys, passwords, recovery phrases or seeds in chat.
-- No approved Kraken secure account-linking client exists. Connection and order submission remain disabled. A preferred provider or OAuth consent is not approval of future orders. Actual trading fees apply.
+- Kraken standard own-account API keys are supported by the provider; partner OAuth separately requires approval. The deployed0.4.1 implementation has no credential flow. New secure linking/execution work is in progress. Every real order requires separate explicit owner approval. Actual trading fees apply.
 - No invented prices, trades, identities, performance, profitability, worldwide ranking or success percentages. Historical reported ROI is not a follower success probability.
 
 ## Implemented application
@@ -71,19 +70,19 @@ Important versions: `spot-cross-v1.1.0`, `manual-paper-v2`, `paper-risk-v2`. Kra
 
 ## Remaining work and next priorities
 
-Finish and verify the prepared0.4.1 follow-up first. Production0.4.0 is already verified. Then improve the product incrementally without restarting:
+Production0.4.1 is verified. Finish the active secure Kraken linking/execution and durability work with separate full acceptance before promotion:
 - Durable history beyond the expiring database: implement protected export and perform a restore drill on a separate disposable database; choose any replacement only within the user's free-only approval.
 - Better independent risk-adjusted trader evidence requires cash-flow-aware histories, documented metric semantics, retained point-in-time cohorts and adequate prospective/out-of-sample observations. Do not turn recent P&L or overlapping windows into a skill score or success odds.
 - Expand useful market investigations and validated strategy comparisons with measured false positives, liquidity/latency constraints and realistic execution costs. No automatic promotion from unvalidated outcomes.
 - Source rights and eligibility review before commercial signals or distribution; Coinbase is disabled because of current data-use restrictions. ChangeNOW estimates await its separate public business key/use approval, not private exchange keys.
-- Kraken future execution is externally blocked by provider-approved secure account-linking configuration. Obtain appropriate application permission first; verify region/account/product eligibility, balances, lot rules and actual costs, then implement immutable short-lived individually approved orders and idempotency. No real-money acceptance trade.
+- Kraken owner API-key integration is technically supported. Implement secure encrypted secret storage, restricted permission verification, regional/account eligibility, actual balances/fees/lot rules, immutable short-lived individually approved orders and durable unknown-outcome reconciliation. Partner OAuth remains separately blocked by provider approval. No real-money acceptance trade.
 - Chain-wide whale discovery, complete worldwide trader rankings, validated liquidation-cascade models and advanced cross-asset risk are not complete. Do not claim the whole multi-phase mission is finished.
 
 ## Working and verification cautions
 
-Workspace `/workspace/market-sentinel-ai`. Local git reported all files untracked, with stale local .github content absent remotely. Do not bulk git-add/push. Connected GitHub tools created trees/commits with expected-SHA leases; preserve newer user commits. Current local source contains the prepared0.4.1 feature branch and checkpoint docs, not just the deployed0.4.0 release.
+Workspace `/workspace/market-sentinel-ai`. This resumed environment restored all94 tracked files from exact remote blob hashes and reconstructed a shallow git checkout of `live-market-motion-v041-preview`; local HEAD is the deployed0.4.1 application commit. New next-version files may be untracked. Do not bulk git-add/push. Connected GitHub tools create trees/commits with expected-SHA leases; preserve newer user commits.
 
-Local backend command: `env PYTHONPATH=backend python -m unittest discover -s backend/tests -q`. Frontend dependencies were absent locally; use the Cloudflare release runner for TypeScript/Next/Chromium. The three PostgreSQL integration tests require a separate disposable TEST_POSTGRES_URL; never use production.
+Local backend command: `env PYTHONPATH=backend python -m unittest discover -s backend/tests -q`. Frontend dependencies are absent locally; use the Cloudflare release runner for TypeScript/Next/Chromium. The0.4.1 frontend gate has now passed. The three PostgreSQL integration tests require a separate disposable TEST_POSTGRES_URL; never use production.
 
 Shell HTTP proxy was unavailable; sufficient connected GitHub/Cloudflare/Render tools and Cloudflare build runners worked. No credential environments were dumped. Tool store() state can disappear on user steering; persist state in files/commits. Useful metadata: /tmp/market-sentinel-resumed.json, /tmp/market-sentinel-v04.json, /tmp/market-sentinel-release.json.
 

@@ -24,4 +24,12 @@ Application source69e97de9bf33a752849118373468cd45acde233c passed182 Python chec
 
 Actual external health returnedapp_version0.4.0/readiness200/live_tradingfalse. Anonymous and forged direct/proxied dashboard requests returned401; customdomain redirected302 tosign-in. Actual Render logs confirm sixfresh corebooks,47,622 leaderboardrows retainedas100candidates, independentradarscans, and approximately180MB memory within512MB. Buildrunner parser memory was17,266peak pendingJSONbytes for39,183,901downloadedbytes; it is not wholeprocess memory. No owner session was impersonated and no productionpaper/liveorder ormobilemessage was submitted during acceptance.
 
-The three PostgreSQL integration checks need a separate disposable test database. Production paper persistence after restart and a database export/restore drill remain outstanding. Synthetic test data is never inserted into production. Later0.4.1 live-chart/plain-language work is separately saved and has not passed frontend acceptance or reached production; see HANDOFF.md.
+The three PostgreSQL integration checks need a separate disposable test database. Production paper persistence after restart and a database export/restore drill remain outstanding. Synthetic test data is never inserted into production. Version0.4.1 is now released: see the verified follow-up below and HANDOFF.md.
+
+## Verified 0.4.1 follow-up
+
+Application commit `e30c2815f30042d111d8be6c533289d8f8d444cb` adds selectable timestamped live charts, stale freezing/outage gaps, readable trader explanations with observed quantities and price comparisons, actual rejection causes, wallet-specific actions/history navigation and strict unvalidated-odds hiding. Review fixes stop hidden-page polling, prevent older responses overwriting newer intelligence and restore keyboard focus.
+
+Preview `c2a1a40a-3b2b-4f17-a338-951c2fd2764c` passed190 Python checks (187passed,3isolated PostgreSQL skipped),15Chromium checks,TypeScript/Next build,Blueprint schema and dependency audits. Cloudflare production `eb316fdc-9c34-41f3-b6f1-3c46f09b258f` succeeded2026-10-23 18:36:13UTC; Render `dep-dbdqhb59fdbs738ase9g` reachedlive18:35:23UTC. Actual external acceptance confirmed backend0.4.1/readiness200, anonymous/forged API401 and owner-sign-in302. Real provider probes observed six core books and actual public trader history; those observations do not establish profitable copyability.
+
+No owner session was impersonated and no credential, real order, production paper order or mobile delivery was submitted. Real account linking/execution is the next active request and is not part of deployed0.4.1. Passing tests does not prove trading profitability.
