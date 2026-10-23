@@ -107,3 +107,18 @@
  .live-market-provenance small,.live-market-plot-foot,.live-market-foot{font-size:10px}
 }
 @media(prefers-reduced-motion:reduce){.quote-tick{animation:none!important}}
+
+/* Phone-first legibility: keep evidence readable without altering desktop density. */
+@media(max-width:600px){
+ .main-shell{min-width:0}
+ .page-heading h1{font-size:clamp(28px,7vw,38px)}
+ .page-heading p,.safety-strip,.hosting-note{font-size:12px;line-height:1.65}
+ .panel-head h2{font-size:16px}
+ .panel-head .eyebrow,.eyebrow{font-size:10px}
+ .live-market-source,.live-market-chart-meta,.live-market-top-book>div>small{font-size:11px}
+ .live-market-top-book strong,.live-market-provenance strong{font-size:12px}
+ .live-market-plot-foot,.live-market-provenance small,.live-market-foot{font-size:11px}
+ .radar-overview-copy p{font-size:13px;line-height:1.6}
+ .radar-overview-copy>small,.radar-economics small{font-size:11px}
+ .secondary,.primary{min-height:40px}
+}
