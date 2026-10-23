@@ -135,6 +135,25 @@ class KrakenAccountTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(status['withdrawals_enabled'])
         self.assertFalse(status['autonomous_trading'])
 
+    async def test_emergency_stop_and_active_order_disable_order_ready_status(self):
+        await self.connect()
+        self.assertTrue(self.account.status()['order_submission_enabled'])
+        self.store.set_state('control',{'stopped':True})
+        self.assertFalse(self.account.status()['order_submission_enabled'])
+        self.store.set_state('control',{'stopped':False})
+        self.store.set_state('kraken_live_active','synthetic-unresolved-order')
+        self.assertFalse(self.account.status()['order_submission_enabled'])
+        self.assertTrue(self.account.status()['connected'])
+
+    async def test_malformed_decrypted_vault_payload_fails_closed(self):
+        await self.connect()
+        saved=self.store.get_state(CONNECTION_KEY)
+        saved['cipher']=Fernet(self.settings.kraken_vault_key.encode()).encrypt(b'[]').decode()
+        self.store.set_state(CONNECTION_KEY,saved)
+        self.assertFalse(self.account.status()['order_submission_enabled'])
+        with self.assertRaises(AccountError):
+            await self.account.account()
+
     async def test_rotated_valid_vault_key_disables_connection_without_exposing_secrets(self):
         await self.connect()
         self.settings.kraken_vault_key = Fernet.generate_key().decode()
