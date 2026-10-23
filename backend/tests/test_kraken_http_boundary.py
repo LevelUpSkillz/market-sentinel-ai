@@ -61,6 +61,22 @@ class KrakenHttpBoundaryTests(unittest.TestCase):
                     self.assertIn('disabled',preview.text.lower())
         asyncio.run(check())
 
+    def test_backup_download_requires_owner_and_excludes_exchange_credentials(self):
+        async def check():
+            transport=httpx.ASGITransport(app=self.app)
+            async with httpx.AsyncClient(transport=transport,base_url='https://example.test') as client:
+                denied=await client.post('/api/backup/export',headers={'origin':self.settings.origin})
+                self.assertEqual(denied.status_code,401)
+                with patch('sentinel.app.verify_session',return_value=True):
+                    response=await client.post('/api/backup/export',headers={'origin':self.settings.origin})
+                    self.assertEqual(response.status_code,200)
+                    self.assertIn('attachment;',response.headers['content-disposition'])
+                    self.assertEqual(response.headers['cache-control'],'no-store')
+                    self.assertNotIn('connection:kraken',response.text)
+                    self.assertNotIn('kraken_nonce:',response.text)
+                    self.assertEqual(response.json()['format'],'market-sentinel-logical-backup')
+        asyncio.run(check())
+
     def test_live_trading_defaults_off_and_no_credentials_in_status(self):
         self.assertFalse(self.app.state.kraken_account.enabled)
         status=self.app.state.kraken_account.status()
