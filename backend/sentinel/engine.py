@@ -91,7 +91,7 @@ def copy_decision(event, book: Book | None, exposure=D(0), stopped=False, now=No
 def anomaly_facts(current, previous):
     """Observations are not allegations of manipulation or directional trade recommendations."""
     facts = []
-    if not previous or current['status'] != 'live' or previous['status'] != 'live':
+    if not previous or current['status'] != 'live' or previous['status'] != 'live' or not 0 <= current['received_at']-previous['received_at'] <= 20:
         return facts
     depth, old_depth = decimal(current['visible_depth_usd']), decimal(previous['visible_depth_usd'])
     spread, old_spread = decimal(current['spread_bps']), decimal(previous['spread_bps'])

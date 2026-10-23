@@ -1,57 +1,51 @@
-# FREE MVP: database expires after 30 days; web service sleeps when idle.
-previews:
-  generation: off
-projects:
-  - name: Market Sentinel AI
-    environments:
-      - name: production
-        databases:
-          - name: market-sentinel-ai-db
-            databaseName: market_sentinel_ai_db
-            user: market_sentinel_ai_db_user
-            plan: free
-            region: ohio
-            postgresMajorVersion: '16'
-            ipAllowList: []
-        services:
-          - type: web
-            name: market-sentinel-ai-api
-            runtime: python
-            region: ohio
-            plan: free
-            numInstances: 1
-            rootDir: backend
-            buildCommand: pip install -r requirements.txt
-            startCommand: python -m sentinel
-            healthCheckPath: /health/ready
-            autoDeployTrigger: commit
-            maxShutdownDelaySeconds: 30
-            envVars:
-              - key: PYTHON_VERSION
-                value: 3.12.14
-              - key: ENVIRONMENT
-                value: production
-              - key: APP_ORIGIN
-                value: https://market.getlevelupskillz.com
-              - key: DATABASE_URL
-                fromDatabase:
-                  name: market-sentinel-ai-db
-                  property: connectionString
-              - key: SESSION_SECRET
-                generateValue: true
-              - key: CF_ACCESS_TEAM
-                value: https://icy-water-baae.cloudflareaccess.com
-              - key: CF_ACCESS_AUD
-                value: 330b4558ff48e9661e541681fd5fedcac414bca32e4d11d821f72f287839c189
-              - key: OWNER_EMAIL
-                value: levelupskillz.store@gmail.com
-              - key: COLLECT_MARKETS
-                value: 'true'
-              - key: APPROVED_PROVIDERS
-                value: kraken,hyperliquid
-              - key: HOSTING_TIER
-                value: free
-              - key: DATABASE_EXPIRY
-                value: '2026-11-22T04:35:26Z'
-              - key: CHANGENOW_RESEARCH_APPROVED
-                value: 'false'
+# Free-only configuration. Database expires 2026-11-22; API sleeps when idle.
+databases:
+  - name: market-sentinel-ai-db
+    databaseName: market_sentinel_ai_db
+    user: market_sentinel_ai_db_user
+    plan: free
+    region: ohio
+    postgresMajorVersion: '16'
+    ipAllowList: []
+services:
+  - type: web
+    name: market-sentinel-ai-api
+    runtime: python
+    region: ohio
+    plan: free
+    numInstances: 1
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m sentinel
+    healthCheckPath: /health/ready
+    autoDeployTrigger: commit
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.14
+      - key: ENVIRONMENT
+        value: production
+      - key: APP_ORIGIN
+        value: https://market.getlevelupskillz.com
+      - key: DATABASE_URL
+        fromDatabase:
+          name: market-sentinel-ai-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: CF_ACCESS_TEAM
+        value: https://icy-water-baae.cloudflareaccess.com
+      - key: CF_ACCESS_AUD
+        value: 330b4558ff48e9661e541681fd5fedcac414bca32e4d11d821f72f287839c189
+      - key: OWNER_EMAIL
+        value: levelupskillz.store@gmail.com
+      - key: COLLECT_MARKETS
+        value: 'true'
+      - key: APPROVED_PROVIDERS
+        value: kraken,hyperliquid
+      - key: HOSTING_TIER
+        value: free
+      - key: DATABASE_EXPIRY
+        value: '2026-11-22T04:35:26Z'
+      - key: CHANGENOW_RESEARCH_APPROVED
+        value: 'false'

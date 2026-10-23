@@ -90,3 +90,64 @@ class PaperPlanTests(unittest.TestCase):
     def test_stop_stale_exposure_cash_and_daily_loss(self):
         for extra in [{'stopped':True},{'exposure':D('2499')},{'now':1800000010},{'cash':D(0)},{'daily_pnl':D('-200')}]:
             self.assertEqual(evaluate_paper_plan(self.book(),'100','98','110',**{'now':1800000000,**extra})['decision'],'NO-GO')
+
+class RecoveryTests(unittest.IsolatedAsyncioTestCase):
+    async def test_disconnect_invalidates_book_and_reconnect_starts_from_snapshot(self):
+        from unittest.mock import patch
+        from sentinel.runtime import Runtime
+        from sentinel.storage import Store
+        import asyncio
+        store=Store('sqlite:///:memory:')
+        runtime=Runtime(store,Settings(collect=False))
+        calls=[]
+        now=time.time()
+        class Socket:
+            def __init__(self,index):self.index=index;self.cursor=0
+            async def send(self,message):pass
+            async def recv(self):
+                self.cursor+=1
+                if self.cursor==1:return json.dumps({'type':'snapshot','product_id':'BTC-USD','bids':[[str(99+self.index),'2']],'asks':[[str(101+self.index),'2']]})
+                if self.cursor==2:return json.dumps({'type':'l2update','product_id':'BTC-USD','time':now,'changes':[['buy',str(99+self.index),'3']]})
+                if self.index==0:raise ConnectionError('SYNTHETIC disconnect')
+                raise asyncio.CancelledError()
+        class Context:
+            def __init__(self,index):self.socket=Socket(index)
+            async def __aenter__(self):return self.socket
+            async def __aexit__(self,*args):return False
+        def connect(*args,**kwargs):
+            index=len(calls);calls.append(index)
+            return Context(index)
+        async def backoff(delay):
+            self.assertFalse(runtime.books[('coinbase','BTC-USD')].valid)
+        with patch('sentinel.runtime.connect',connect),patch('sentinel.runtime.asyncio.sleep',backoff):
+            with self.assertRaises(asyncio.CancelledError):await runtime.stream('coinbase')
+        self.assertEqual(len(calls),2)
+        self.assertEqual(runtime.status['coinbase']['reconnects'],1)
+        self.assertEqual(max(runtime.books[('coinbase','BTC-USD')].bids),D(100))
+        self.assertFalse(runtime.books[('coinbase','BTC-USD')].valid)
+        store.close()
+
+class FlowTests(unittest.TestCase):
+    def test_volume_requires_complete_observed_history_and_deduplicates(self):
+        from sentinel.flow import FlowDetector
+        f=FlowDetector()
+        def add(bucket,count,qty):
+            for i in range(count):
+                t=bucket*30+i*.01
+                f.observe({'provider':'kraken','symbol':'BTC-USD','trade_id':str(bucket)+':'+str(i),'price':'100','quantity':qty,'source_at':t,'received_at':t,'side':'buy'})
+        for i in range(10):add(i,10,'1')
+        add(10,10,'10')
+        events=f.anomalies(330)
+        self.assertEqual(len(events),1)
+        self.assertEqual(events[0]['volume_ratio'],'10')
+        self.assertEqual(f.anomalies(330),[])
+        f.reset('kraken')
+        self.assertEqual(f.anomalies(330),[])
+    def test_stale_and_duplicate_trades_are_not_new_flow(self):
+        from sentinel.flow import FlowDetector
+        f=FlowDetector()
+        t={'provider':'kraken','symbol':'BTC-USD','trade_id':'SYNTHETIC','price':'100','quantity':'1','source_at':100,'received_at':100,'side':'buy'}
+        f.observe(t);f.observe(t)
+        self.assertEqual(f.buckets[('kraken','BTC-USD')][3]['count'],1)
+        f.observe(dict(t,trade_id='stale',received_at=200))
+        self.assertEqual(f.buckets[('kraken','BTC-USD')][3]['count'],1)

@@ -11,6 +11,7 @@ from .models import Book
 from .providers import ADAPTERS
 from .engine import investigate, anomaly_facts
 from .traders import poll_trader
+from .flow import FlowDetector
 
 log = logging.getLogger('sentinel')
 
@@ -24,6 +25,7 @@ class Runtime:
         self.trades = deque(maxlen=2000)
         self.tickers,self.funding = {},{}
         self.tasks = []
+        self.flow=FlowDetector()
         self.status = {p:{'state':'disabled','reason':'Provider terms/use approval not configured.','reconnects':0} for p in ADAPTERS}
         self.last_persist = None
         self.last_error = None
@@ -48,6 +50,7 @@ class Runtime:
         attempt = 0
         while True:
             adapter = ADAPTERS[provider]()
+            self.flow.reset(provider)
             status = self.status[provider]
             status.update(state='connecting',reason=None)
             connected_at = time.time()
@@ -65,6 +68,7 @@ class Runtime:
                                 status.update(state='connected',last_book_at=now)
                             elif kind=='trade':
                                 self.trades.append(event)
+                                self.flow.observe(event)
                             elif kind=='funding':
                                 self.funding[event['symbol']] = event
                             elif kind=='ticker':
@@ -123,6 +127,11 @@ class Runtime:
                             'unknowns':['Intent, trader identity, hidden liquidity and causal mechanism.'],
                             'conclusion':'Observed anomaly; evidence does not establish manipulation.'})
                     previous[key] = view
+                for flow in self.flow.anomalies(time.time()):
+                    self.store.put('forensic',{'facts':flow['facts'],'flow':flow,'snapshot':next((v for v in self.market_view() if v['provider']==flow['provider'] and v['symbol']==flow['symbol']),None),
+                        'hypotheses':['Changing participation or liquidity could explain these observations.'],
+                        'unknowns':['Complete off-venue flow, trader intent and causal mechanism.'],
+                        'conclusion':'Observed flow anomaly; no directional profitability or manipulation conclusion.'})
                 if tick%30==0:
                     for signal in self.current_signals():
                         # Persist actual paired observations, including cost-based rejections.
