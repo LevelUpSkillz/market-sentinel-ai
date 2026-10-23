@@ -1,4 +1,4 @@
-"""Versioned logical research backup; no HTTP restore or credential backup.
+⁹"""Versioned logical research backup; no HTTP restore or credential backup.
 
 The caller must protect downloads with owner authentication, no-store headers
 and a low request limit. This module never starts collectors or sends orders.
@@ -24,6 +24,7 @@ RECORD_KINDS = frozenset({
     'radar_signal', 'entry_plan', 'real_plan', 'real_order', 'lab', 'quote',
 })
 STATE_KEYS = frozenset({
+        'kraken_live_active',
     'control', 'account', 'market_watch', 'real_capital_profile',
     'catalogue:coins', 'catalogue:quotes', 'catalogue:venues',
     'public_leaderboard', 'public_leaderboard_error',
