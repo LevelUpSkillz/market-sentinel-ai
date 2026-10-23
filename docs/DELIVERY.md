@@ -1,5 +1,7 @@
 # Delivery status — 2026-10-23
 
+Version 0.2 adds SOL/USD and SOL perpetual data, documented public large-trade participant discovery, available public fill-history reconstruction, next-action research reviews and a separately validated prospective shadow-follow study. Full assumptions and probability gates are in TRADER_EVIDENCE.md. Cloudflare preview 4b8710d5-4e56-42b9-9219-3a331eb2562e passed 96 backend checks (three PostgreSQL checks skipped), three Chromium checks, dependency audits, TypeScript/build, and probes of all six enabled live market books. Render deployment dep-dbdgnoqvcj2c73fn9r0g of backend da3fffc457a02708da01d12bf72e2b24649ee31f reached live at 07:26 UTC after the owner's Blueprint sync. Runtime logs confirm fresh BTC/ETH/SOL books on Kraken and Hyperliquid and successful PostgreSQL snapshot writes for all six. Historical win percentages require complete observed cycles; follower odds remain unavailable until the forward-validation policy passes. No historical win rate is presented as a follower forecast.
+
 Dashboard: https://market.getlevelupskillz.com (Cloudflare Pages with owner-only Cloudflare Access).
 Backend: https://market-sentinel-ai-api.onrender.com (Render Free, Ohio).
 Repository: https://github.com/LevelUpSkillz/market-sentinel-ai (temporarily public by the owner's choice).
