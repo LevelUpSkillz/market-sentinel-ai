@@ -28,11 +28,11 @@ async def main():
                     message=json.loads(await socket.recv(),parse_float=Decimal)
                     for kind,trade in adapter.consume(message,time.time()):
                         if kind!='trade' or time.time()-trade['source_at']>10:continue
-                        if Decimal(trade['price'])*Decimal(trade['quantity'])<THRESHOLD:continue
+                        notional=Decimal(trade['price'])*Decimal(trade['quantity'])
                         for candidate in trade.get('public_participants',[]):
                             if isinstance(candidate,str) and ADDRESS.fullmatch(candidate) and int(candidate,16)!=0:
                                 address=candidate.lower()
-                                report.update(symbol=trade['symbol'],observed_print_notional_usdc=str(Decimal(trade['price'])*Decimal(trade['quantity'])),public_participant_observed=True)
+                                report.update(symbol=trade['symbol'],observed_print_notional_usdc=str(notional),qualifies_as_large_print=notional>=THRESHOLD,public_participant_observed=True)
                                 break
         store=Store('sqlite:///:memory:')
         try:
@@ -46,7 +46,7 @@ async def main():
                     historical_win_rate_pct=history['historical_win_rate_pct'],follower_odds=None,
                     note='Historical cycles are before funding and do not estimate follower odds; wallet addresses are omitted from CI logs.')
         finally:store.close()
-    except TimeoutError:report.update(status='no_qualifying_print_or_request_completed_within_probe_window')
+    except TimeoutError:report.update(status='public_participant_or_request_not_observed_within_probe_window')
     except Exception as error:report.update(status='provider_probe_unavailable',error=type(error).__name__)
     print('PUBLIC_TRADER_PROBE '+json.dumps(report))
 
