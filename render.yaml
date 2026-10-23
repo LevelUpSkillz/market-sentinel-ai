@@ -19,7 +19,6 @@ services:
     startCommand: python -m sentinel
     healthCheckPath: /health/ready
     autoDeployTrigger: commit
-    maxShutdownDelaySeconds: 30
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.14
