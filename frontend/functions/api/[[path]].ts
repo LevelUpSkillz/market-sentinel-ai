@@ -10,7 +10,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
   upstream.pathname = incoming.pathname;
   upstream.search = incoming.search;
   const headers = new Headers();
-  for (const key of ['content-type','cookie','origin']) {
+  for (const key of ['content-type','cookie','origin','cf-access-jwt-assertion']) {
     const value = request.headers.get(key); if (value) headers.set(key,value);
   }
   headers.set('Accept','application/json');

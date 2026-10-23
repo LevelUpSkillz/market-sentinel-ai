@@ -114,7 +114,8 @@ class Runtime:
                     if not view['received_at']:
                         continue
                     key = (view['provider'],view['symbol'])
-                    self.store.put('market_snapshot',view)
+                    if tick%6==0:
+                        self.store.put('market_snapshot',view)
                     facts = anomaly_facts(view,previous.get(key))
                     if facts:
                         self.store.put('forensic',{'facts':facts,'snapshot':view,'prior_snapshot':previous.get(key),
@@ -122,7 +123,7 @@ class Runtime:
                             'unknowns':['Intent, trader identity, hidden liquidity and causal mechanism.'],
                             'conclusion':'Observed anomaly; evidence does not establish manipulation.'})
                     previous[key] = view
-                if tick%6==0:
+                if tick%30==0:
                     for signal in self.current_signals():
                         # Persist actual paired observations, including cost-based rejections.
                         if all(s['received_at'] for s in signal['snapshots']):

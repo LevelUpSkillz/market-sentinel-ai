@@ -119,7 +119,7 @@ def paper_open(store, book, notional, idempotency_key, now=None):
         account = store.get_state('account')
         positions = [p for p in store.list('paper',10000) if p['status']=='open']
         exposure = sum((decimal(p['entry_notional']) for p in positions),D(0))
-        if exposure+amount > POLICY.max_total_exposure:
+        if exposure+amount*(1+POLICY.latency_bps/10000) > POLICY.max_total_exposure:
             raise ValueError('Correlated crypto exposure limit reached')
         day_pnl = sum((decimal(p.get('net_pnl',0)) for p in store.list('paper',10000) if p.get('closed_at',0) >= now-now%86400),D(0))
         if day_pnl <= -POLICY.max_daily_loss:
@@ -162,3 +162,40 @@ def paper_close(store, position_id, book, now=None):
         store.replace(position_id,p)
         store.put('audit',{'action':'paper.close','position':position_id,'actor':'owner'})
         return p
+
+def evaluate_paper_plan(book, notional, stop, target, *, exposure=D(0), cash=D('10000'), daily_pnl=D(0), stopped=False, now=None):
+    """GO only means eligible for a simulated experiment, never an assertion of edge."""
+    now=time.time() if now is None else now
+    amount,stop,target=decimal(notional),decimal(stop),decimal(target)
+    result={'kind':'paper_entry_plan','strategy_version':'paper-risk-v1','mode':'SIMULATED PAPER EXPERIMENT',
+            'decision':'NO-GO','symbol':book.symbol,'provider':book.provider,'detected_at':now,
+            'notional_usd':str(amount),'stop':str(stop),'target':str(target),'snapshot':book.view(now),
+            'risk_reward':None,'maximum_modeled_loss':None,'hypothesis_validated':False}
+    reasons=[]
+    if stopped:reasons.append('Emergency stop is active.')
+    if not book.fresh(now) or book.instrument!='spot' or book.quote!='USD':
+        reasons.append('A fresh USD spot book is required.')
+    if not D(10)<=amount<=POLICY.max_position:reasons.append('Notional violates the $10–$500 paper limit.')
+    if daily_pnl<=-POLICY.max_daily_loss:reasons.append('Daily realized paper loss limit has been reached.')
+    if not reasons:
+        try:
+            qty=amount/min(book.asks)
+            entry=book.fill('buy',qty)*(1+POLICY.latency_bps/10000)
+            entry_cost=entry*qty*(1+FEES[book.provider]/10000)
+            stop_proceeds=stop*qty*(1-POLICY.latency_bps/10000)*(1-FEES[book.provider]/10000)
+            target_proceeds=target*qty*(1-POLICY.latency_bps/10000)*(1-FEES[book.provider]/10000)
+            loss,reward=entry_cost-stop_proceeds,target_proceeds-entry_cost
+            result.update(entry_vwap=str(entry),quantity=str(qty),maximum_modeled_loss=str(loss),
+                target_net_profit=str(reward),entry_cost=str(entry_cost),risk_reward=str(reward/loss) if loss>0 else None)
+            if entry_cost>cash:reasons.append('Available paper cash cannot fund the entry including fees.')
+            if exposure+entry*qty>POLICY.max_total_exposure:reasons.append('Correlated crypto exposure limit would be exceeded.')
+            if not 0<stop<entry<target:reasons.append('A long plan requires a positive stop below entry and target above entry.')
+            if loss<=0 or loss>D(100):reasons.append('Modeled risk must be positive and at most $100 per experiment.')
+            if loss>0 and reward/loss<D(2):reasons.append('Net reward/risk must be at least 2 after both-leg costs.')
+            if not reasons:result['decision']='GO'
+        except ValueError as error:reasons.append(str(error))
+    result['stages']={'finder':{'facts':['Owner-specified long-entry hypothesis; no historical edge is inferred.']},
+        'skeptic':{'objections':reasons,'unknowns':['Stop orders are not guaranteed; gaps can exceed modeled loss.','Probability of reaching the target is unvalidated.']},
+        'risk':{'rules':['No leverage or shorting.','$500 requested notional; $2,500 correlated crypto exposure; $100 modeled risk cap.','2:1 net modeled reward/risk minimum.']},
+        'decision':{'result':result['decision'],'meaning':'GO means eligible for a paper experiment. It does not mean profitable or approved for live execution.'}}
+    return result

@@ -1,4 +1,4 @@
-# Separate Market Sentinel resources. Never add existing Sentinel Intelligence resource names.
+# FREE MVP: database expires after 30 days; web service sleeps when idle.
 previews:
   generation: off
 projects:
@@ -7,25 +7,24 @@ projects:
       - name: production
         databases:
           - name: market-sentinel-ai-db
-            databaseName: market_sentinel
-            user: market_sentinel
-            plan: basic-256mb
+            databaseName: market_sentinel_ai_db
+            user: market_sentinel_ai_db_user
+            plan: free
             region: ohio
             postgresMajorVersion: '16'
-            diskSizeGB: 5
             ipAllowList: []
         services:
           - type: web
             name: market-sentinel-ai-api
             runtime: python
             region: ohio
-            plan: starter
+            plan: free
             numInstances: 1
             rootDir: backend
             buildCommand: pip install -r requirements.txt
             startCommand: python -m sentinel
             healthCheckPath: /health/ready
-            autoDeployTrigger: checksPass
+            autoDeployTrigger: commit
             maxShutdownDelaySeconds: 30
             envVars:
               - key: PYTHON_VERSION
@@ -40,17 +39,19 @@ projects:
                   property: connectionString
               - key: SESSION_SECRET
                 generateValue: true
-              - key: OWNER_PASSWORD_HASH
-                sync: false
+              - key: CF_ACCESS_TEAM
+                value: https://icy-water-baae.cloudflareaccess.com
+              - key: CF_ACCESS_AUD
+                value: 330b4558ff48e9661e541681fd5fedcac414bca32e4d11d821f72f287839c189
+              - key: OWNER_EMAIL
+                value: levelupskillz.store@gmail.com
               - key: COLLECT_MARKETS
                 value: 'true'
               - key: APPROVED_PROVIDERS
                 value: ''
+              - key: HOSTING_TIER
+                value: free
+              - key: DATABASE_EXPIRY
+                value: '2026-11-22T04:35:26Z'
               - key: CHANGENOW_RESEARCH_APPROVED
                 value: 'false'
-              - key: CHANGENOW_API_KEY
-                sync: false
-              - key: NTFY_TOPIC
-                sync: false
-              - key: NTFY_TOKEN
-                sync: false

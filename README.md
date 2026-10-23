@@ -65,3 +65,5 @@ The backend suite uses clearly synthetic fixtures and one published Kraken check
 Read-only research and manual paper execution only. Advanced cash-flow-adjusted trader rankings, chain-wide whale discovery, validated liquidation models, genuine out-of-sample strategy promotion and supervised execution require later implementation and evidence. No commercial signal launch is implied. Review Canadian/Québec regulatory applicability before commercialization or execution.
 
 No profitability, statistical significance or edge claim is made.
+
+Paper hypothesis evaluation now supports GO eligibility based on stop/target, visible depth, both-leg costs, cash, exposure, loss limits and net reward/risk. GO explicitly means a paper experiment with unvalidated predictive edge. Production Access JWT verification and free-plan retention/sleep limits are documented in docs/.

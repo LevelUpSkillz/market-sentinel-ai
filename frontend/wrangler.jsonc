@@ -2,5 +2,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "market-sentinel-ai",
   "pages_build_output_dir": "./out",
-  "compatibility_date": "2026-10-23"
+  "compatibility_date": "2026-10-23",
+  "vars": {
+    "API_ORIGIN": "https://market-sentinel-ai-api.onrender.com"
+  }
 }
