@@ -87,6 +87,20 @@ class LeaderboardTests(unittest.IsolatedAsyncioTestCase):
         self.assertGreater(parsed['duplicate_selected_rows'],0)
         self.assertLess(parsed['peak_buffer_bytes'],1024*1024)
 
+    async def test_reported_raw_roi_preserves_more_than_28_significant_digits(self):
+        raw_roi='0.123456789012345678901234567890123456789'
+        candidate=row()
+        for _,metrics in candidate['windowPerformances']:metrics['roi']=raw_roi
+        directory=TraderDirectory(self.store)
+        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r:response([candidate],size=7))) as client:
+            data=await directory.refresh(client,now=NOW)
+        self.assertEqual(data['status'],'cached_reported_metrics')
+        reported=data['traders'][0]['windows']['month']
+        self.assertEqual(reported['roi_raw'],raw_roi)
+        self.assertIsNone(reported['roi_pct'])
+        cached=self.store.get_state(CACHE_KEY)
+        self.assertEqual(cached['traders'][0]['windows']['month']['roi_raw'],raw_roi)
+
     async def test_bad_addresses_nonfinite_metrics_and_duplicate_windows_never_become_candidates(self):
         invalid=[dict(row(2),ethAddress='not-a-wallet'),dict(row(3),ethAddress='0x'+'0'*40),
                  dict(row(4),accountValue='Infinity'),row(5,windows=1),row(6,pnl='NaN'),

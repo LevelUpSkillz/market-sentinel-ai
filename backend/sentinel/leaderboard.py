@@ -133,8 +133,10 @@ def _number(value,nonnegative=False):
     out = decimal(value)
     if abs(out)>D('1e18') or (out and out.adjusted() < -18):raise ValueError('Reported metric exceeds numeric bounds')
     if nonnegative and out<0:raise ValueError('Negative provider account value or volume')
-    # Normalization prevents harmless trailing zero exponents from expanding output.
-    return format(out.normalize() if out else D(0),'f')
+    # Preserve reported precision: normalize() can round at Decimal's context
+    # precision. Input length/magnitude bounds cap nonzero fixed-point output;
+    # canonical zero avoids expanding a harmless huge negative zero exponent.
+    return format(out if out else D(0),'f')
 
 
 def _candidate(row):
