@@ -20,8 +20,17 @@ class Settings:
     changenow_approved: bool = os.getenv('CHANGENOW_RESEARCH_APPROVED', 'false').lower() == 'true'
     ntfy_topic: str = os.getenv('NTFY_TOPIC', '')
     ntfy_token: str = os.getenv('NTFY_TOKEN', '')
+    kraken_vault_key: str = os.getenv('KRAKEN_VAULT_KEY', '')
+    kraken_live_enabled: bool = os.getenv('KRAKEN_LIVE_ENABLED', 'false').lower() == 'true'
 
     def validate(self):
+        # Never allow real order submission without an explicitly provisioned vault.
+        if self.kraken_live_enabled:
+            from cryptography.fernet import Fernet
+            try:
+                Fernet(self.kraken_vault_key.encode('ascii'))
+            except (ValueError, TypeError, AttributeError, UnicodeError) as exc:
+                raise ValueError('Live Kraken mode requires a valid server-side Fernet vault key') from None
         if self.environment not in {'development', 'test', 'production', 'staging'}:
             raise ValueError('Unknown environment')
         if self.environment in {'production', 'staging'}:
