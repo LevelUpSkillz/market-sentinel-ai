@@ -43,7 +43,28 @@ class KrakenConnect(BaseModel):
     model_config = ConfigDict(extra='forbid')
     api_key: str = Field(min_length=8,max_length=512)
     api_secret: str = Field(min_length=8,max_length=4096)
-    country_code: str = Field(pattern=r'^[A-Z]{2}
+    country_code: str = Field(pattern=r'^[A-Z]{2}$')
+    region: str = Field(min_length=1,max_length=100)
+    eligibility_confirmed: bool
+    dedicated_key_confirmed: bool
+
+class KrakenOrderPreviewRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    symbol: str = Field(pattern=r'^[A-Z0-9.]{1,20}-USD$')
+    side: str = Field(pattern=r'^(buy|sell)$')
+    quantity: str = Field(min_length=1,max_length=40)
+    limit_price: str = Field(min_length=1,max_length=40)
+
+class KrakenOrderApproval(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    preview_id: uuid.UUID
+    confirmation: str = Field(max_length=64)
+
+class KrakenOrderReconcile(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    order_id: uuid.UUID
+
+class Login(BaseModel):
     password: str = Field(min_length=1,max_length=256)
 class PaperOrder(BaseModel):
     provider: str = Field(pattern=r'^(kraken|coinbase)$')
