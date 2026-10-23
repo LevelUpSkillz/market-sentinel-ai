@@ -13,10 +13,7 @@ PYTHONPATH=../backend /tmp/sentinel-verification/bin/python -m unittest discover
 /tmp/sentinel-verification/bin/pip-audit -r ../backend/requirements.txt
 npm audit --audit-level=high
 npm run typecheck
-# Next.js embeds NEXT_PUBLIC_* variables at build time. Cloudflare Pages
-# manages this project's other variables through Wrangler, so supply the
-# public, non-secret Render API origin explicitly for both preview and prod.
-export NEXT_PUBLIC_API_BASE="https://market-sentinel-ai-api.onrender.com"
+# Route browser API calls through the existing same-origin Pages Function.\n# This keeps owner session cookies on the frontend host and avoids CORS.\nexport NEXT_PUBLIC_API_BASE=''
 npm run build
 npx playwright install chromium
 npm run test:e2e
