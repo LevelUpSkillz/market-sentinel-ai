@@ -37,6 +37,30 @@ class KrakenHttpBoundaryTests(unittest.TestCase):
                         self.assertEqual(response.status_code,401)
         asyncio.run(check())
 
+    def test_authenticated_routes_are_wired_and_credentials_are_not_echoed(self):
+        async def check():
+            transport=httpx.ASGITransport(app=self.app)
+            with patch('sentinel.app.verify_session',return_value=True):
+                async with httpx.AsyncClient(transport=transport,base_url='https://example.test') as client:
+                    status=await client.get('/api/connections')
+                    self.assertEqual(status.status_code,200)
+                    self.assertFalse(status.json()['order_submission_enabled'])
+                    self.assertFalse(status.json()['credential_entry_enabled'])
+                    self.assertNotIn('cipher',status.text)
+                    # An invalid request must not expose submitted secret fields.
+                    secret='DO_NOT_ECHO_THIS_TEST_SECRET'
+                    invalid=await client.post('/api/connections/kraken',
+                        headers={'origin':self.settings.origin},
+                        json={'api_key':secret,'api_secret':secret,'country_code':'invalid'})
+                    self.assertEqual(invalid.status_code,422)
+                    self.assertNotIn(secret,invalid.text)
+                    preview=await client.post('/api/connections/kraken/preview',
+                        headers={'origin':self.settings.origin},
+                        json={'symbol':'BTC-USD','side':'buy','quantity':'0.01','limit_price':'50000'})
+                    self.assertEqual(preview.status_code,409)
+                    self.assertIn('disabled',preview.text.lower())
+        asyncio.run(check())
+
     def test_live_trading_defaults_off_and_no_credentials_in_status(self):
         self.assertFalse(self.app.state.kraken_account.enabled)
         status=self.app.state.kraken_account.status()
