@@ -10,3 +10,4 @@ npm run typecheck
 npm run build
 npx playwright install chromium
 npm run test:e2e
+/tmp/sentinel-verification/bin/python ../scripts/check_deployed_auth.py
