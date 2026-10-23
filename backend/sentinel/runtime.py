@@ -116,6 +116,7 @@ class Runtime:
             connected_at = time.time()
             expected = ['BTC-USDC-PERP','ETH-USDC-PERP'] if provider=='hyperliquid' else ['BTC-USD','ETH-USD']
             progress = {symbol:time.monotonic() for symbol in expected}
+            logged_fresh = set()
             try:
                 async with connect(adapter.url,open_timeout=15,ping_interval=20,ping_timeout=20,max_size=8*1024*1024,max_queue=32) as ws:
                     for subscription in adapter.subscriptions():
@@ -129,6 +130,9 @@ class Runtime:
                                 self.books[(provider,event.symbol)] = event
                                 progress[event.symbol] = time.monotonic()
                                 status.update(state='connected',last_book_at=now)
+                                if event.fresh(now) and event.symbol not in logged_fresh:
+                                    logged_fresh.add(event.symbol)
+                                    log.info('provider_book_observed provider=%s symbol=%s source_at=%s received_at=%s integrity=%s',provider,event.symbol,event.source_at,event.received_at,event.integrity)
                             elif kind=='trade':
                                 self.trades.append(event)
                                 self.flow.observe(event)
@@ -185,6 +189,7 @@ class Runtime:
                     key = (view['provider'],view['symbol'])
                     if tick%6==0:
                         self.store.put('market_snapshot',view)
+                        log.info('market_snapshot_persisted provider=%s symbol=%s status=%s source_at=%s received_at=%s',view['provider'],view['symbol'],view['status'],view['source_at'],view['received_at'])
                     facts = anomaly_facts(view,previous.get(key))
                     if facts:
                         self.store.put('forensic',{'facts':facts,'snapshot':view,'prior_snapshot':previous.get(key),

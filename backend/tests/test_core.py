@@ -226,6 +226,19 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.client.post('/api/session/login',json={'password':'x'})).status_code,403)
         await self.login()
         self.assertEqual((await self.client.post('/api/control',json={'stopped':True},headers={'Origin':'https://evil.test'})).status_code,403)
+    async def test_chunked_body_cannot_bypass_size_limit(self):
+        async def chunks():
+            yield b'x'*700000
+            yield b'x'*700000
+        response=await self.client.post('/api/session/login',content=chunks(),headers={'Origin':'https://testserver','Content-Type':'application/json'})
+        self.assertNotIn('content-length',response.request.headers)
+        self.assertEqual(response.status_code,413)
+    async def test_small_chunked_body_replayed_to_json_parser(self):
+        async def chunks():
+            yield b'{"password":'
+            yield b'"synthetic test password"}'
+        response=await self.client.post('/api/session/login',content=chunks(),headers={'Origin':'https://testserver','Content-Type':'application/json'})
+        self.assertEqual(response.status_code,200)
     async def test_missing_market_never_substitutes_fill(self):
         await self.login();r=await self.client.post('/api/paper/open',json={'provider':'kraken','symbol':'BTC-USD','notional':'100','idempotency_key':'a1535c18-24b9-4ef2-adcb-627f81d9c0ab'},headers={'Origin':'https://testserver'})
         self.assertEqual(r.status_code,409);self.assertEqual(self.s.list('paper'),[])
