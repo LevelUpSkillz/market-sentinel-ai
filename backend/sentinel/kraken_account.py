@@ -88,12 +88,20 @@ class KrakenAccount:
 
     def status(self):
         saved=self.store.get_state(CONNECTION_KEY)
-        connected=bool(saved and saved.get('cipher') and self.vault_ready)
-        connection=None if not saved else {k:saved[k] for k in ('id','verified_at','permissions','can_trade')}
+        connected=False
+        if saved and saved.get('cipher') and self.vault_ready:
+            # A valid Fernet key is not necessarily the key that encrypted this
+            # connection. A rotated/mismatched vault must fail closed.
+            try:
+                payload=json.loads(Fernet(self.settings.kraken_vault_key.encode()).decrypt(saved['cipher'].encode()))
+                connected=bool(isinstance(payload,dict) and payload.get('api_key') and payload.get('api_secret'))
+            except (InvalidToken,ValueError,TypeError,KeyError,UnicodeError):
+                connected=False
+        connection=None if not saved else {k:saved.get(k) for k in ('id','verified_at','permissions','can_trade')}
         active=self.store.get_state('kraken_live_active')
         active_doc=self.store.get('real_order',active) if active else None
         return {'credential_entry_enabled':self.vault_ready,'live_order_submission_enabled':self.enabled,
-            'order_submission_enabled':bool(self.enabled and connected and saved['can_trade']),
+            'order_submission_enabled':bool(self.enabled and connected and saved.get('can_trade')),
             'connected':connected,'connection':connection,
             'active_order':dict(self._result(active_doc),**{k:active_doc.get(k) for k in ('symbol','side','quantity','limit_price','expires_at','estimated_notional','fee_reserve','risk_disclosure')}) if active_doc else None,
             'markets':[{'symbol':symbol,'ready':book.fresh() and book.integrity=='crc32_verified'} for (provider,symbol),book in self.books.items() if provider=='kraken' and book.instrument=='spot' and book.quote=='USD'],
