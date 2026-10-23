@@ -4,3 +4,16 @@
 .inline-form label{display:flex;flex-direction:column;gap:6px;font-size:10px;color:#a8bc9b}.inline-form label input{max-width:180px}.inline-form:has(label){align-items:end;flex-wrap:wrap}.wallet-details h3{font-size:17px;font-weight:500;margin-top:15px}
 
 .hosting-note{font-size:9px;line-height:1.7;color:#b6a57c;background:#211f15;border:1px solid #49412c;border-radius:4px;padding:9px 12px;margin:-10px 0 22px}
+/* Evidence cards keep descriptive history separate from prospective estimates. */
+.action-card,.history-section{padding:24px;border-top:1px solid var(--border,#28362c)}
+.action-card code,.wallet-details code{overflow-wrap:anywhere;word-break:break-word}
+.action-card p,.history-section p{line-height:1.65;color:var(--muted,#a5b3a6)}
+.action-card details,.history-section details{margin:16px 0;line-height:1.6;color:var(--muted,#a5b3a6)}
+.action-card summary,.history-section summary{cursor:pointer;color:var(--text,#e9efe7)}
+.action-heading{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.action-heading h3{margin:8px 0 12px}
+.evidence-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:24px 0}
+.evidence-metrics>div{padding:16px;background:rgba(166,203,128,.045);border:1px solid var(--border,#28362c);border-radius:10px;min-width:0}
+.evidence-metrics small{display:block;color:var(--muted,#a5b3a6);line-height:1.5}
+.evidence-metrics strong{display:block;font-size:1.25rem;margin:8px 0;overflow-wrap:anywhere}
+@media(max-width:600px){.evidence-metrics{grid-template-columns:1fr}.action-card,.history-section{padding:20px}.action-heading{flex-wrap:wrap}}
