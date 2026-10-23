@@ -14,6 +14,7 @@ from .traders import poll_trader
 from .flow import FlowDetector
 
 log = logging.getLogger('sentinel')
+BOOK_STALL_SECONDS = 90
 
 def reconnect_delay(attempt, random_value=None):
     return min(60,2**min(attempt,6))+(random.random() if random_value is None else random_value)
@@ -29,17 +30,76 @@ class Runtime:
         self.status = {p:{'state':'disabled','reason':'Provider terms/use approval not configured.','reconnects':0} for p in ADAPTERS}
         self.last_persist = None
         self.last_error = None
+        self.collector_state = 'disabled'
+        self.coordinator_heartbeat = None
+        self.job_status = {}
 
     async def start(self):
         if not self.settings.collect:
             return
-        self.store.acquire_collector()
-        for provider in self.settings.providers:
-            self.tasks.append(asyncio.create_task(self.stream(provider)))
-        self.tasks.append(asyncio.create_task(self.journal()))
-        if 'hyperliquid' in self.settings.providers:
-            self.tasks.append(asyncio.create_task(self.track_traders()))
-        self.tasks.append(asyncio.create_task(self.alert_delivery()))
+        self.collector_state = 'starting'
+        self.tasks.append(asyncio.create_task(self.coordinate(),name='collector-coordinator'))
+
+    async def supervise(self,name,factory):
+        attempt = 0
+        while True:
+            self.job_status[name] = {'state':'running','at':time.time()}
+            try:
+                await factory()
+                raise RuntimeError('Continuous background task exited unexpectedly')
+            except asyncio.CancelledError:
+                self.job_status[name] = {'state':'stopped','at':time.time()}
+                raise
+            except Exception as error:
+                self.job_status[name] = {'state':'restarting','at':time.time(),'error':type(error).__name__}
+                log.exception('background_task_failed task=%s',name)
+                await asyncio.sleep(reconnect_delay(attempt))
+                attempt += 1
+
+    async def coordinate(self):
+        # A new Render instance must become ready before the old instance drains.
+        # Stand by until its PostgreSQL session lock is released, then collect.
+        acquired = False
+        jobs = []
+        try:
+            while True:
+                self.coordinator_heartbeat = time.monotonic()
+                if not acquired:
+                    try:
+                        acquired = self.store.try_acquire_collector()
+                        self.collector_state = 'active' if acquired else 'standby'
+                    except Exception:
+                        self.collector_state = 'recovering'
+                        log.exception('collector_lock_failed')
+                    if acquired:
+                        factories = [('stream:'+p,lambda p=p:self.stream(p)) for p in self.settings.providers]
+                        factories += [('journal',self.journal),('alerts',self.alert_delivery)]
+                        if 'hyperliquid' in self.settings.providers:
+                            factories.append(('traders',self.track_traders))
+                        jobs = [asyncio.create_task(self.supervise(name,factory),name=name) for name,factory in factories]
+                if any(task.done() for task in jobs):
+                    self.collector_state = 'failed'
+                    return  # Readiness fails; Render restarts the service.
+                await asyncio.sleep(2)
+        finally:
+            for task in jobs:
+                task.cancel()
+            await asyncio.gather(*jobs,return_exceptions=True)
+            for book in self.books.values():
+                book.valid = False
+                book.integrity = 'collector_stopped'
+            if acquired:
+                try:self.store.release_collector()
+                except Exception:log.exception('collector_unlock_failed')
+            if self.collector_state!='failed':self.collector_state = 'stopped'
+
+    def healthy(self):
+        if not self.settings.collect:return True
+        if self.coordinator_heartbeat is None or time.monotonic()-self.coordinator_heartbeat>15:return False
+        if any(task.done() for task in self.tasks):return False
+        if self.collector_state=='standby':return True
+        return (self.collector_state=='active' and self.last_persist is not None and
+                time.time()-self.last_persist<60 and self.last_error is None)
 
     async def stop(self):
         for task in self.tasks:
@@ -54,6 +114,8 @@ class Runtime:
             status = self.status[provider]
             status.update(state='connecting',reason=None)
             connected_at = time.time()
+            expected = ['BTC-USDC-PERP','ETH-USDC-PERP'] if provider=='hyperliquid' else ['BTC-USD','ETH-USD']
+            progress = {symbol:time.monotonic() for symbol in expected}
             try:
                 async with connect(adapter.url,open_timeout=15,ping_interval=20,ping_timeout=20,max_size=8*1024*1024,max_queue=32) as ws:
                     for subscription in adapter.subscriptions():
@@ -65,6 +127,7 @@ class Runtime:
                         for kind,event in adapter.consume(message,now):
                             if kind=='book':
                                 self.books[(provider,event.symbol)] = event
+                                progress[event.symbol] = time.monotonic()
                                 status.update(state='connected',last_book_at=now)
                             elif kind=='trade':
                                 self.trades.append(event)
@@ -74,6 +137,8 @@ class Runtime:
                             elif kind=='ticker':
                                 self.tickers[(provider,event['symbol'])] = event
                         status['last_message_at'] = now
+                        if any(time.monotonic()-last>BOOK_STALL_SECONDS for last in progress.values()):
+                            raise TimeoutError('Provider book updates stalled')
                         if now-connected_at > 60:
                             attempt = 0
             except asyncio.CancelledError:

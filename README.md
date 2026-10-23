@@ -54,7 +54,7 @@ npm run build
 npm run test:e2e
 ```
 
-The backend suite uses clearly synthetic fixtures and one published Kraken checksum vector. A dedicated PostgreSQL service runs integration tests in CI; set `TEST_POSTGRES_URL` only to a disposable testing database. No test result establishes profitable trading.
+The backend suite uses clearly synthetic fixtures and one published Kraken checksum vector. Cloudflare runs the release checks. PostgreSQL integration checks require `TEST_POSTGRES_URL` pointing to a disposable testing database; they skip when that isolated database is unavailable. No test result establishes profitable trading.
 
 ## Hosting
 

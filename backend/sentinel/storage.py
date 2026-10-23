@@ -13,7 +13,8 @@ class Store:
         if self.postgres:
             import psycopg
             from psycopg.rows import dict_row
-            self.conn = psycopg.connect(url, autocommit=True, row_factory=dict_row)
+            self.conn = psycopg.connect(url, autocommit=True, row_factory=dict_row,
+                                        connect_timeout=10, options='-c statement_timeout=4000 -c lock_timeout=3000')
         else:
             self.conn = sqlite3.connect(url.removeprefix('sqlite:///'), check_same_thread=False, isolation_level=None)
             self.conn.row_factory = sqlite3.Row
@@ -77,18 +78,28 @@ class Store:
             return [json.loads(r['data']) for r in rows]
 
     def rate(self, key, limit, window=60):
-        bucket = int(time.time() // window)
+        # Store all windows in epoch seconds; minute requests must not erase
+        # the longer login window during cleanup.
+        bucket = int(time.time() // window) * window
         with self.transaction():
             row = self.execute('INSERT INTO rate_limits(key,bucket,count) VALUES (?,?,1) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN rate_limits.bucket=excluded.bucket THEN rate_limits.count+1 ELSE 1 END,bucket=excluded.bucket RETURNING count',(key,bucket)).fetchone()
             # One row per hashed client, bounded by expiry cleanup.
-            self.execute('DELETE FROM rate_limits WHERE bucket < ?', (bucket-2,))
+            self.execute('DELETE FROM rate_limits WHERE bucket < ?', (int(time.time())-86400,))
             return row['count'] <= limit
 
-    def acquire_collector(self):
+    def try_acquire_collector(self):
         if self.postgres:
             row = self.execute('SELECT pg_try_advisory_lock(71933021) AS acquired').fetchone()
-            if not row['acquired']:
-                raise RuntimeError('Only one collector process per deployment is permitted')
+            return bool(row['acquired'])
+        return True
+
+    def acquire_collector(self):
+        if not self.try_acquire_collector():
+            raise RuntimeError('Only one collector process per deployment is permitted')
+
+    def release_collector(self):
+        if self.postgres:
+            self.execute('SELECT pg_advisory_unlock(71933021)')
 
     def close(self):
         self.conn.close()

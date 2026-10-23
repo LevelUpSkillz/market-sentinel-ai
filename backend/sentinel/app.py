@@ -60,10 +60,12 @@ def create_app(settings=None,store=None):
     access = AccessVerifier(settings.access_team,settings.access_aud,settings.owner_email)
     @asynccontextmanager
     async def lifespan(app):
-        await runtime.start()
-        yield
-        await runtime.stop()
-        store.close()
+        try:
+            await runtime.start()
+            yield
+        finally:
+            await runtime.stop()
+            store.close()
     app = FastAPI(title='Market Sentinel AI',version='0.1.0',lifespan=lifespan,
                   docs_url='/docs' if settings.environment=='development' else None,redoc_url=None)
     app.state.store,app.state.runtime,app.state.settings = store,runtime,settings
@@ -81,6 +83,15 @@ def create_app(settings=None,store=None):
             return Response('Invalid Content-Length',status_code=400)
         if length>1024*1024:
             return Response('Request body too large',status_code=413)
+        # Content-Length is optional; bound chunked bodies before JSON parsing.
+        if request.method not in ['GET','HEAD','OPTIONS']:
+            chunks,size = [],0
+            async for chunk in request.stream():
+                size += len(chunk)
+                if size>1024*1024:
+                    return Response('Request body too large',status_code=413)
+                chunks.append(chunk)
+            request._body = b''.join(chunks)
         # Defense in depth: origin validation is checked even on login and logout.
         if request.method not in ['GET','HEAD','OPTIONS'] and request.headers.get('origin')!=settings.origin:
             return Response('Origin denied',status_code=403)
@@ -110,7 +121,7 @@ def create_app(settings=None,store=None):
     async def ready(response:Response):
         try:
             store.get_state('control')
-            ok = not settings.collect or (runtime.last_persist is not None and time.time()-runtime.last_persist<60 and runtime.last_error is None)
+            ok = runtime.healthy()
         except Exception:
             ok = False
         if not ok:
@@ -147,6 +158,7 @@ def create_app(settings=None,store=None):
             'opportunities':store.list('opportunity',20),'paper':store.list('paper',1000),
             'funding':list(runtime.funding.values()),'trades':list(runtime.trades)[-40:],
             'strategy_version':VERSION,'last_persist':runtime.last_persist,'journal_error':runtime.last_error,
+            'collector':{'state':runtime.collector_state,'jobs':runtime.job_status,'independent_of_dashboard':True},
             'changenow':{'configured':bool(settings.changenow_key),'approved':settings.changenow_approved,'kind':'indicative_swap_estimates'},
             'auth_method':'cloudflare_access' if settings.access_aud else 'owner_password','alerts_configured':bool(settings.ntfy_topic),'hosting':{'tier':settings.hosting_tier,'continuous_collection_guaranteed':False,'database_expiry':settings.database_expiry or None},
             'data_policy':'Only explicitly approved public providers are connected.'}

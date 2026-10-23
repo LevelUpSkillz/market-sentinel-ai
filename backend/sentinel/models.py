@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 from datetime import datetime, timezone
 import time
+from math import isfinite
 
 D = Decimal
 
@@ -19,8 +20,11 @@ def timestamp(value) -> float | None:
         return None
     if isinstance(value, (int, float, Decimal)):
         n = float(value)
+        if not isfinite(n):raise ValueError('Non-finite source timestamp')
         return n / 1000 if n > 1e11 else n
-    return datetime.fromisoformat(value.replace('Z', '+00:00')).astimezone(timezone.utc).timestamp()
+    parsed=datetime.fromisoformat(value.replace('Z', '+00:00'))
+    if parsed.tzinfo is None:raise ValueError('Source timestamp must specify a timezone')
+    return parsed.astimezone(timezone.utc).timestamp()
 
 @dataclass
 class Book:

@@ -151,3 +151,9 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(f.buckets[('kraken','BTC-USD')][3]['count'],1)
         f.observe(dict(t,trade_id='stale',received_at=200))
         self.assertEqual(f.buckets[('kraken','BTC-USD')][3]['count'],1)
+
+class TimestampTests(unittest.TestCase):
+    def test_unknown_clock_and_nonfinite_source_timestamps_rejected(self):
+        from sentinel.models import timestamp
+        for value in [float('nan'),float('inf'),'2026-10-23T12:00:00']:
+            with self.assertRaises(ValueError):timestamp(value)

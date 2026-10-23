@@ -25,4 +25,9 @@ class PostgresTests(unittest.TestCase):
         second=Store(os.environ['TEST_POSTGRES_URL'])
         try:
             with self.assertRaises(RuntimeError):second.acquire_collector()
+            self.store.release_collector()
+            second.acquire_collector()
+            with self.assertRaises(RuntimeError):self.store.acquire_collector()
+            second.release_collector()
+            self.store.acquire_collector()
         finally:second.close()
