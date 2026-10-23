@@ -13,11 +13,15 @@ from .engine import investigate, anomaly_facts
 from .traders import poll_trader
 from .flow import FlowDetector
 from .smart_money import discover,THRESHOLD
-from .trader_history import fetch_history
+from .trader_history import fetch_history,HISTORY_VERSION
 from .follow_evidence import resolve_samples
+from .catalogue import Catalogue,BASES,EXTRA_BOOK_LIMIT
+from .market_directory import directory_stream
 
 log = logging.getLogger('sentinel')
 BOOK_STALL_SECONDS = 90
+
+class WatchChanged(Exception):pass
 
 def reconnect_delay(attempt, random_value=None):
     return min(60,2**min(attempt,6))+(random.random() if random_value is None else random_value)
@@ -37,6 +41,8 @@ class Runtime:
         self.coordinator_heartbeat = None
         self.job_status = {}
         self.last_discovery_check = 0
+        self.catalogue = Catalogue(store,settings.providers)
+        self.live_watch = store.get_state('market_watch',[])
 
     async def start(self):
         if not self.settings.collect:
@@ -78,6 +84,9 @@ class Runtime:
                     if acquired:
                         factories = [('stream:'+p,lambda p=p:self.stream(p)) for p in self.settings.providers]
                         factories += [('journal',self.journal),('alerts',self.alert_delivery)]
+                        if self.settings.providers:
+                            factories += [('catalogue',self.catalogue.run)]
+                            factories += [('directory:'+p,lambda p=p:directory_stream(self.catalogue,p)) for p in self.settings.providers if p in ('kraken','hyperliquid')]
                         if 'hyperliquid' in self.settings.providers:
                             factories += [('traders',self.track_traders),('trader_history',self.track_histories)]
                         jobs = [asyncio.create_task(self.supervise(name,factory),name=name) for name,factory in factories]
@@ -110,15 +119,43 @@ class Runtime:
             task.cancel()
         await asyncio.gather(*self.tasks,return_exceptions=True)
 
+    def desired_symbols(self,provider):
+        suffix = '-USDC-PERP' if provider=='hyperliquid' else '-USD'
+        allowed = self.catalogue.venues.get(provider,{})
+        return sorted({*(b+suffix for b in BASES),*(r['symbol'] for r in self.live_watch if r['provider']==provider and allowed.get(r['id'],{}).get('active',True))})
+
+    def set_market_watch(self,market_id,enabled):
+        row = self.catalogue.validate_watch(market_id) if enabled else None
+        with self.store.transaction():
+            current = self.store.get_state('market_watch',[])
+            if enabled and row['symbol'] not in self.desired_symbols(row['provider']):
+                if len(current)>=EXTRA_BOOK_LIMIT:raise ValueError('Free workspace: six additional detailed books at a time. All venue quotes remain searchable.')
+                current.append(row)
+            elif not enabled:
+                existing = next((r for r in current if r['id']==market_id),None)
+                if existing and any(p['status']=='open' and p['provider']==existing['provider'] and p['symbol']==existing['symbol'] for p in self.store.list('paper',10000)):
+                    raise ValueError('Close the open paper position before removing its live exit book')
+                current = [r for r in current if r['id']!=market_id]
+            self.store.set_state('market_watch',current)
+            self.store.put('audit',{'action':'market_watch.add' if enabled else 'market_watch.remove','market_id':market_id,'actor':'owner'})
+        self.live_watch = current
+        # Removed books must not remain available as paper execution inputs.
+        for key in list(self.books):
+            if key[1] not in self.desired_symbols(key[0]):
+                self.books.pop(key)
+                self.tickers.pop(key,None)
+                if key[0]=='hyperliquid':self.funding.pop(key[1],None)
+        return {'markets':current,'extra_limit':EXTRA_BOOK_LIMIT}
+
     async def stream(self,provider):
         attempt = 0
         while True:
-            adapter = ADAPTERS[provider]()
+            expected = self.desired_symbols(provider)
+            adapter = ADAPTERS[provider](expected)
             self.flow.reset(provider)
             status = self.status[provider]
             status.update(state='connecting',reason=None)
             connected_at = time.time()
-            expected = ['BTC-USDC-PERP','ETH-USDC-PERP','SOL-USDC-PERP'] if provider=='hyperliquid' else ['BTC-USD','ETH-USD','SOL-USD']
             progress = {symbol:time.monotonic() for symbol in expected}
             logged_fresh = set()
             try:
@@ -129,6 +166,7 @@ class Runtime:
                         raw = await asyncio.wait_for(ws.recv(),timeout=40)
                         now = time.time()
                         message = json.loads(raw,parse_float=D)
+                        if expected!=self.desired_symbols(provider):raise WatchChanged()
                         for kind,event in adapter.consume(message,now):
                             if kind=='book':
                                 self.books[(provider,event.symbol)] = event
@@ -163,6 +201,9 @@ class Runtime:
                     if p==provider:
                         book.valid = False
                         book.integrity = 'disconnected'
+                if isinstance(e,WatchChanged):
+                    status.update(state='reconnecting',reason='Market selection changed')
+                    continue
                 status.update(state='reconnecting',reason=type(e).__name__,reconnects=status['reconnects']+1)
                 log.warning('provider_reconnect provider=%s error=%s',provider,type(e).__name__)
                 await asyncio.sleep(reconnect_delay(attempt))
@@ -171,7 +212,7 @@ class Runtime:
     def market_view(self):
         now = time.time()
         views = [b.view(now) for b in self.books.values()]
-        expected = [(p,s) for p in ADAPTERS for s in (['BTC-USDC-PERP','ETH-USDC-PERP','SOL-USDC-PERP'] if p=='hyperliquid' else ['BTC-USD','ETH-USD','SOL-USD'])]
+        expected = [(p,s) for p in ADAPTERS for s in self.desired_symbols(p)]
         for p,s in expected:
             if (p,s) not in self.books:
                 views.append(Book(p,s,'perpetual' if p=='hyperliquid' else 'spot','USDC' if p=='hyperliquid' else 'USD').view(now))
@@ -261,7 +302,7 @@ class Runtime:
         while True:
             for trader in self.store.list('watchlist',10):
                 prior = self.store.get_state('trader_history:'+trader['address'])
-                if prior and time.time()-prior['received_at']<6*3600:continue
+                if prior and prior.get('version')==HISTORY_VERSION and time.time()-prior['received_at']<6*3600:continue
                 try:await fetch_history(self.store,trader['address'])
                 except asyncio.CancelledError:raise
                 except Exception as error:

@@ -6,7 +6,7 @@ import logging
 import re
 import time
 import uuid
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ConfigDict
 from .config import Settings
@@ -19,23 +19,28 @@ from .traders import ADDRESS
 from .changenow import estimate
 from .access import AccessVerifier
 from .smart_money import intelligence
+from .catalogue import EXTRA_BOOK_LIMIT
 
 class Login(BaseModel):
     password: str = Field(min_length=1,max_length=256)
 class PaperOrder(BaseModel):
     provider: str = Field(pattern=r'^(kraken|coinbase)$')
-    symbol: str = Field(pattern=r'^(BTC|ETH|SOL)-USD$')
+    symbol: str = Field(pattern=r'^[A-Za-z0-9_.-]{1,40}-USD$')
     notional: str = Field(pattern=r'^\d{1,4}(\.\d{1,2})?$')
     idempotency_key: uuid.UUID
 class EntryPlan(BaseModel):
     provider: str = Field(pattern=r'^(kraken|coinbase)$')
-    symbol: str = Field(pattern=r'^(BTC|ETH|SOL)-USD$')
+    symbol: str = Field(pattern=r'^[A-Za-z0-9_.-]{1,40}-USD$')
     notional: str = Field(pattern=r'^\d{1,4}(\.\d{1,2})?$')
     stop: str = Field(pattern=r'^\d{1,9}(\.\d{1,8})?$')
     target: str = Field(pattern=r'^\d{1,9}(\.\d{1,8})?$')
 class Watch(BaseModel):
     address: str = Field(pattern=r'^0x[0-9a-fA-F]{40}$')
     label: str = Field(default='Public wallet',max_length=60)
+class MarketWatch(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    market_id: str = Field(min_length=1,max_length=150)
+    enabled: bool = True
 class QuoteRequest(BaseModel):
     source: str = Field(pattern=r'^(btc|eth|usdc)$')
     destination: str = Field(pattern=r'^(btc|eth|usdc)$')
@@ -67,7 +72,7 @@ def create_app(settings=None,store=None):
         finally:
             await runtime.stop()
             store.close()
-    app = FastAPI(title='Market Sentinel AI',version='0.2.0',lifespan=lifespan,
+    app = FastAPI(title='Market Sentinel AI',version='0.3.0',lifespan=lifespan,
                   docs_url='/docs' if settings.environment=='development' else None,redoc_url=None)
     app.state.store,app.state.runtime,app.state.settings = store,runtime,settings
     if settings.environment=='development':
@@ -116,7 +121,7 @@ def create_app(settings=None,store=None):
 
     @app.get('/health/live')
     async def live():
-        return {'status':'alive','app_version':'0.2.0','live_trading':False}
+        return {'status':'alive','app_version':'0.3.0','live_trading':False}
 
     @app.get('/health/ready')
     async def ready(response:Response):
@@ -169,6 +174,19 @@ def create_app(settings=None,store=None):
         if kind not in ['opportunity','paper','forensic','alert','audit','lab','market_snapshot','trader_event','quote','entry_plan']:
             raise HTTPException(404,'Unknown record type')
         return {'records':store.list(kind,max(1,min(limit,1000)),q[:200]),'as_of':time.time()}
+
+    @app.get('/api/assets')
+    async def assets(q:str=Query('',max_length=100),source:str=Query('live',pattern=r'^(live|all|coinpaprika|kraken|hyperliquid)$'),
+                     page:int=Query(1,ge=1,le=100000),limit:int=Query(25,ge=1,le=100),
+                     active:str=Query('active',pattern=r'^(active|inactive|all)$')):
+        result = runtime.catalogue.search(q,source,page,limit,active)
+        result['watched_markets'] = runtime.live_watch
+        result['extra_book_limit'] = EXTRA_BOOK_LIMIT
+        return result
+
+    @app.post('/api/markets/watch')
+    async def market_watch(body:MarketWatch):
+        return runtime.set_market_watch(body.market_id,body.enabled)
 
     @app.get('/api/opportunities/{id}')
     async def opportunity(id:str):

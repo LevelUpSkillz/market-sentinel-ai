@@ -7,9 +7,9 @@ import time
 import httpx
 from .models import decimal
 from .traders import ADDRESS, INFO_URL
+from .catalogue import NATIVE
 
-HISTORY_VERSION = 'public-cycles-v1'
-ASSETS = {'BTC','ETH','SOL'}
+HISTORY_VERSION = 'public-cycles-v2'
 
 
 def analyze_fills(rows, as_of=None):
@@ -19,7 +19,7 @@ def analyze_fills(rows, as_of=None):
     accepted = []
     for raw in sorted(rows,key=lambda r:r.get('time',0)):
         coin = raw.get('coin')
-        if coin not in ASSETS:continue
+        if not isinstance(coin,str) or not NATIVE.fullmatch(coin):continue
         try:
             at = int(raw['time'])/1000
             if at>as_of:continue

@@ -43,3 +43,36 @@ test('synthetic history is visibly separate from unvalidated follower odds',asyn
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
 });
+
+test('all-market search keeps token identity, freshness and depth controls explicit on mobile',async({page})=>{
+  const now=Date.now()/1000;
+  await page.setViewportSize({width:390,height:844});
+  let watched=false;
+  await page.route('**/api/**',async route=>{
+    const url=new URL(route.request().url());
+    const dashboard={as_of:now,environment:'test',auth_method:'cloudflare_access',live_trading:false,markets:[],providers:{},signals:[],control:{stopped:false},account:{cash:'10000',initial_cash:'10000',realized_pnl:'0'},opportunities:[],paper:[],funding:[],trades:[],strategy_version:'SYNTHETIC',last_persist:now,journal_error:null,alerts_configured:false,changenow:{configured:false,approved:false,kind:'indicative_swap_estimates'}};
+    let body:unknown={records:[]};
+    if(url.pathname==='/api/dashboard')body=dashboard;
+    if(url.pathname==='/api/intelligence')body={as_of:now,actions:[]};
+    if(url.pathname==='/api/markets/watch'){watched=route.request().postDataJSON().enabled;body={markets:[]}}
+    if(url.pathname==='/api/assets'){
+      const global=url.searchParams.get('source')==='coinpaprika';
+      body={items:[{id:global?'coinpaprika:synthetic-xrp':'kraken:XRP/USD',provider_id:global?'synthetic-xrp':'XRP/USD',source:global?'coinpaprika':'kraken',symbol:'XRP',name:global?'SYNTHETIC XRP TOKEN':'SYNTHETIC XRP/USD',active:true,instrument:global?'aggregate':'spot',quote_currency:'USD',watch_symbol:global?null:'XRP-USD',quote:{price:global?null:'1',status:global?'unavailable':'live',source_at:global?null:now,received_at:global?null:now,volume_24h:null,market_cap:null,change_24h_pct:null,price_kind:'SYNTHETIC TEST QUOTE'}}],page:1,limit:25,total:1,counts:{catalogue:1,global_prices:0,venue_markets:1,streaming_quotes:1},as_of:now,watched_markets:watched?[{id:'kraken:XRP/USD',provider:'kraken',symbol:'XRP-USD'}]:[],extra_book_limit:6,sessions:{kraken:{state:'connected'}},errors:{},catalogue_received_at:now,global_quotes_received_at:null,coverage:'SYNTHETIC TEST FIXTURE: no actual prices.',attribution:{label:'Powered by CoinPaprika',url:'https://coinpaprika.com',license:'SYNTHETIC TEST FIXTURE'}};
+    }
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
+  });
+  await page.goto('/');
+  await page.getByLabel('Open navigation').click();
+  await page.getByRole('button',{name:'Live Markets',exact:true}).click();
+  const directory=page.getByRole('region',{name:'All crypto markets'});
+  await expect(directory.getByText('SYNTHETIC XRP/USD',{exact:true})).toBeVisible();
+  await page.getByLabel('Search all crypto markets').fill('XRP');
+  await expect(directory.getByText('kraken:XRP/USD',{exact:true})).toBeVisible();
+  await directory.getByRole('button',{name:'Add detailed book',exact:true}).click();
+  await expect(directory.getByRole('button',{name:'Remove detailed book',exact:true})).toBeVisible();
+  await page.getByLabel('Market coverage').selectOption('coinpaprika');
+  await expect(directory.getByText('coinpaprika:synthetic-xrp',{exact:true})).toBeVisible();
+  await expect(directory.locator('.catalogue-price').getByText('unavailable',{exact:true})).toBeVisible();
+  await expect(directory.locator('.catalogue-row').getByRole('button',{name:'Add detailed book',exact:true})).toHaveCount(0);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
+});

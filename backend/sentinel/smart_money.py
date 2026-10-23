@@ -4,6 +4,7 @@ import time
 from .models import decimal
 from .traders import ADDRESS
 from .follow_evidence import evidence
+from .catalogue import NATIVE
 
 THRESHOLD = D('100000')
 AUTO_LIMIT = 5
@@ -44,7 +45,7 @@ def intelligence(store,books,now=None):
         if not snapshot:continue
         history = store.get_state('trader_history:'+trader['address'])
         for position in snapshot['positions']:
-            if position['coin'] not in ['BTC','ETH','SOL'] or decimal(position['szi'])==0:continue
+            if not NATIVE.fullmatch(position['coin']) or decimal(position['szi'])==0:continue
             side = 'long' if decimal(position['szi'])>0 else 'short'
             symbol = position['coin']+'-USDC-PERP'
             book = books.get(('hyperliquid',symbol))
@@ -77,6 +78,6 @@ def intelligence(store,books,now=None):
                 'source':snapshot['source'],'source_at':snapshot.get('source_at'),'received_at':snapshot['received_at'],
                 'history_received_at':history.get('received_at') if history else None})
     return {'as_of':now,'actions':actions,'discovery_threshold_usdc':str(THRESHOLD),'auto_wallet_limit':AUTO_LIMIT,
-        'poll_interval_seconds':30,'historical_scope':'Up to 2,000 provider-available fills in a requested 30-day window, BTC/ETH/SOL complete cycles.',
+        'poll_interval_seconds':30,'historical_scope':'Up to 2,000 provider-available native perpetual fills in a requested 30-day window; complete cycles only. Namespaced HIP-3 and spot IDs are excluded.',
         'probability_policy':'A percentage for future follower success requires prospective non-overlapping observations, coverage, held-out calibration and uncertainty checks.',
         'source':'Hyperliquid public trades, clearinghouseState and userFillsByTime; selected cohort, not the whole market.'}

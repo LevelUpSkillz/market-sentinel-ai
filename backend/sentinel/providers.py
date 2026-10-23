@@ -6,8 +6,9 @@ from .models import Book, decimal, timestamp
 class Adapter:
     name = ''
     url = ''
-    def __init__(self):
+    def __init__(self,symbols=None):
         self.books = {}
+        self.symbols = symbols
     def book(self,symbol,instrument='spot',quote='USD'):
         if symbol not in self.books:
             self.books[symbol] = Book(self.name,symbol,instrument,quote)
@@ -20,7 +21,8 @@ class Adapter:
 class Kraken(Adapter):
     name, url = 'kraken','wss://ws.kraken.com/v2'
     def subscriptions(self):
-        return [{'method':'subscribe','params':{'channel':c,'symbol':['BTC/USD','ETH/USD','SOL/USD'],**({'depth':10} if c=='book' else {})}} for c in ['book','ticker','trade']]
+        symbols = [s.removesuffix('-USD')+'/USD' for s in self.symbols] if self.symbols is not None else ['BTC/USD','ETH/USD','SOL/USD']
+        return [{'method':'subscribe','params':{'channel':c,'symbol':symbols,**({'depth':10} if c=='book' else {})}} for c in ['book','ticker','trade']]
     @staticmethod
     def checksum(book):
         def fmt(value):
@@ -57,7 +59,7 @@ class Kraken(Adapter):
 class Coinbase(Adapter):
     name,url = 'coinbase','wss://ws-feed.exchange.coinbase.com'
     def subscriptions(self):
-        return [{'type':'subscribe','product_ids':['BTC-USD','ETH-USD','SOL-USD'],'channels':['level2_batch','ticker','matches','heartbeat']}]
+        return [{'type':'subscribe','product_ids':self.symbols if self.symbols is not None else ['BTC-USD','ETH-USD','SOL-USD'],'channels':['level2_batch','ticker','matches','heartbeat']}]
     def consume(self,m,received_at):
         kind = m.get('type')
         if kind=='error':
@@ -86,7 +88,8 @@ class Coinbase(Adapter):
 class Hyperliquid(Adapter):
     name,url = 'hyperliquid','wss://api.hyperliquid.xyz/ws'
     def subscriptions(self):
-        return [{'method':'subscribe','subscription':{'type':kind,'coin':coin}} for coin in ['BTC','ETH','SOL'] for kind in ['l2Book','trades','activeAssetCtx']]
+        coins = [s.removesuffix('-USDC-PERP') for s in self.symbols] if self.symbols is not None else ['BTC','ETH','SOL']
+        return [{'method':'subscribe','subscription':{'type':kind,'coin':coin}} for coin in coins for kind in ['l2Book','trades','activeAssetCtx']]
     def consume(self,m,received_at):
         channel,data = m.get('channel'),m.get('data')
         if channel=='error':
