@@ -1,4 +1,4 @@
-⁹"""Versioned logical research backup; no HTTP restore or credential backup.
+"""Versioned logical research backup; no HTTP restore or credential backup.
 
 The caller must protect downloads with owner authentication, no-store headers
 and a low request limit. This module never starts collectors or sends orders.
