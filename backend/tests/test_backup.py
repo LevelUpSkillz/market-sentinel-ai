@@ -85,6 +85,23 @@ class BackupTests(unittest.TestCase):
         self.restore(blob)
         self.assertEqual(self.destination.execute('SELECT COUNT(*) AS count FROM rate_limits').fetchone()['count'], 0)
 
+    def test_unresolved_order_reference_requires_matching_preserved_record(self):
+        with self.source.transaction():
+            self.source.set_state('kraken_live_active', 'synthetic-unresolved-order')
+        with self.assertRaisesRegex(BackupError, 'order reference'):
+            export_backup(self.source, now=NOW)
+        self.source.put('real_order', {'status': 'unknown',
+            'source': 'SYNTHETIC OFFLINE ORDER; NEVER SUBMIT'},
+            id='synthetic-unresolved-order', at=NOW-10)
+        blob = export_backup(self.source, now=NOW)
+        self.assertEqual(validate_backup(blob)['counts']['state'], 6)
+        self.restore(blob)
+        self.assertEqual(self.destination.get_state('kraken_live_active'), 'synthetic-unresolved-order')
+        recovered = self.destination.get('real_order', 'synthetic-unresolved-order')
+        self.assertTrue(recovered['restored_execution_disabled'])
+        self.assertFalse(recovered['execution_enabled'])
+        self.assertTrue(self.destination.get_state('control')['stopped'])
+
     def test_real_order_financial_evidence_is_preserved_but_never_reenabled_on_restore(self):
         original = self.source.put('real_order', {'status': 'unknown', 'connection_id': 'SYNTHETIC_CONNECTION',
             'preview': {'symbol': 'SYNTHETIC-USD', 'quantity': '1'}, 'txids': ['SYNTHETIC_TXID'],
