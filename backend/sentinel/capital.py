@@ -153,6 +153,10 @@ def evaluate_real_plan(store, book, stop, target, now=None):
     if stop <= 0 or target <= 0:
         reasons.append('Stop and target prices must be positive.')
     if reasons:return _aliases(result)
+    # A book can already be almost five seconds old when the request arrives.
+    # Calculating a plan must not grant its observations another five seconds.
+    # Freshness above guarantees a source timestamp and valid receipt age.
+    result['expires_at'] = min(now+5, book.source_at+5, book.received_at+5)
     try:
         # Revalidate stored inputs rather than relying only on a profile version tag.
         values = _profile_values({key:profile[key] for key in FIELDS} | {'currency':profile['currency']})

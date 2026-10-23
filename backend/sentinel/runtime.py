@@ -18,6 +18,7 @@ from .follow_evidence import resolve_samples
 from .catalogue import Catalogue,BASES,EXTRA_BOOK_LIMIT
 from .market_directory import directory_stream
 from .radar import Radar
+from .leaderboard import TraderDirectory
 
 log = logging.getLogger('sentinel')
 BOOK_STALL_SECONDS = 90
@@ -45,6 +46,7 @@ class Runtime:
         self.catalogue = Catalogue(store,settings.providers)
         self.live_watch = store.get_state('market_watch',[])
         self.radar = Radar(store)
+        self.trader_directory = TraderDirectory(store,enabled='hyperliquid' in settings.providers)
 
     async def start(self):
         if not self.settings.collect:
@@ -92,7 +94,8 @@ class Runtime:
                             factories += [('radar',self.scan_radar)]
                             factories += [('directory:'+p,lambda p=p:directory_stream(self.catalogue,p)) for p in self.settings.providers if p in ('kraken','hyperliquid')]
                         if 'hyperliquid' in self.settings.providers:
-                            factories += [('traders',self.track_traders),('trader_history',self.track_histories)]
+                            factories += [('traders',self.track_traders),('trader_history',self.track_histories),
+                                          ('trader_directory',self.trader_directory.run)]
                         jobs = [asyncio.create_task(self.supervise(name,factory),name=name) for name,factory in factories]
                 if any(task.done() for task in jobs):
                     self.collector_state = 'failed'
@@ -349,12 +352,23 @@ class Runtime:
                         alert.update(status='expired',expired_at=time.time())
                         self.store.replace(alert['id'],alert)
                         continue
+                    if alert.get('signal_id'):
+                        # A queued/retried notification cannot preserve an old
+                        # GO after price, source freshness or risk has changed.
+                        current = next((s for s in self.radar.snapshot(self.books)['setups']
+                                        if s['id']==alert['signal_id']),None)
+                        if not current or current['decision']!='GO':
+                            alert.update(status='invalidated',invalidated_at=time.time(),
+                                         reason='Radar conditions no longer permit a paper entry.')
+                            self.store.replace(alert['id'],alert)
+                            continue
                     try:
                         headers = {'Title':'Market Sentinel AI','Priority':'default'}
                         if self.settings.ntfy_token:
                             headers['Authorization'] = 'Bearer '+self.settings.ntfy_token
                         async with httpx.AsyncClient(timeout=10,follow_redirects=False) as client:
-                            r = await client.post('https://ntfy.sh/'+self.settings.ntfy_topic,content=alert['title'].encode(),headers=headers)
+                            message = alert['title']+(' Check the app for current status; this notification cannot authorize an entry.' if alert.get('signal_id') else '')
+                            r = await client.post('https://ntfy.sh/'+self.settings.ntfy_topic,content=message.encode(),headers=headers)
                             r.raise_for_status()
                         alert.update(status='delivered',delivered_at=time.time())
                     except asyncio.CancelledError:

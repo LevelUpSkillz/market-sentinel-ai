@@ -133,6 +133,13 @@ def paper_open(store, book, notional, idempotency_key, now=None):
         price = book.fill('buy',quantity)*(1+POLICY.latency_bps/10000)
         cost = price*quantity
         fee = cost*FEES[book.provider]/10000
+        # Requested top-of-book notional is only a lower bound. Walking visible
+        # depth and adverse latency can increase the actual simulated exposure.
+        # Reject an unsafe execution before changing cash or writing the trade.
+        if cost > POLICY.max_position:
+            raise ValueError('Visible-depth paper entry exceeds the $500 position limit after modeled execution costs')
+        if exposure+cost > POLICY.max_total_exposure:
+            raise ValueError('Correlated crypto exposure limit reached after visible-depth execution costs')
         if decimal(account['cash']) < cost+fee:
             raise ValueError('Insufficient paper cash')
         account['cash'] = str(decimal(account['cash'])-cost-fee)
@@ -192,6 +199,7 @@ def evaluate_paper_plan(book, notional, stop, target, *, exposure=D(0), cash=D('
             loss,reward=entry_cost-stop_proceeds,target_proceeds-entry_cost
             result.update(entry_vwap=str(entry),quantity=str(qty),maximum_modeled_loss=str(loss),
                 target_net_profit=str(reward),entry_cost=str(entry_cost),risk_reward=str(reward/loss) if loss>0 else None)
+            if entry*qty>POLICY.max_position:reasons.append('Visible-depth paper entry exceeds the $500 position limit after modeled execution costs.')
             if entry_cost>cash:reasons.append('Available paper cash cannot fund the entry including fees.')
             if exposure+entry*qty>POLICY.max_total_exposure:reasons.append('Correlated crypto exposure limit would be exceeded.')
             if not 0<stop<entry<target:reasons.append('A long plan requires a positive stop below entry and target above entry.')

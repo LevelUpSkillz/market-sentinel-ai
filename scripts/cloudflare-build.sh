@@ -7,6 +7,7 @@ PYTHONPATH=../backend /tmp/sentinel-verification/bin/python -m unittest discover
 /tmp/sentinel-verification/bin/python ../scripts/probe_providers.py
 /tmp/sentinel-verification/bin/python ../scripts/probe_trader_data.py
 /tmp/sentinel-verification/bin/python ../scripts/probe_leaderboard_contract.py
+/tmp/sentinel-verification/bin/python ../scripts/probe_trader_directory.py
 /tmp/sentinel-verification/bin/python ../scripts/probe_catalogue.py
 /tmp/sentinel-verification/bin/python ../scripts/validate_blueprint.py
 /tmp/sentinel-verification/bin/pip-audit -r ../backend/requirements.txt

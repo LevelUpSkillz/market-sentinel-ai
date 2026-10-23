@@ -84,6 +84,33 @@ class CapitalTests(unittest.TestCase):
         self.assertEqual(self.store.get_state('account'), account)
         self.assertEqual(self.store.list('paper'), [])
 
+    def test_plan_does_not_extend_an_almost_expired_book_observation(self):
+        save_profile(self.store, inputs(), NOW)
+        # The book is valid at request time, with only ~100ms of freshness left.
+        almost_old = book(now=NOW-4.9)
+        self.assertTrue(almost_old.fresh(NOW))
+        plan = evaluate_real_plan(self.store, almost_old, '98', '110', NOW)
+        self.assertEqual(plan['risk_decision'], 'PASS')
+        self.assertGreater(plan['expires_at'], NOW)
+        self.assertLess(plan['expires_at'], NOW+0.11)
+        # A client using expires_at must stop showing PASS as soon as the
+        # underlying observation becomes stale, without needing another request.
+        self.assertFalse(almost_old.fresh(NOW+0.11))
+        self.assertGreaterEqual(NOW+0.11, plan['expires_at'])
+
+    def test_plan_expiry_honors_receipt_age_and_does_not_extend_for_future_source(self):
+        save_profile(self.store, inputs(), NOW)
+        delayed_receipt = book()
+        delayed_receipt.received_at = NOW-4.9
+        self.assertTrue(delayed_receipt.fresh(NOW))
+        plan = evaluate_real_plan(self.store, delayed_receipt, '98', '110', NOW)
+        self.assertEqual(plan['risk_decision'], 'PASS')
+        self.assertLess(plan['expires_at'], NOW+0.11)
+        clock_skew = book()
+        clock_skew.source_at = NOW+0.5
+        self.assertTrue(clock_skew.fresh(NOW))
+        self.assertEqual(evaluate_real_plan(self.store, clock_skew, '98', '110', NOW)['expires_at'],NOW+5)
+
     def test_position_cash_and_exposure_caps_bound_sized_quantity(self):
         cases = [inputs(max_position_pct='0.2'), inputs(available_cash_usd='15'),
             inputs(existing_crypto_exposure_usd='2490')]

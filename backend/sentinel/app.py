@@ -199,7 +199,7 @@ def create_app(settings=None,store=None):
 
     @app.get('/api/records/{kind}')
     async def records(kind:str,q:str='',limit:int=100):
-        if kind not in ['opportunity','paper','forensic','alert','audit','lab','market_snapshot','trader_event','quote','entry_plan','radar_signal','real_plan']:
+        if kind not in ['opportunity','paper','forensic','alert','audit','lab','market_snapshot','trader_event','quote','entry_plan','radar_signal','real_plan','trader_cohort']:
             raise HTTPException(404,'Unknown record type')
         return {'records':store.list(kind,max(1,min(limit,1000)),q[:200]),'as_of':time.time()}
 
@@ -320,6 +320,13 @@ def create_app(settings=None,store=None):
     @app.get('/api/intelligence')
     async def market_intelligence():
         return intelligence(store,runtime.books)
+
+    @app.get('/api/trader-directory')
+    async def trader_directory(q:str=Query('',max_length=100),page:int=Query(1,ge=1,le=100),
+                               limit:int=Query(12,ge=1,le=50)):
+        # A dashboard request only reads the bounded background cache. It cannot
+        # trigger a provider download or change the owner's watched addresses.
+        return runtime.trader_directory.directory(q,page,limit)
 
     @app.post('/api/traders')
     async def add_trader(body:Watch):
