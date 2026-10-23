@@ -5,29 +5,60 @@ import type { Intelligence, Trader, JournalRecord, Dashboard } from './types';
 const n=(value:unknown,digits=2)=>value==null||!Number.isFinite(Number(value))?'—':Number(value).toLocaleString('en-US',{maximumFractionDigits:digits});
 const date=(value?:number|null)=>value?new Date(value*1000).toLocaleString():'unavailable';
 const usdc=(value:unknown)=>n(value)+' USDC';
+const quotePrice=(value:unknown)=>value==null||!Number.isFinite(Number(value))?'Unavailable':Number(value).toLocaleString('en-US',{maximumSignificantDigits:9})+' USDC';
+const assetNames:Record<string,string>={BTC:'Bitcoin',ETH:'Ethereum',SOL:'Solana',HYPE:'Hyperliquid',DOGE:'Dogecoin',XRP:'XRP',AVAX:'Avalanche',LINK:'Chainlink',LTC:'Litecoin',SUI:'Sui',AAVE:'Aave',BNB:'BNB'};
+const assetName=(symbol:string)=>{const token=symbol.replace(/-USDC-PERP$/,'');return assetNames[token]&&assetNames[token]!==token?assetNames[token]+' ('+token+')':token};
+const shortAddress=(address:string)=>address.slice(0,8)+'…'+address.slice(-6);
 
-export function ActionBriefing({intel,online,now}:{intel:Intelligence|null;online:boolean;now:number}) {
-  return <section className="panel"><div className="panel-head"><div><span className="eyebrow">PUBLIC TRADERS · INDEPENDENT REVIEW</span><h2>Your next action briefing</h2></div></div>
+function PublicWalletAddress({address}:{address:string}) {
+  const [copyStatus,setCopyStatus]=useState<'idle'|'copied'|'failed'>('idle');
+  async function copyAddress() {
+    try {await navigator.clipboard.writeText(address);setCopyStatus('copied')}
+    catch {setCopyStatus('failed')}
+  }
+  return <><code title={address}>{address}</code><button type="button" onClick={copyAddress}>Copy public wallet address</button><small role="status">{copyStatus==='copied'?'Public wallet address copied.':copyStatus==='failed'?'Copy unavailable. Select the full address above to copy it.':''}</small></>;
+}
+
+export function ActionBriefing({intel,online,now,onInspectWallet}:{intel:Intelligence|null;online:boolean;now:number;onInspectWallet?:(address:string)=>void}) {
+  return <section className="panel" aria-label="Next action briefing"><div className="panel-head"><div><span className="eyebrow">PUBLIC TRADERS · INDEPENDENT REVIEW</span><h2>Your next action briefing</h2></div></div>
     <div className="wallet-details"><p>Observed large-trader positions inform research. An entry requires your own risk plan; another wallet’s trade is not an instruction.</p></div>
     {intel?.actions.length?intel.actions.slice(0,6).map(a=>{
-      const fresh=online&&now-a.received_at<90;
+      const positionFresh=online&&Number.isFinite(a.received_at)&&now-a.received_at>=0&&now-a.received_at<=90;
+      const marketFresh=online&&a.market_received_at!=null&&a.market_source_at!=null&&Number.isFinite(a.market_received_at)&&Number.isFinite(a.market_source_at)&&now-a.market_received_at>=0&&now-a.market_received_at<=5&&now-a.market_source_at>=0&&now-a.market_source_at<=5;
+      const fresh=positionFresh&&marketFresh;
       const odds=a.follow_evidence;
+      const validated=fresh&&odds.estimated_success_pct!=null&&Number.isFinite(odds.estimated_success_pct)&&odds.estimated_success_pct>=0&&odds.estimated_success_pct<=100;
+      const interval=validated&&odds.interval_95_pct&&odds.interval_95_pct.every(x=>Number.isFinite(x)&&x>=0&&x<=100)&&odds.interval_95_pct[0]<=odds.interval_95_pct[1]?odds.interval_95_pct:null;
+      const entryDifference=a.entry_drift_bps==null?null:Number(a.entry_drift_bps);
+      const hasEntryDifference=fresh&&entryDifference!=null&&Number.isFinite(entryDifference);
+      const hasComparisonPrices=a.reported_average_entry_price!==undefined||a.current_executable_price!==undefined;
+      const nextStep=!fresh?'Wait for fresh market observations':a.decision==='NO-GO'?'Skip this observed entry':'Research only — no validated trade recommendation';
       return <article className="action-card" key={a.address+a.symbol}>
-        <div className="action-heading"><div><span className="eyebrow">{a.side.toUpperCase()} · {a.symbol}</span><h3>{fresh?a.next_action:'Wait for fresh observations'}</h3><code>{a.address}</code></div><span className={'badge '+(fresh&&a.decision==='WAIT'?'wait':'no-go')}>{fresh?a.decision:'NO-GO'}</span></div>
-        <div className="evidence-metrics"><div><small>Estimated follower success · 1 hour</small><strong>{fresh&&odds.estimated_success_pct!=null?n(odds.estimated_success_pct,1)+'%':'Insufficient evidence'}</strong></div><div><small>Completed forward observations</small><strong>{odds.completed} / {odds.minimum_sample}</strong></div><div><small>95% outcome interval</small><strong>{odds.interval_95_pct?odds.interval_95_pct.map(x=>n(x,1)+'%').join(' – '):'Unavailable'}</strong></div><div><small>Entry deterioration</small><strong>{n(a.entry_drift_bps)} bps</strong></div></div>
+        <div className="action-heading"><div><span className="eyebrow">PUBLIC POSITION OBSERVATION</span><h3>{assetName(a.symbol)}</h3></div><span className={'badge '+(fresh&&a.decision==='WAIT'?'wait':'no-go')}>{fresh?a.decision:'NO-GO'}</span></div>
+        <p>Public wallet holds a position for a {a.side==='long'?'price rise (long)':a.side==='short'?'price fall (short)':'direction that has not been verified'}.</p>
+        <button type="button" disabled={!onInspectWallet} onClick={()=>onInspectWallet?.(a.address)}>View this wallet’s actions</button>
+        <p>Perpetual contract · USDC · not a Kraken spot order.</p>
+        <p>{a.timing_note||'Current public position snapshot; an opening or exact execution time is not established.'}</p>
+        <h4>{nextStep}</h4>
+        {fresh&&<p>{a.next_action}</p>}
+        {!positionFresh?<p>The position observation is unavailable or older than 90 seconds. Refresh the evidence before assessing an entry.</p>:!marketFresh&&<p>A current matching market quote is unavailable or older than five seconds. Refresh the evidence before assessing an entry.</p>}
+        {fresh&&a.decision_cause==='nearby_liquidation'&&hasEntryDifference&&entryDifference!<0&&<p>A more favorable entry price does not remove the nearby liquidation risk.</p>}
         {a.reasons.map(r=><p key={r}>{r}</p>)}
+        {hasComparisonPrices&&<div className="evidence-metrics"><div><small>Wallet’s reported average entry</small><strong>{a.reported_average_entry_price==null?'Unavailable':quotePrice(a.reported_average_entry_price)}</strong></div><div><small>Current market quote (before costs)</small><strong>{fresh&&a.current_executable_price!=null?quotePrice(a.current_executable_price):'Unavailable'}</strong><small>Visible best bid or ask; fees, size and fill risk apply.</small><small>Quote receipt: {date(a.market_received_at)}</small></div></div>}
+        <div className="evidence-metrics"><div><small>Success odds · next hour</small><strong>{validated?n(odds.estimated_success_pct,1)+'%':fresh?'Not validated':'Unavailable'}</strong></div><div><small>Learning progress</small><strong>{odds.completed} of {odds.minimum_sample} minimum completed</strong>{!validated&&<small>Sample threshold alone is insufficient.</small>}</div>{interval&&<div><small>95% outcome interval</small><strong>{interval.map(x=>n(x,1)+'%').join(' – ')}</strong></div>}<div><small>Entry compared with wallet</small><strong>{hasEntryDifference?n(Math.abs(entryDifference!)/100,4)+'%':'Unavailable'}</strong><small>{hasEntryDifference?entryDifference!<0?'Favorable versus the observed average entry':entryDifference!>0?'Adverse versus the observed average entry':'Unchanged versus the observed average entry':'A matching executable price is required.'}</small></div></div>
         <details><summary>How the success estimate is validated</summary><p>{odds.meaning}</p><p>Historical shadow success: {odds.historical_success_pct==null?'unavailable':n(odds.historical_success_pct,1)+'%'} · missing outcomes: {odds.missing} · pending: {odds.pending} · held-out predictions: {odds.held_out_predictions}</p>{odds.reasons.map(r=><p key={r}>{r}</p>)}{odds.limitations.map(r=><p key={r}>{r}</p>)}</details>
-        <small>Source: {a.source} · received {date(a.received_at)} · source time {date(a.source_at)}</small>
+        <small>Position observation: {positionFresh?'recent':'unavailable or stale'} · received {date(a.received_at)}</small>
+        <details><summary>Source and wallet details · {shortAddress(a.address)}</summary><p>Public address, not a verified identity:</p><PublicWalletAddress address={a.address}/><p>Instrument: {a.symbol}</p><p>Source: {a.source}</p><p>Position received: {date(a.received_at)}</p><p>Position source time: {date(a.source_at)}</p>{hasComparisonPrices&&<p>Market quote received: {date(a.market_received_at)} · source time: {date(a.market_source_at)}</p>}{hasEntryDifference&&<p>Direction-adjusted entry difference: {n(entryDifference,2)} bps. A positive difference is a worse entry for the observed direction; a negative difference is more favorable. This comparison does not establish a profitable trade.</p>}</details>
       </article>
     }):<div className="empty-state"><h3>Waiting for public large-trader observations</h3><p>The collector discovers wallets from actual Hyperliquid prints of at least 100,000 USDC, then retrieves positions and available history. No successful traders or odds are invented.</p></div>}
     <div className="panel-foot">Research and paper review only. A high historical win rate does not establish positive expected profit or a follower’s probability of success.</div>
   </section>;
 }
 
-export default function SmartMoneyView({traders,events,intel,online,now,auth,busy,onAdd}:{traders:Trader[];events:JournalRecord[];intel:Intelligence|null;online:boolean;now:number;auth:boolean;busy:boolean;onAdd:(address:string,label:string)=>Promise<void>}) {
+export default function SmartMoneyView({traders,events,intel,online,now,auth,busy,onAdd,onInspectWallet}:{traders:Trader[];events:JournalRecord[];intel:Intelligence|null;online:boolean;now:number;auth:boolean;busy:boolean;onAdd:(address:string,label:string)=>Promise<void>;onInspectWallet?:(address:string)=>void}) {
   const [address,setAddress]=useState(''),[label,setLabel]=useState('');
   return <>
-    <ActionBriefing intel={intel} online={online} now={now}/>
+    <ActionBriefing intel={intel} online={online} now={now} onInspectWallet={onInspectWallet}/>
     <section className="panel"><div className="panel-head"><div><span className="eyebrow">AUTOMATIC DISCOVERY + YOUR WATCHLIST</span><h2>Investigate a public wallet</h2></div></div><div className="wallet-details"><p>Up to five wallets are discovered from genuine large public trade prints. Both buyer and seller are investigated; print size does not establish skill, wealth, identity or directional intent.</p></div>
       <form className="inline-form" onSubmit={async e=>{e.preventDefault();await onAdd(address,label||'Public wallet');setAddress('');setLabel('')}}><input aria-label="Public wallet address" placeholder="Public address · 0x…" value={address} onChange={e=>setAddress(e.target.value)} pattern="0x[0-9a-fA-F]{40}" required/><input aria-label="Wallet label" placeholder="Your label, not verified identity" maxLength={60} value={label} onChange={e=>setLabel(e.target.value)}/><button className="primary" disabled={!auth||busy}>Add public wallet</button></form>
       <div className="panel-foot">Hyperliquid public data · ten wallets total · position rounds approximately 30 seconds at full capacity · available history refreshes every six hours · gaps possible on free hosting</div>
@@ -35,7 +66,7 @@ export default function SmartMoneyView({traders,events,intel,online,now,auth,bus
     {traders.map(t=>{
       const h=t.history;
       const fresh=online&&t.snapshot&&now-t.snapshot.received_at<90;
-      return <section className="panel" key={t.id}>
+      return <section className="panel" key={t.id} id={'wallet-'+t.address} tabIndex={-1} aria-label={'Public wallet '+shortAddress(t.address)}>
         <div className="panel-head"><div><span className="eyebrow">{t.origin==='auto_large_trade'?'DISCOVERED LARGE-TRADE PARTICIPANT':'USER WATCHLIST'}</span><h2>{t.label}</h2></div><span className={'badge '+(fresh?'live':'unavailable')}>{fresh?'recent snapshot':t.snapshot?'stale':'awaiting data'}</span></div>
         <div className="wallet-details"><code>{t.address}</code><p>Observed account value: {usdc(t.snapshot?.account_value)} · identity and external hedges unknown.</p>{t.discovery&&<p>Discovery print: {usdc(t.discovery.observed_notional_usdc)} · {t.discovery.symbol} · participant was the {t.discovery.role_in_print} · {date(t.discovery.source_at)}</p>}<small>Positions source: {t.snapshot?.source||'Hyperliquid, awaiting data'} · received {date(t.snapshot?.received_at)} · source time {date(t.snapshot?.source_at)}</small>{t.error&&<p className="negative">Latest position request: {t.error.error} at {date(t.error.at)}</p>}</div>
         {t.snapshot?.positions.length?<div className="table-scroll"><table><thead><tr><th>Asset / direction</th><th>Observed position</th><th>Average entry</th><th>Unrealized P&L</th><th>Liquidation price</th></tr></thead><tbody>{t.snapshot.positions.map(p=><tr key={p.coin}><td>{p.coin} · {Number(p.szi)>0?'long':'short'}</td><td>{n(p.szi,6)}</td><td>{usdc(p.entryPx)}</td><td>{usdc(p.unrealizedPnl)}</td><td>{usdc(p.liquidationPx)}</td></tr>)}</tbody></table></div>:<div className="wallet-details"><p>{t.snapshot?'No current public positions returned.':'Waiting for the first provider snapshot; no position is assumed.'}</p></div>}

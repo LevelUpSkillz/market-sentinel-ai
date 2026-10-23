@@ -92,6 +92,112 @@ class DiscoveryTests(unittest.TestCase):
         event=Hyperliquid().consume({'channel':'trades','data':[row]},NOW)[0][1]
         self.assertEqual(event['public_participants'],row['users'])
 
+
+class ActionBriefingCauseTests(unittest.TestCase):
+    def setUp(self):
+        self.store=Store('sqlite:///:memory:')
+        self.store.put('watchlist',{'address':WALLET,'label':'SYNTHETIC TEST WALLET'},id=WALLET)
+
+    def tearDown(self):self.store.close()
+
+    def position(self,*,entry='101',liquidation=None,received=NOW,size='1'):
+        self.store.set_state('trader:'+WALLET,{'received_at':received,'source_at':None,
+            'source':'SYNTHETIC PUBLIC POSITION FIXTURE',
+            'positions':[{'coin':'BTC','szi':size,'entryPx':entry,'liquidationPx':liquidation}]})
+
+    def action(self,books=None):
+        rows=intelligence(self.store,{('hyperliquid','BTC-USDC-PERP'):book()} if books is None else books,NOW)['actions']
+        self.assertEqual(len(rows),1)
+        return rows[0]
+
+    def test_favorable_entry_drift_with_liquidation_risk_is_not_described_as_chasing(self):
+        self.position(entry='101',liquidation='99.2')
+        action=self.action()
+        self.assertEqual(action['decision'],'NO-GO')
+        self.assertLess(D(action['entry_drift_bps']),0)
+        self.assertEqual(action['decision_cause'],'nearby_liquidation')
+        self.assertIn('liquidation',action['next_action'])
+        self.assertNotIn('chasing',action['next_action'])
+        self.assertTrue(any('within 2%' in reason for reason in action['reasons']))
+        self.assertEqual(action['reported_average_entry_price'],'101')
+        self.assertEqual(action['current_executable_price'],'100')
+        self.assertEqual(action['asset'],'BTC')
+        self.assertEqual(action['instrument'],'perpetual')
+        self.assertEqual(action['quote_currency'],'USDC')
+        self.assertEqual(action['position_size_native_units'],'1')
+        self.assertEqual(action['observation_kind'],'current_public_position')
+        self.assertIn('not established',action['timing_note'])
+        self.assertEqual(action['market_source_at'],NOW)
+        self.assertEqual(action['market_received_at'],NOW)
+
+    def test_actual_adverse_entry_retains_no_chasing_headline(self):
+        self.position(entry='90')
+        action=self.action()
+        self.assertEqual(action['decision'],'NO-GO')
+        self.assertGreater(D(action['entry_drift_bps']),20)
+        self.assertEqual(action['decision_cause'],'adverse_entry')
+        self.assertEqual(action['next_action'],'Avoid chasing this entry')
+
+    def test_stopped_or_stale_data_headline_takes_priority_over_price_comparison(self):
+        self.position(entry='90',received=NOW-91)
+        self.store.set_state('control',{'stopped':True})
+        action=self.action()
+        self.assertEqual(action['decision_cause'],'emergency_stop')
+        self.assertIn('paused',action['next_action'])
+        self.store.set_state('control',{'stopped':False})
+        action=self.action()
+        self.assertEqual(action['decision'],'NO-GO')
+        self.assertEqual(action['decision_cause'],'stale_position')
+        self.assertIn('fresh public position',action['next_action'])
+
+    def test_missing_and_stale_books_request_actual_market_evidence(self):
+        self.position()
+        for books in ({},{('hyperliquid','BTC-USDC-PERP'):book(NOW-6)}):
+            action=self.action(books)
+            self.assertEqual(action['decision'],'NO-GO')
+            self.assertEqual(action['decision_cause'],'unavailable_market')
+            self.assertIsNone(action['entry_drift_bps'])
+            self.assertIsNone(action['current_executable_price'])
+            self.assertIsNone(action['market_source_at'])
+            self.assertIsNone(action['market_received_at'])
+            self.assertIn('fresh matching market book',action['next_action'])
+
+    def test_negative_history_and_favorable_price_report_the_historical_cause(self):
+        self.position(entry='101')
+        self.store.set_state('trader_history:'+WALLET,{'complete_cycles':5,'net_before_funding_usdc':'-10','received_at':NOW})
+        action=self.action()
+        self.assertEqual(action['decision'],'NO-GO')
+        self.assertLess(D(action['entry_drift_bps']),0)
+        self.assertEqual(action['decision_cause'],'negative_history')
+        self.assertIn('historical losses',action['next_action'])
+        self.assertNotIn('chasing',action['next_action'])
+
+    def test_fresh_favorable_price_without_blockers_still_requires_independent_plan(self):
+        self.position(entry='101')
+        action=self.action()
+        self.assertEqual(action['decision'],'WAIT')
+        self.assertEqual(action['decision_cause'],'independent_plan_required')
+        self.assertIsNone(action['follow_evidence']['estimated_success_pct'])
+        self.assertEqual(action['next_action'],'Investigate with a paper risk plan')
+
+    def test_liquidation_cause_also_handles_a_favorable_short_entry(self):
+        self.position(entry='90',liquidation='99.5',size='-1')
+        action=self.action()
+        self.assertEqual(action['side'],'short')
+        self.assertLess(D(action['entry_drift_bps']),0)
+        self.assertEqual(action['decision'],'NO-GO')
+        self.assertEqual(action['decision_cause'],'nearby_liquidation')
+        self.assertEqual(action['current_executable_price'],'99')
+        self.assertEqual(action['position_size_native_units'],'-1')
+
+    def test_unavailable_reported_entry_is_not_invented_from_current_market(self):
+        self.position(entry=None)
+        action=self.action()
+        self.assertIsNone(action['reported_average_entry_price'])
+        self.assertEqual(action['current_executable_price'],'100')
+        self.assertIsNone(action['entry_drift_bps'])
+        self.assertEqual(action['observation_kind'],'current_public_position')
+
 class ForwardStudyTests(unittest.TestCase):
     def setUp(self):self.store=Store('sqlite:///:memory:')
     def tearDown(self):self.store.close()

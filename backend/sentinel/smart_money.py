@@ -51,29 +51,62 @@ def intelligence(store,books,now=None):
             book = books.get(('hyperliquid',symbol))
             confidence = evidence(rows,symbol,side,now)
             reasons = []
-            reject = stopped or now-snapshot['received_at']>90 or not book or not book.fresh(now)
+            stale_position = now-snapshot['received_at']>90
+            unavailable_book = not book or not book.fresh(now)
+            adverse_entry = nearby_liquidation = negative_history = False
+            reject = stopped or stale_position or unavailable_book
             if stopped:reasons.append('Emergency stop is active.')
-            if now-snapshot['received_at']>90:reasons.append('The public position snapshot is stale.')
-            if not book or not book.fresh(now):reasons.append('A fresh matching perpetual order book is unavailable.')
+            if stale_position:reasons.append('The public position snapshot is stale.')
+            if unavailable_book:reasons.append('A fresh matching perpetual order book is unavailable.')
             drift = None
             entry = decimal(position.get('entryPx') or 0)
+            executable = (min(book.asks) if side=='long' else max(book.bids)) if book and book.fresh(now) else None
             if book and book.fresh(now) and entry>0:
-                executable = min(book.asks) if side=='long' else max(book.bids)
                 drift = (executable-entry)/entry*10000*(1 if side=='long' else -1)
                 if drift>20:
+                    adverse_entry = True
                     reject = True
                     reasons.append('The follower price is more than 20 bps worse than the observed average entry.')
                 liq = decimal(position.get('liquidationPx') or 0)
                 if liq>0 and abs(executable-liq)/executable<D('.02'):
+                    nearby_liquidation = True
                     reject = True
                     reasons.append('Observed liquidation price is within 2% of the current quote.')
             if history and history['complete_cycles']>=5 and D(history['net_before_funding_usdc'])<0:
+                negative_history = True
                 reject = True
                 reasons.append('Observed complete historical cycles have negative P&L after trading fees, before funding.')
             if confidence['estimated_success_pct'] is None:reasons.append('Follower odds have insufficient validated evidence; the trader’s historical win rate is not a substitute.')
             reasons.append('Define an independent stop, target and exposure budget in the paper risk planner before considering any entry.')
+            # The headline must explain the actual blocking evidence. A favorable
+            # entry comparison can still fail liquidation/history checks; calling
+            # every NO-GO "chasing" incorrectly describes such observations.
+            if stopped:
+                cause,next_action = 'emergency_stop','Research entries are paused'
+            elif stale_position:
+                cause,next_action = 'stale_position','Wait for a fresh public position snapshot'
+            elif unavailable_book:
+                cause,next_action = 'unavailable_market','Wait for a fresh matching market book'
+            elif nearby_liquidation:
+                cause,next_action = 'nearby_liquidation','Review nearby liquidation risk before copying'
+            elif adverse_entry:
+                cause,next_action = 'adverse_entry','Avoid chasing this entry'
+            elif negative_history:
+                cause,next_action = 'negative_history','Review the trader’s historical losses before copying'
+            elif reject:
+                cause,next_action = 'risk_checks','Do not enter while risk checks fail'
+            else:
+                cause,next_action = 'independent_plan_required','Investigate with a paper risk plan'
             actions.append({'address':trader['address'],'label':trader['label'],'symbol':symbol,'side':side,
-                'decision':'NO-GO' if reject else 'WAIT','next_action':'Avoid chasing this entry' if reject else 'Investigate with a paper risk plan',
+                'decision':'NO-GO' if reject else 'WAIT','next_action':next_action,'decision_cause':cause,
+                'asset':position['coin'],'instrument':'perpetual','quote_currency':'USDC',
+                'reported_average_entry_price':str(entry) if entry>0 else None,
+                'current_executable_price':str(executable) if executable is not None else None,
+                'position_size_native_units':str(decimal(position['szi'])),
+                'observation_kind':'current_public_position',
+                'timing_note':'Current public position snapshot; an opening or exact execution time is not established.',
+                'market_source_at':book.source_at if executable is not None else None,
+                'market_received_at':book.received_at if executable is not None else None,
                 'entry_drift_bps':str(drift) if drift is not None else None,'reasons':reasons,'follow_evidence':confidence,
                 'source':snapshot['source'],'source_at':snapshot.get('source_at'),'received_at':snapshot['received_at'],
                 'history_received_at':history.get('received_at') if history else None})

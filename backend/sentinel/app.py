@@ -100,7 +100,7 @@ def create_app(settings=None,store=None):
         finally:
             await runtime.stop()
             store.close()
-    app = FastAPI(title='Market Sentinel AI',version='0.4.0',lifespan=lifespan,
+    app = FastAPI(title='Market Sentinel AI',version='0.4.1',lifespan=lifespan,
                   docs_url='/docs' if settings.environment=='development' else None,redoc_url=None)
     app.state.store,app.state.runtime,app.state.settings = store,runtime,settings
     if settings.environment=='development':
@@ -149,7 +149,7 @@ def create_app(settings=None,store=None):
 
     @app.get('/health/live')
     async def live():
-        return {'status':'alive','app_version':'0.4.0','live_trading':False}
+        return {'status':'alive','app_version':'0.4.1','live_trading':False}
 
     @app.get('/health/ready')
     async def ready(response:Response):

@@ -35,7 +35,7 @@ export default function AllMarkets({auth,online,now,onMarketChange}:{auth:boolea
       }catch(e){if(!disposed){setConnected(false);setError((e as Error).message)}}
       finally{clearTimeout(timeout);running=false}
     };
-    setConnected(false);setData(null);refresh();const timer=setInterval(refresh,5000);
+    setConnected(false);setData(null);refresh();const timer=setInterval(refresh,2000);
     return()=>{disposed=true;controller?.abort();clearInterval(timer)};
   },[auth,search,source,active,page,revision]);
   async function watch(row:Asset,enabled:boolean){
@@ -49,7 +49,7 @@ export default function AllMarkets({auth,online,now,onMarketChange}:{auth:boolea
   const pages=data?Math.max(1,Math.ceil(data.total/data.limit)):1;
   return <section className="panel all-markets" aria-label="All crypto markets">
     <div className="panel-head"><div><span className="eyebrow">EXPLORE THE MARKET</span><h2>All crypto markets</h2></div><span className="badge research">READ-ONLY</span></div>
-    <div className="catalogue-intro"><p>Search every crypto market published by our connected venues, or explore the broader token catalogue. Venue prices stream through WebSockets while the free backend is awake. This screen refreshes every five seconds.</p>
+    <div className="catalogue-intro"><p>Search every crypto market published by our connected venues, or explore the broader token catalogue. Venue prices stream through WebSockets while the free backend is awake. This screen refreshes every two seconds while visible.</p>
       <div className="coverage-grid"><div><strong>{num(data?.counts.venue_markets,0)}</strong><small>Venue markets</small></div><div><strong>{num(data?.counts.streaming_quotes,0)}</strong><small>Recently updated quotes</small></div><div><strong>{num(data?.counts.catalogue,0)}</strong><small>Catalogue assets</small></div><div><strong>{num(data?.counts.global_prices,0)}</strong><small>Aggregate USD prices</small></div></div>
     </div>
     <div className="catalogue-filters"><label>Find a token or pair<input aria-label="Search all crypto markets" placeholder="Bitcoin, XRP, DOGE, token ID…" value={query} maxLength={100} onChange={e=>setQuery(e.target.value)}/></label><label>Coverage<select aria-label="Market coverage" value={source} onChange={e=>{setSource(e.target.value);setPage(1)}}><option value="live">Live venues · all markets</option><option value="kraken">Kraken · spot</option><option value="hyperliquid">Hyperliquid · perpetuals</option><option value="coinpaprika">Global token catalogue</option><option value="all">All sources</option></select></label><label>Listings<select aria-label="Listing status" value={active} onChange={e=>{setActive(e.target.value);setPage(1)}}><option value="active">Active</option><option value="all">All, including inactive</option><option value="inactive">Inactive</option></select></label></div>
@@ -61,7 +61,7 @@ export default function AllMarkets({auth,online,now,onMarketChange}:{auth:boolea
         const core=['BTC','ETH','SOL'].includes(row.symbol)&&row.watch_symbol!==null;
         return <article className="catalogue-row" key={row.id}>
           <div className="catalogue-identity"><span className="token-monogram">{row.symbol.slice(0,3)}</span><div><strong>{row.name}</strong><small>{row.symbol} · {row.source} · {row.instrument}{!row.active?' · inactive':''}</small><small className="catalogue-id">{row.id}</small></div></div>
-          <div className="catalogue-price"><strong>{num(q.price,Number(q.price)<1?12:6)} <small>{row.quote_currency}</small></strong><span className={'badge '+state}>{state==='streaming'?'streaming · receipt time':state}</span>{q.price_kind&&<small>{q.price_kind}</small>}</div>
+          <div className="catalogue-price"><strong key={q.price} className={state==='live'||state==='streaming'?'quote-tick':''}>{num(q.price,Number(q.price)<1?12:6)} <small>{row.quote_currency}</small></strong><span className={'badge '+state}>{state==='streaming'?'streaming · receipt time':state}</span>{q.price_kind&&<small>{q.price_kind}</small>}</div>
           <div className="catalogue-stat"><small>24h change</small><strong className={Number(q.change_24h_pct)<0?'negative':''}>{num(q.change_24h_pct)}{q.change_24h_pct!=null?'%':''}</strong><small>Volume {num(q.volume_24h)} {row.quote_currency}</small>{q.market_cap!=null&&<small>Market cap {num(q.market_cap)} USD</small>}</div>
           <div className="catalogue-provenance"><small>Source time: {at(q.source_at)}</small><small>Received: {at(q.received_at)}</small>{row.source==='hyperliquid'&&<small>No provider timestamp · context {at(q.context_received_at)}</small>}{row.source==='coinpaprika'&&<small>Aggregate estimate · up to 10 min updates</small>}
             {row.watch_symbol&&<button className="secondary compact" disabled={!!busy||!online||core||!row.active} onClick={()=>watch(row,!watching)}>{core?'Core detailed book':busy===row.id?'Saving…':watching?'Remove detailed book':'Add detailed book'}</button>}

@@ -11,4 +11,12 @@ export type EntryPlanResult = {id:string;decision:string;provider:string;symbol:
 
 export type TraderHistory = {version:string;fills_analyzed:number;complete_cycles:number;historical_win_rate_pct:number|null;net_before_funding_usdc:string|null;profit_factor:string|null;realized_pnl_drawdown_usdc:string|null;median_holding_seconds:number|null;unclosed_cycles:number;position_gaps:number;provider_limit_reached:boolean;source:string;received_at:number;first_fill_at:number|null;last_fill_at:number|null;limitations:string[];recent_fills:{coin:string;side:string;action:string;price:string;quantity:string;source_at:number;closed_pnl_before_fees_usdc:string;trading_fee_usdc:string}[];cycles:{coin:string;side:string;closed_at:number;trading_fees_usdc:string;net_before_funding_usdc:string}[]};
 export type FollowEvidence = {completed:number;minimum_sample:number;missing:number;pending:number;held_out_predictions:number;estimated_success_pct:number|null;historical_success_pct:number|null;interval_95_pct:[number,number]|null;meaning:string;reasons:string[];limitations:string[]};
-export type Intelligence = {as_of:number;actions:{address:string;label:string;symbol:string;side:string;decision:string;next_action:string;entry_drift_bps:string|null;reasons:string[];follow_evidence:FollowEvidence;source:string;source_at:number|null;received_at:number}[]};
+export type Intelligence = {as_of:number;actions:{
+  address:string;label:string;symbol:string;side:string;decision:string;next_action:string;
+  entry_drift_bps:string|null;reasons:string[];follow_evidence:FollowEvidence;
+  source:string;source_at:number|null;received_at:number;
+  decision_cause?:string;asset?:string;instrument?:'perpetual';quote_currency?:'USDC';
+  reported_average_entry_price?:string|null;current_executable_price?:string|null;
+  position_size_native_units?:string;observation_kind?:'current_public_position';timing_note?:string;
+  market_source_at?:number|null;market_received_at?:number|null;
+}[]};
