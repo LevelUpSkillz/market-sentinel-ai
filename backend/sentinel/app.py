@@ -26,17 +26,19 @@ from .capital import save_profile,get_profile,evaluate_real_plan
 from .kraken_account import KrakenAccount, AccountError
 
 def connection_status():
-    # A preferred venue is not an authenticated account connection.
+    # Legacy capital-planning compatibility; never imply authenticated access.
     return {'provider':'kraken','status':'secure_setup_required','connected':False,
         'order_submission_enabled':False,'withdrawals_enabled':False,
-        'app_hosting_plan':'free','trading_fees':'Kraken transaction fees apply; no fee-free trading is promised.',
-        'requirements':['Kraken supports owner-created API keys for account access and trading; OAuth is an alternative that requires a provider-approved client.',
-            'This app still needs an encrypted server-side credential flow and verified account permissions before either route can connect.',
-            'A future restricted connection must exclude funding, transfers and withdrawals. Public wallet watching does not authorize trading.',
-            'Provider permission for this app’s market-data use and regional eligibility must be verified.',
-            'Every future order requires verified Kraken balances/product rules, current venue costs and a separate user approval.'],
+        'app_hosting_plan':'free',
+        'trading_fees':'Kraken transaction fees apply; no fee-free trading is promised.',
+        'requirements':[
+            'Use a dedicated Kraken API key with funds and order-query permissions.',
+            'Only enable trading permissions for individually approved spot orders.',
+            'Never enable withdrawals, funding or transfers.',
+            'Regional eligibility, actual balances, pair rules and fees must be verified.',
+            'Live orders require a configured encrypted server-side vault and explicit owner approval.'
+        ],
         'documentation':'https://support.kraken.com/au/articles/360041395271-using-the-kraken-api-with-a-third-party-service',
-        'oauth_documentation':'https://docs-legacy.kraken.com/api/docs/oauth/kraken-connect/',
         'fees_url':'https://www.kraken.com/features/fee-schedule'}
 
 class KrakenConnect(BaseModel):
@@ -277,7 +279,7 @@ def create_app(settings=None,store=None):
 
     @app.get('/api/capital')
     async def capital():
-        return {'profile':get_profile(store),'execution_enabled':False,'connection':connection_status()}
+        return {'profile':get_profile(store),'execution_enabled':kraken_account.status()['order_submission_enabled'],'connection':dict(connection_status(),**kraken_account.status())}
 
     @app.post('/api/capital')
     async def capital_update(body:CapitalProfile):
@@ -289,7 +291,7 @@ def create_app(settings=None,store=None):
         if not book:raise HTTPException(409,'Inspect the matching detailed market book before calculating a real-capital plan')
         result = evaluate_real_plan(store,book,body.stop,body.target)
         result['preferred_execution_venue'] = 'kraken'
-        result['connection'] = connection_status()
+        result['connection'] = dict(connection_status(),**kraken_account.status())
         result['venue_warning'] = 'This plan uses the named source venue. Other venues require their own actual quotes, balances, fee tiers and product rules.'
         return store.put('real_plan',result)
 
