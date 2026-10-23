@@ -138,7 +138,8 @@ def create_app(settings=None,store=None):
             return Response('Rate limit exceeded',status_code=429,headers={'Retry-After':'60'})
         if path not in ['/api/session/login'] and request.method!='OPTIONS':
             token=request.headers.get('cf-access-jwt-assertion')
-            allowed=await access.verify(token) if settings.access_aud else verify_session(request.cookies.get('sentinel_session'),settings.session_secret,settings.environment)
+            owner_session=verify_session(request.cookies.get('sentinel_session'),settings.session_secret,settings.environment)
+            allowed=owner_session or (bool(settings.access_aud) and await access.verify(token))
             if not allowed:
                 return Response('Authentication required',status_code=401)
         response = await call_next(request)
