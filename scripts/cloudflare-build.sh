@@ -13,6 +13,8 @@ PYTHONPATH=../backend /tmp/sentinel-verification/bin/python -m unittest discover
 /tmp/sentinel-verification/bin/pip-audit -r ../backend/requirements.txt
 npm audit --audit-level=high
 npm run typecheck
+# Keep browser requests same-origin through Pages Functions, regardless of Pages env.
+export NEXT_PUBLIC_API_BASE=''
 npm run build
 npx playwright install chromium
 npm run test:e2e
