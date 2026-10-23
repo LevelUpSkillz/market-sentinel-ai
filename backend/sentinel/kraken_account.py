@@ -100,8 +100,10 @@ class KrakenAccount:
         connection=None if not saved else {k:saved.get(k) for k in ('id','verified_at','permissions','can_trade')}
         active=self.store.get_state('kraken_live_active')
         active_doc=self.store.get('real_order',active) if active else None
+        stopped=self.store.get_state('control',{}).get('stopped',False)
+        ready=bool(self.enabled and connected and saved.get('can_trade') and not active and not stopped)
         return {'credential_entry_enabled':self.vault_ready,'live_order_submission_enabled':self.enabled,
-            'order_submission_enabled':bool(self.enabled and connected and saved.get('can_trade')),
+            'order_submission_enabled':ready,
             'connected':connected,'connection':connection,
             'active_order':dict(self._result(active_doc),**{k:active_doc.get(k) for k in ('symbol','side','quantity','limit_price','expires_at','estimated_notional','fee_reserve','risk_disclosure')}) if active_doc else None,
             'markets':[{'symbol':symbol,'ready':book.fresh() and book.integrity=='crc32_verified'} for (provider,symbol),book in self.books.items() if provider=='kraken' and book.instrument=='spot' and book.quote=='USD'],
