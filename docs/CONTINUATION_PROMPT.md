@@ -1,30 +1,40 @@
-Continue building Market Sentinel AI as my autonomous engineering collaborator. Resume the existing implementation; do not start over with a plan, mockup or generic dashboard.
-
-First read the latest checkpoint:
-https://github.com/LevelUpSkillz/market-sentinel-ai/blob/decision-desk-v04-preview/docs/HANDOFF.md
+Continue building Market Sentinel AI as my autonomous engineering collaborator. Resume the existing app; do not start over with a plan or a mockup.
 
 Repository: https://github.com/LevelUpSkillz/market-sentinel-ai
-Working branch at this checkpoint: decision-desk-v04-preview
-Production dashboard: https://market.getlevelupskillz.com
+Live dashboard: https://market.getlevelupskillz.com
 Backend: https://market-sentinel-ai-api.onrender.com
+Read the latest checkpoint first:
+https://github.com/LevelUpSkillz/market-sentinel-ai/blob/main/docs/HANDOFF.md
 
-Inspect current main/working branches, project instructions, files, deployment commits, logs and tests. The checkpoint may be older than the current code: preserve newer work and continue from verified current state. Read docs/RADAR.md, ACCOUNT_CONNECTIONS.md, PROVIDERS.md, DELIVERY.md and DEPLOYMENT.md. If the original workspace exists, use /workspace/market-sentinel-ai.
+Inspect current branches, project instructions, files, hosting access, deployed commits, logs and tests. Preserve newer work. If available, the workspace is /workspace/market-sentinel-ai.
 
-My decisions remain:
-- Keep Next.js/TypeScript on Cloudflare, Python/FastAPI and independent market collectors on Render, and dedicated PostgreSQL. Completely isolate this project from Sentinel Intelligence.
-- Use free plans only. Do not purchase subscriptions, upgrade services, add paid workers or create keep-alive workarounds without explicit cost approval. Free Render can sleep; do not promise continuous 24/7 monitoring. Check the database expiry and data durability.
-- GitHub is source storage, not GitHub Actions deployment. Build/test/deploy the dashboard through Cloudflare and the backend through Render.
-- My selected exchange is Kraken. I want real-capital manual planning and a future secure exchange connection where I approve every real order individually. This does not authorize autonomous trades or withdrawals. Never request exchange private keys, passwords, seeds or recovery phrases in chat. Do not pretend an account is connected when provider-approved OAuth configuration is missing. Trading fees still apply.
-- Make the app premium and mobile-first, with clear decision briefs and strong functional features, not decorative fake metrics.
+CURRENT CHECKPOINT — VERIFY BEFORE ACTING
+Production 0.4.0 is live on application commit 69e97de9bf33a752849118373468cd45acde233c. Its acceptance passed 179 Python tests and nine browser tests; three isolated PostgreSQL tests were skipped. Production health, authentication boundaries, real market collectors and the public trader directory were verified.
 
-Continue the full product mission: broad legitimate live crypto coverage; unusual market activity; public whale/trader actions; independently evaluated copyability; realistic fees, spread, slippage and latency; explainable GO/WAIT/NO-GO; forensic investigations; searchable opportunity memory/autopsies; causal backtesting and out-of-sample validation; capital/exposure controls; alerts; authentication, audit logs and emergency stops.
+Prepared 0.4.1 work is saved on branch live-market-motion-v041-preview. Its application code checkpoint is 951f90b9b5444849fca3ec4a2eb7c7f91d182b01; later checkpoint commits may advance that branch. It is NOT deployed. Local backend checks pass: 190 run, 187 passed, three PostgreSQL tests skipped. Its TypeScript/build and new browser tests have NOT run. Do not confuse version strings, saved code or a deployment trigger with a verified live release.
 
-Latest checkpoint: production 0.3 is live. New 0.4 radar, real-capital planner and evidence memory are saved on the preview branch. The tested code passed 147 Python checks and seven browser checks, with three isolated PostgreSQL tests skipped. It is not yet production. A prepared trader-discovery frontend was added afterward and still needs its backend endpoint, integration and checks. Verify these facts against newer evidence before proceeding.
+MY LATEST PRIORITIES
+1. Live charts and visibly changing real prices. The prepared chart uses real provider timestamps, selectable detailed markets and two-second visible-page sampling. It must freeze stale/invalid prices, leave outage gaps, show source/freshness and never manufacture movement.
+2. Clear trader cards. “LONG ETH-USDC-PERP / Avoid chasing / 0x…” is not understandable to me. Show the token name, what the observed position means, actual reported average entry versus current quote, the specific risk/rejection reason, and a clear next step.
+3. Easy access to wallets and actual actions. Finish and verify “View this wallet’s actions,” navigation to Smart Money, wallet details/address copying, observed position changes and available historical executions. A current position snapshot is not proof of a new trade.
+4. Honest success odds. Hide the outcome interval and success percentage until statistical validation passes. Two of 100 observations are insufficient; sample count alone is not validation. Explain missing evidence in plain language.
 
-Finish the trader-actions section using legitimate public data. Distinguish public leaderboard candidates from independently validated skill. Do not claim to identify the world's best traders or real people behind anonymous wallets. The candidate feed is undocumented and may be about 40 MB: verify its actual contract and parse it within bounded memory before enabling it on the free Render instance. Preserve provenance, data gaps and selection/survivorship-bias disclosures. Never invent positions, returns or success odds.
+The prepared work includes live-market-chart.tsx, revised ActionBriefing/types, correct backend rejection causes, two-second polling, mobile styles, direct wallet navigation and five additional browser tests. Read HANDOFF.md for exact files and known verification needs.
 
-Keep the radar honest: show tokens, conditional entry triggers, entry limits, stops, targets, modeled costs, risk sizing, expiry and rejection reasons. An exact profitable future minute cannot be promised. Current radar GO means paper eligibility, not a proven edge or approval for real money. Real-capital risk PASS is separate from a trading recommendation. Success percentages require adequate validated forward/out-of-sample evidence.
+FIXED CONSTRAINTS
+- Keep Next.js/TypeScript on Cloudflare, Python/FastAPI and independent collectors on Render, and dedicated PostgreSQL. Completely isolate Market Sentinel from Sentinel Intelligence.
+- Free plans only. No paid upgrades, subscriptions, workers or keep-alive tricks without explicit cost approval. Render Free can sleep; never promise 24/7 collection. The current free database expires November 22, 2026; address export/restore and durability.
+- GitHub stores source. No GitHub Actions deployment or CI. Cloudflare builds/tests/deploys the dashboard; Render hosts the backend.
+- Kraken is my selected exchange. I want manual real-capital planning and a future secure connection with individual approval for every order. No autonomous trading or withdrawals. No exchange private keys, passwords or recovery phrases in chat. An approved Kraken account-linking client is not configured; do not pretend the account is connected. Trading fees still apply.
+- No fabricated prices, positions, identities, performance, worldwide trader rankings or probabilities. Public leaderboard results do not prove skill or profitable copyability.
+- Radar GO permits a paper experiment only. Real-capital risk PASS remains separate from a trade recommendation.
 
-Implement the remaining end-to-end features, run meaningful tests and audits, fix failures, and deploy authorized free read-only/paper/manual-planning changes once they pass. Verify the actual production version and collectors; passing tests does not prove profitability. Do not run destructive tests on the production database or place real-money orders as tests. Respect current provider permissions, account eligibility and applicable Canadian/Québec requirements before future commercial signals or execution.
+CONTINUE THE FULL MISSION
+Broad legitimate crypto market coverage; unusual activity detection; public whale/trader investigations; independent copy-trade evaluation; realistic fees, spread, depth, slippage and latency; explainable GO/WAIT/NO-GO; forensic analysis; searchable opportunity memory/autopsies; causal backtesting, walk-forward and out-of-sample validation; paper experiments; capital/exposure controls; useful mobile alerts; authentication, audit and emergency controls. Keep the interface premium, readable and mobile friendly.
 
-Work autonomously within this scope. Give concise progress updates and answer my steering without losing the goal. Ask only for genuinely missing information, necessary external setup or cost approval; explain the exact blocker. Save each completed milestone, update HANDOFF.md, and finish with implemented features, actual test/deployment results, URLs, costs and remaining limitations.
+NEXT ACTION
+Resume the feature branch, inspect the saved changes and run the full Cloudflare preview verification before promotion. Fix genuine failures, then deploy the authorized free read-only/paper/manual-planning update and verify the actual production version and collectors. Use a separate disposable database for destructive integration tests; never production. Never place real-money orders as acceptance tests.
+
+Read docs/HANDOFF.md, RELEASE_0_4.md, RADAR.md, TRADER_DISCOVERY.md, TRADER_EVIDENCE.md, ACCOUNT_CONNECTIONS.md, PROVIDERS.md, SECURITY.md and DEPLOYMENT.md. Check current provider permissions and Canadian/Québec requirements before commercial signals or future execution.
+
+Work autonomously, give concise progress updates, preserve completed work, and update the handoff at every milestone. Ask only for genuinely missing information, necessary external setup or cost approval. Report what is actually implemented, tested and deployed, with URLs, costs and remaining limits. Passing tests does not prove trading profitability.
