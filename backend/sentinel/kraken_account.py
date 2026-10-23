@@ -124,9 +124,13 @@ class KrakenAccount:
         if not self.vault_ready:raise AccountError('Secure server-side credential storage is not configured.')
         saved=self.store.get_state(CONNECTION_KEY)
         if not saved or not saved.get('cipher'):raise AccountError('Connect your own Kraken account first.')
-        try:credentials=json.loads(Fernet(self.settings.kraken_vault_key.encode()).decrypt(saved['cipher'].encode()))
-        except (InvalidToken,ValueError,KeyError,TypeError):raise AccountError('Stored credentials are unavailable. Reconnect using the secure form.') from None
-        client=self._new_client(credentials['api_key'],credentials['api_secret'])
+        try:
+            credentials=json.loads(Fernet(self.settings.kraken_vault_key.encode()).decrypt(saved['cipher'].encode()))
+            if not isinstance(credentials,dict) or not all(isinstance(credentials.get(key),str) and credentials[key] for key in ('api_key','api_secret','country_code')):
+                raise ValueError('Incomplete credentials')
+            client=self._new_client(credentials['api_key'],credentials['api_secret'])
+        except (InvalidToken,ValueError,KeyError,TypeError,UnicodeError):
+            raise AccountError('Stored credentials are unavailable. Reconnect using the secure form.') from None
         return saved,credentials,client
 
     @staticmethod
