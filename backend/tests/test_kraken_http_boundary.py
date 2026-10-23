@@ -61,6 +61,27 @@ class KrakenHttpBoundaryTests(unittest.TestCase):
                     self.assertIn('disabled',preview.text.lower())
         asyncio.run(check())
 
+    def test_password_session_remains_valid_with_cloudflare_access_configured(self):
+        """A valid owner cookie must work even when Access is configured."""
+        from sentinel.security import session_token
+        self.settings.access_aud = 'access-audience'
+        self.settings.access_team = 'https://example.cloudflareaccess.com'
+        self.settings.owner_email = 'owner@example.test'
+        # Recreate the app so its verifier reads the updated Access settings.
+        self.app = create_app(self.settings, self.store)
+        async def check():
+            transport = httpx.ASGITransport(app=self.app)
+            async with httpx.AsyncClient(transport=transport, base_url='https://example.test') as client:
+                denied = await client.get('/api/session')
+                self.assertEqual(denied.status_code, 401)
+                client.cookies.set('sentinel_session', session_token(self.settings.session_secret, 'test'))
+                accepted = await client.get('/api/session')
+                self.assertEqual(accepted.status_code, 200)
+                self.assertTrue(accepted.json()['authenticated'])
+                dashboard = await client.get('/api/dashboard')
+                self.assertEqual(dashboard.status_code, 200)
+        asyncio.run(check())
+
     def test_backup_download_requires_owner_and_excludes_exchange_credentials(self):
         async def check():
             transport=httpx.ASGITransport(app=self.app)
