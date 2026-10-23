@@ -7,6 +7,8 @@ import re
 import time
 import uuid
 from fastapi import FastAPI, HTTPException, Request, Response, Query
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ConfigDict
 from .config import Settings
@@ -144,6 +146,12 @@ def create_app(settings=None,store=None):
         response = await call_next(request)
         response.headers.update({'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'})
         return response
+
+    @app.exception_handler(RequestValidationError)
+    async def safe_request_validation(request,error):
+        # Pydantic validation errors can contain rejected API credentials in
+        # their input fields. Never echo raw validation details to clients.
+        return JSONResponse({'detail':'Invalid request fields.'},status_code=422)
 
     @app.exception_handler(ValueError)
     async def invalid(request,error):
