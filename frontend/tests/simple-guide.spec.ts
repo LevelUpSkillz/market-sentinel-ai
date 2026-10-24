@@ -26,8 +26,8 @@ test('simple navigation and six-step guide explain decisions without creating a 
 });
 
 test('exchange history draws a real series immediately with line and candlestick modes',async({page})=>{
- const writes=await mock(page);await page.goto('/');const chart=page.getByLabel('Exchange price history',{exact:true});
- await expect(chart.getByTestId('history-price-line')).toHaveAttribute('d',/L/);await expect(chart).toContainText('3 actual exchange candles');await expect(chart).toContainText('still changing');
+ await page.setViewportSize({width:390,height:844});const writes=await mock(page);await page.goto('/');const chart=page.getByLabel('Exchange price history',{exact:true});
+ await expect(chart.getByTestId('history-price-line')).toHaveAttribute('d',/L/);await expect(chart).toContainText('3 actual exchange candles');await expect.poll(async()=>Number((await chart.locator('svg').getAttribute('viewBox'))?.split(' ')[2])).toBeLessThanOrEqual(390);await expect(chart).toContainText('still changing');
  await chart.getByLabel('Price history chart style').selectOption('candles');await expect(chart.locator('.candle-up')).toHaveCount(3);expect(writes).toEqual([]);
 });
 
