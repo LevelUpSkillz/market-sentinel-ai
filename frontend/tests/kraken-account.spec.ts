@@ -176,10 +176,14 @@ test('ambiguous submission never resends and only explicit reconciliation can un
   await expect(page.getByRole('button',{name:'Validate and review · no order placed',exact:true})).toBeDisabled();
   const reconcile=page.getByRole('button',{name:'Reconcile this order with Kraken · no resend',exact:true});
   await reconcile.click();
-  expect(writes(state,'/api/connections/kraken/reconcile').map(row=>row.body)).toEqual([{order_id:APP_ORDER_ID}]);
+  await expect.poll(()=>writes(state,'/api/connections/kraken/reconcile').map(row=>row.body)).toEqual([{order_id:APP_ORDER_ID}]);
   await expect(page.getByRole('heading',{name:'Order submission outcome unknown',exact:true})).toBeVisible();
+  // A click only dispatches the event; wait for the response to settle before
+  // changing the synthetic provider state for the second explicit action.
+  await expect(reconcile).toBeEnabled();
   state.reconciled=true;await reconcile.click();
   await expect(page.getByRole('heading',{name:'Kraken order reconciled to a terminal status',exact:true})).toBeVisible();
+  expect(writes(state,'/api/connections/kraken/reconcile').map(row=>row.body)).toEqual([{order_id:APP_ORDER_ID},{order_id:APP_ORDER_ID}]);
   await page.getByRole('button',{name:'Refresh balances and open orders',exact:true}).click();
   await expect(page.getByRole('button',{name:'Validate and review · no order placed',exact:true})).toBeEnabled();
   expect(writes(state,'/api/connections/kraken/approve')).toHaveLength(1);
@@ -192,7 +196,7 @@ test('durable active intent restores manual reconciliation after a page reload',
   await page.getByRole('button',{name:'Refresh balances and open orders',exact:true}).click();
   await expect(page.getByRole('button',{name:'Validate and review · no order placed',exact:true})).toBeDisabled();
   await page.getByRole('button',{name:'Reconcile this order with Kraken · no resend',exact:true}).click();
-  expect(writes(state,'/api/connections/kraken/reconcile').map(row=>row.body)).toEqual([{order_id:APP_ORDER_ID}]);
+  await expect.poll(()=>writes(state,'/api/connections/kraken/reconcile').map(row=>row.body)).toEqual([{order_id:APP_ORDER_ID}]);
   expect(writes(state,'/api/connections/kraken/approve')).toHaveLength(0);
 });
 
