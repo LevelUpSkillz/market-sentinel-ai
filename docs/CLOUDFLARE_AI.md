@@ -48,3 +48,8 @@ Owner login: a separate Market Sentinel email-code IdP was added on October 24,
 2026, with automatic Cloudflare-account redirection disabled. Exact owner email
 policy, application audience and eight-hour duration were preserved. Other
 Sentinel applications and their login settings were not edited.
+
+Build-tool security: the new Wrangler / Miniflare tree initially resolved
+Undici at a vulnerable patch. The install explicitly overrides Undici to
+^7.30.1, the fixed compatible major. The full dependency audit remains required;
+no audit severity threshold or check is weakened.
