@@ -27,6 +27,7 @@ from .kraken_account import KrakenAccount, AccountError
 from .backup import export_backup, BackupError
 from .chart import PriceHistory
 from .suggestions import suggestions
+from .ai_research import evidence_packet
 
 def connection_status():
     # Legacy capital-planning compatibility; never imply authenticated access.
@@ -68,6 +69,11 @@ class KrakenOrderApproval(BaseModel):
 class KrakenOrderReconcile(BaseModel):
     model_config = ConfigDict(extra='forbid')
     order_id: uuid.UUID
+
+class AIResearchRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    mode: str = Field(pattern=r'^(explain|challenge|search)$')
+    card_id: str | None = Field(default=None,max_length=180)
 
 class Login(BaseModel):
     password: str = Field(min_length=1,max_length=256)
@@ -138,7 +144,7 @@ def create_app(settings=None,store=None):
         finally:
             await runtime.stop()
             store.close()
-    app = FastAPI(title='Market Sentinel AI',version='0.6.1',lifespan=lifespan,
+    app = FastAPI(title='Market Sentinel AI',version='0.6.2',lifespan=lifespan,
                   docs_url='/docs' if settings.environment=='development' else None,redoc_url=None)
     app.state.store,app.state.runtime,app.state.settings = store,runtime,settings
     app.state.kraken_account = kraken_account
@@ -198,7 +204,7 @@ def create_app(settings=None,store=None):
 
     @app.get('/health/live')
     async def live():
-        return {'status':'alive','app_version':'0.6.1','live_trading':kraken_account.enabled,
+        return {'status':'alive','app_version':'0.6.2','live_trading':kraken_account.enabled,
                 'individual_order_approval_required':True,'autonomous_trading':False,'withdrawals_enabled':False}
 
     @app.get('/health/ready')
@@ -266,6 +272,12 @@ def create_app(settings=None,store=None):
     @app.post('/api/markets/watch')
     async def market_watch(body:MarketWatch):
         return runtime.set_market_watch(body.market_id,body.enabled)
+
+    @app.post('/api/ai/context')
+    async def ai_context(body:AIResearchRequest):
+        try:return evidence_packet(runtime,store,body.mode,body.card_id)
+        except LookupError as error:raise HTTPException(409,str(error)) from None
+        except ValueError as error:raise HTTPException(429,str(error)) from None
 
     @app.get('/api/price-history')
     async def historical_prices(symbol:str=Query(...,pattern=r'^[A-Z0-9.]{1,40}-(USD|USDC-PERP)$'),

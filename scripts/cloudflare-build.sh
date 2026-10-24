@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # Fail quickly on UI type errors before the longer provider/database checks.
+npx wrangler types functions/worker-configuration.d.ts
+npx tsc --noEmit --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler functions/api/ai.ts functions/worker-configuration.d.ts
+npx tsc --skipLibCheck --target ES2022 --module commonjs --rootDir functions/api --outDir /tmp/sentinel-ai-check functions/api/ai.ts functions/worker-configuration.d.ts
+node ../scripts/test_ai_function.cjs
 npm run typecheck
 python3 -m venv /tmp/sentinel-verification
 /tmp/sentinel-verification/bin/pip install -q -r ../backend/requirements.txt PyYAML jsonschema pip-audit pgserver==0.1.4

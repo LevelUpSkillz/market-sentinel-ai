@@ -22,8 +22,8 @@ def parse_candles(payload, symbol, interval, now):
         raise ValueError('Provider rejected historical data')
     result = payload.get('result',{})
     series = [v for k,v in result.items() if k!='last'] if isinstance(result,dict) else []
-    if len(series)!=1 or not isinstance(series[0],list) or len(series[0])>720:
-        raise ValueError('Invalid historical series')
+    if len(series)!=1 or not isinstance(series[0],list) or len(series[0])>1024:
+        raise ValueError('Invalid historical series: series='+str(len(series))+' rows='+str(len(series[0]) if len(series)==1 and isinstance(series[0],list) else 'invalid'))
     candles=[]
     last=0
     for row in series[0]:
