@@ -11,8 +11,16 @@ log = logging.getLogger('sentinel')
 
 def ticker_subscriptions(symbols,method='subscribe'):
     symbols = sorted(symbols)
-    return [{'method':method,'params':{'channel':'ticker','symbol':symbols[i:i+50],
-        'event_trigger':'trades','snapshot':True}} for i in range(0,len(symbols),50)]
+    # USD spot radar observes BBO changes, not only the much sparser trade feed.
+    # Other quote currencies retain trade-triggered breadth. Keep the trigger on
+    # unsubscribe as Kraken identifies the subscription by both symbol/trigger.
+    result=[]
+    for trigger,group in [('bbo',[s for s in symbols if s.endswith('/USD')]),
+                          ('trades',[s for s in symbols if not s.endswith('/USD')])]:
+        for i in range(0,len(group),50):
+            result.append({'method':method,'params':{'channel':'ticker','symbol':group[i:i+50],
+                'event_trigger':trigger,'snapshot':True}})
+    return result
 
 
 async def directory_stream(catalogue,provider):
@@ -43,7 +51,8 @@ async def directory_stream(catalogue,provider):
                     subscriptions = desired
                     last_data = time.monotonic()
                 elif provider=='kraken' and channel=='ticker':
-                    for row in message.get('data',[]):catalogue.kraken_tick(row,now)
+                    for row in message.get('data',[]):
+                        catalogue.kraken_tick(row,now,event_trigger='bbo' if str(row.get('symbol','')).endswith('/USD') else 'trades')
                     last_data = time.monotonic()
                 elif provider=='hyperliquid' and channel=='allMids':
                     catalogue.hyperliquid_mids(message['data']['mids'],now)

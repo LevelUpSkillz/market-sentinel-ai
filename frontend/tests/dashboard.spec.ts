@@ -9,7 +9,7 @@ test('unauthenticated workspace shows no invented financial data',async({page})=
   await expect(page.getByText('No signal analysis available')).toBeVisible();
   await expect(page.getByText('$10,000')).toHaveCount(0);
 });
-test('mobile navigation and all ten sections are reachable',async({page})=>{
+test('mobile navigation reaches the research and live capital workspaces',async({page})=>{
   await page.setViewportSize({width:390,height:844});
   await page.route('**/api/**',route=>route.fulfill({status:401,body:'Authentication required'}));
   await page.goto('/');

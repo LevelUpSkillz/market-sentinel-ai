@@ -29,7 +29,7 @@ class KrakenHttpBoundaryTests(unittest.TestCase):
             async with httpx.AsyncClient(transport=transport,base_url='https://example.test') as client:
                 for method,path in [
                     ('GET','/api/connections'),('GET','/api/connections/kraken/account'),
-                    ('POST','/api/connections/kraken'),('POST','/api/connections/kraken/disconnect'),
+                    ('GET','/api/connections/kraken/orders'),('POST','/api/connections/kraken'),('POST','/api/connections/kraken/disconnect'),
                     ('POST','/api/connections/kraken/preview'),('POST','/api/connections/kraken/approve'),
                     ('POST','/api/connections/kraken/reconcile')]:
                     with self.subTest(path=path):
@@ -59,6 +59,24 @@ class KrakenHttpBoundaryTests(unittest.TestCase):
                         json={'symbol':'BTC-USD','side':'buy','quantity':'0.01','limit_price':'50000'})
                     self.assertEqual(preview.status_code,409)
                     self.assertIn('disabled',preview.text.lower())
+        asyncio.run(check())
+
+    def test_order_journal_is_bounded_read_only_and_never_exposes_unknown_fields(self):
+        for i in range(55):
+            self.store.put('real_order',{'status':'validated','symbol':'TEST-USD','side':'buy',
+                'quantity':'1','limit_price':'1','cipher':'DO_NOT_EXPOSE_SYNTHETIC_FIELD','connection_id':'PRIVATE_BINDING'})
+        async def check():
+            transport=httpx.ASGITransport(app=self.app)
+            with patch('sentinel.app.verify_session',return_value=True):
+                async with httpx.AsyncClient(transport=transport,base_url='https://example.test') as client:
+                    response=await client.get('/api/connections/kraken/orders')
+                    self.assertEqual(response.status_code,200)
+                    self.assertEqual(len(response.json()['orders']),50)
+                    self.assertFalse(response.json()['complete_exchange_history'])
+                    self.assertNotIn('DO_NOT_EXPOSE_SYNTHETIC_FIELD',response.text)
+                    self.assertNotIn('PRIVATE_BINDING',response.text)
+                    self.assertEqual((await client.post('/api/connections/kraken/orders',headers={'origin':self.settings.origin},json={})).status_code,405)
+                    self.assertEqual(len(self.store.list('real_order',100)),55)
         asyncio.run(check())
 
     def test_password_session_remains_valid_with_cloudflare_access_configured(self):

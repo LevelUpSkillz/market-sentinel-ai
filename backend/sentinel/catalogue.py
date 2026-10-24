@@ -108,7 +108,7 @@ class Catalogue:
         if snapshot:self.persist_venues()
         return {v['provider_id'] for v in items.values() if v['active']}
 
-    def kraken_tick(self,row,now):
+    def kraken_tick(self,row,now,*,event_trigger='trades'):
         key = 'kraken:'+str(row.get('symbol',''))
         if key not in self.venues['kraken']:return
         bid,ask = numeric(row.get('bid'),True),numeric(row.get('ask'),True)
@@ -120,7 +120,7 @@ class Catalogue:
         self.quotes[key] = {'price':price,'bid':bid,'ask':ask,'source_at':at,'received_at':now,
             'volume_24h':str(D(volume)*D(vwap)) if volume and vwap else None,'market_cap':None,
             'change_24h_pct':signed(row.get('change_pct')),'price_kind':'best bid/ask midpoint',
-            'transport':'websocket','timestamp_basis':'provider_event','valid':True}
+            'transport':'websocket','timestamp_basis':'provider_event','event_trigger':event_trigger,'valid':True}
 
     def hyperliquid_metadata(self,data,now):
         if not isinstance(data,list) or len(data)!=2:raise ValueError('Invalid Hyperliquid metadata')

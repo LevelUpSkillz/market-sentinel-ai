@@ -58,7 +58,8 @@ test('real-capital configuration starts blank, saves declared inputs and keeps e
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
   });
   await page.goto('/');
-  await navigate(page,'Settings',true);
+  await navigate(page,'Live Money',true);
+  await page.getByRole('navigation',{name:'Live Money sections'}).getByRole('button',{name:'Budget & limits',exact:false}).click();
   const capital=page.getByRole('region',{name:'Real-capital configuration'});
   await expect(capital.getByLabel('Total real trading capital in USD')).toHaveValue('');
   await expect(capital.getByLabel('Available real cash in USD')).toHaveValue('');
@@ -71,9 +72,10 @@ test('real-capital configuration starts blank, saves declared inputs and keeps e
   await capital.getByRole('button',{name:'Save real-capital limits',exact:true}).click();
   await expect(capital.getByText('Real-capital limits saved as your declared inputs. No money moved and no exchange order was placed.')).toBeVisible();
   expect(posted).toEqual([{capital_usd:'5000',available_cash_usd:'1000',existing_crypto_exposure_usd:'200',daily_realized_pnl_usd:'-10',risk_per_trade_pct:'0.5',max_position_pct:'5',max_crypto_exposure_pct:'25',daily_loss_limit_pct:'2'}]);
+  await page.getByRole('navigation',{name:'Live Money sections'}).getByRole('button',{name:'Connection',exact:false}).click();
   const exchange=page.getByRole('region',{name:'Your Kraken account'});
   await expect(exchange).toContainText('Not connected');
-  await expect(exchange).toContainText('Real order submission: Disabled by backend configuration or account permissions');
+  await expect(exchange).toContainText('Real orders disabled');
   await expect(exchange.getByRole('button',{name:/place|submit|approve.*order/i})).toHaveCount(0);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
 });

@@ -81,7 +81,7 @@ function fieldsFrom(profile:RealCapitalProfile):CapitalFields {
   return Object.fromEntries(Object.keys(emptyFields()).map(key=>[key,String(profile[key as keyof CapitalFields])])) as CapitalFields;
 }
 
-export default function CapitalSettings({auth,online}:{auth:boolean;online:boolean}) {
+export default function CapitalSettings({auth,online,onProfile}:{auth:boolean;online:boolean;onProfile?:(value:RealCapitalProfile|null)=>void}) {
   const [profile,setProfile]=useState<RealCapitalProfile|null>(null);
   const [fields,setFields]=useState<CapitalFields>(emptyFields);
   const [connection,setConnection]=useState<CapitalResponse['connection']>();
@@ -107,6 +107,7 @@ export default function CapitalSettings({auth,online}:{auth:boolean;online:boole
   },[auth,retry]);
 
   const stale=!!profile&&(profile.stale||now-profile.confirmed_at>=86400||Math.floor(now/86400)!==Math.floor(profile.confirmed_at/86400));
+  useEffect(()=>{onProfile?.(auth?profile:null)},[auth,profile,onProfile]);
   function change(key:keyof CapitalFields,value:string){edited.current=true;setFields(previous=>({...previous,[key]:value}));setNotice('')}
   async function save(){
     if(!auth||!online||busy)return;
@@ -130,7 +131,7 @@ export default function CapitalSettings({auth,online}:{auth:boolean;online:boole
 
   return <section className="panel" aria-label="Real-capital configuration">
     <div className="panel-head"><div><span className="eyebrow">YOUR REAL BUDGET · MANUAL DECLARATION</span><h2>Real-capital budget &amp; limits</h2></div><span className={'badge '+(stale?'stale':profile?'wait':'unavailable')}>{stale?'Reconfirm balances':profile?'Declared · unverified':'Not configured'}</span></div>
-    <div className="wallet-details"><p>Enter the capital you use outside this app and the limits you want applied to manual trade plans. These amounts are separate from your simulated paper wallet.</p><p>Use <strong>USD amounts</strong>. The app does not convert CAD, USDC or other currencies into USD or verify these inputs against your exchange account.</p>
+    <div className="wallet-details"><p>Set the USD budget and limits applied to planning and individually approved Kraken orders. These amounts are separate from your simulated paper wallet.</p><p>Use <strong>USD amounts</strong>. The app does not convert CAD, USDC or other currencies into USD or verify these inputs against your exchange account.</p>
       {profile&&<small>Source: your declaration · last confirmed {date(profile.confirmed_at)} · currency USD</small>}
       {connection&&<p>Exchange connection: {connection.provider||'No provider selected'} · {connection.status.replaceAll('_',' ')}.</p>}
       {stale&&<p className="negative">Reconfirm your current cash, exposure and today’s realized P&amp;L before creating another plan.{profile?.stale_reasons.map(reason=><span key={reason} style={{display:'block'}}>{reason}</span>)}</p>}
@@ -153,7 +154,7 @@ export default function CapitalSettings({auth,online}:{auth:boolean;online:boole
       {error&&<div className="wallet-details"><p className="negative" role="alert">{error}</p><button type="button" className="secondary compact" disabled={busy||!online} onClick={()=>setRetry(value=>value+1)}>Reload saved limits</button></div>}
       {!online&&<div className="wallet-details"><p>API offline. Saved declarations have not been refreshed; saving requires a connection.</p></div>}
     </>}
-    <div className="panel-foot" style={{display:'block'}}>Manual planning configuration only. Risk checks can pass while the trading edge remains unvalidated. Exchange order submission is disabled here; this form never requests exchange credentials.</div>
+    <div className="panel-foot" style={{display:'block'}}>These are your declared limits, separate from actual Kraken balances. They apply to planning and manual order checks. Risk checks do not establish a profitable trading edge. Exchange order submission is disabled here; this form never requests exchange credentials.</div>
   </section>;
 }
 

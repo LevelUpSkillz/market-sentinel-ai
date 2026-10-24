@@ -13,7 +13,7 @@ import time
 from .models import decimal
 from .engine import FEES, POLICY, evaluate_paper_plan
 
-VERSION = 'observed-breakout-v1'
+VERSION = 'observed-breakout-v1.1'
 BIN_SECONDS = 30
 BASELINE_BINS = 10
 MAX_SOURCE_GAP = 15
@@ -38,6 +38,8 @@ class Radar:
         self.recent_created = deque(maxlen=12)
         self.coverage = {'universe':0,'observed':0,'warming_up':0,'ready':0,'candidates':0}
         self.last_tick = None
+        self.watchlist = []
+        self.feed = {'state':'waiting','received_at':None,'event_trigger':'bbo'}
         # Persisted historical records remain searchable. They are never restored
         # as active setups or used to invent uninterrupted observations on restart.
 
@@ -234,6 +236,7 @@ class Radar:
         universe = {key:row for key,row in catalogue.venues.get('kraken',{}).items() if 'kraken' in catalogue.providers
             and row.get('active') and row.get('quote_currency')=='USD' and row.get('instrument')=='spot' and row.get('watch_symbol')}
         observed = ready = 0
+        watchlist = []
         new_candidates = []
         connected = catalogue.sessions.get('kraken',{}).get('state')=='connected'
         for key,row in list(universe.items())[:MAX_SERIES]:
@@ -244,6 +247,18 @@ class Radar:
             existing = self.setups.get(key)
             if existing:self._advance(existing,series,now)
             baseline = self._baseline(series,now)
+            index=int(series['last_at']//BIN_SECONDS)
+            completed=0
+            for offset in range(1,BASELINE_BINS+1):
+                bar=series['bins'].get(index-offset)
+                if not bar or bar['points']<2:break
+                completed+=1
+            watchlist.append({'market_id':key,'symbol':row['watch_symbol'],'provider':'kraken',
+                'price':str(series['last_price']),'source_at':series['last_at'],'received_at':series['last_received_at'],
+                'completed_bins':completed,'required_bins':BASELINE_BINS,'baseline_ready':baseline is not None,
+                'change_5m_bps':str((series['last_price']/baseline[0][0]['open']-1)*10000) if baseline else None,
+                'range_5m_bps':str((max(b['high'] for b in baseline[0])/min(b['low'] for b in baseline[0])-1)*10000) if baseline else None,
+                'price_kind':'observed best bid/ask midpoint','executable':False})
             if baseline is None:continue
             ready += 1
             if existing and now<existing['expires_at']:continue
@@ -270,6 +285,9 @@ class Radar:
             if key not in universe and now-at>600:self.last_created.pop(key,None)
         for setup in self.setups.values():self._persist(setup,self._evaluate(setup,books,risk,now),now)
         self.coverage = {'universe':len(universe),'observed':observed,'warming_up':max(0,observed-ready),'ready':ready,'candidates':len(self.setups)}
+        watchlist.sort(key=lambda r:(r['baseline_ready'],abs(decimal(r['change_5m_bps'])) if r['change_5m_bps'] is not None else D(r['completed_bins'])),reverse=True)
+        self.watchlist=watchlist[:12]
+        self.feed=dict(catalogue.sessions.get('kraken',{}),event_trigger='bbo')
         self.last_tick = now
         return self.snapshot(books,now=now)
 
@@ -286,8 +304,9 @@ class Radar:
                     setup.update(decision='NO-GO',state='stale',next_action='Wait for the radar collector to resume.')
                     setup['reasons'].append('The independent radar scan is stale.')
         return {'as_of':self.last_tick if self.last_tick is not None else now,'last_scan_at':self.last_tick,'strategy_version':VERSION,'mode':'paper_only',
-            'status':'stopped' if risk['stopped'] else 'collecting' if fresh else 'waiting_for_collector',
+            'status':'stopped' if risk['stopped'] else ('scanning' if self.coverage['ready'] else 'warming_up') if fresh else 'waiting_for_collector',
             'coverage':dict(self.coverage),'setups':setups[:MAX_SETUPS],
+            'watchlist':deepcopy(self.watchlist),'feed':dict(self.feed),
             'limitations':['GO means current paper-risk eligibility, not a validated profitable edge or real-money instruction.',
                 'Five-minute observed-price baselines must warm up after a restart or data gap; no missing prices are filled.',
                 'This fixed breakout hypothesis has no out-of-sample validation or estimated success odds yet.',

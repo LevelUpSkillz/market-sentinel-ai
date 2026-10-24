@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type { Market } from './types';
 
 export type KrakenConnectionStatus = {
   provider:string;
@@ -87,7 +88,8 @@ function PreviewDetails({preview}:{preview:KrakenOrderTerms}) {
   </>;
 }
 
-export default function KrakenAccount({auth,online}:{auth:boolean;online:boolean}) {
+export type KrakenSummary={connection:KrakenConnectionStatus|null;account:KrakenAccountSnapshot|null;unresolved:boolean};
+export default function KrakenAccount({auth,online,view='all',onSummary,liveMarkets=[],stopped=false,riskReady=true}:{auth:boolean;online:boolean;view?:'all'|'overview'|'trade'|'connection';onSummary?:(value:KrakenSummary)=>void;liveMarkets?:Market[];stopped?:boolean;riskReady?:boolean}) {
   const [connection,setConnection]=useState<KrakenConnectionStatus|null>(null);
   const [account,setAccount]=useState<KrakenAccountSnapshot|null>(null);
   const [apiKey,setApiKey]=useState(''),[apiSecret,setApiSecret]=useState('');
@@ -156,7 +158,7 @@ export default function KrakenAccount({auth,online}:{auth:boolean;online:boolean
   const connected=auth&&connection?.connected===true;
   const accountFresh=online&&account!=null&&Number.isFinite(account.verified_at)&&now-account.verified_at>=0&&now-account.verified_at<=ACCOUNT_MAX_AGE;
   const tradingPermission=connected&&connection?.connection?.can_trade===true;
-  const submissionEnabled=tradingPermission&&connection?.order_submission_enabled===true&&connection.live_order_submission_enabled===true;
+  const submissionEnabled=!stopped&&tradingPermission&&connection?.order_submission_enabled===true&&connection.live_order_submission_enabled===true;
   const unresolved=result!=null&&['submitting','submitted','unknown'].includes(result.status);
   const reviewFresh=preview!=null&&Number.isFinite(preview.expires_at)&&now>0&&now<preview.expires_at;
   const validPreview=preview?.status==='validated'&&preview.provider_validation===true&&preview.quote_currency==='USD'&&
@@ -164,7 +166,13 @@ export default function KrakenAccount({auth,online}:{auth:boolean;online:boolean
   const canApprove=auth&&online&&!busy&&!unresolved&&submissionEnabled&&accountFresh&&reviewFresh&&validPreview&&confirmation===CONFIRMATION;
   const markets=connection?.markets?.filter(row=>typeof row.symbol==='string'&&row.symbol.endsWith('-USD'))||[];
   const marketReady=markets.some(row=>row.symbol===symbol&&row.ready);
-  const canPreview=auth&&online&&!busy&&!unresolved&&tradingPermission&&accountFresh&&marketReady&&positiveDecimal(quantity)&&positiveDecimal(limitPrice);
+  const canPreview=riskReady&&auth&&online&&!busy&&!unresolved&&submissionEnabled&&accountFresh&&marketReady&&positiveDecimal(quantity)&&positiveDecimal(limitPrice);
+
+  useEffect(()=>{onSummary?.({connection:auth?connection:null,account:auth?account:null,unresolved:auth&&unresolved})},[auth,connection,account,unresolved,onSummary]);
+  const selectedQuote=liveMarkets.find(row=>row.provider==='kraken'&&row.symbol===symbol&&row.quote==='USD'&&row.instrument==='spot');
+  const quoteFresh=!!selectedQuote&&online&&selectedQuote.integrity==='crc32_verified'&&selectedQuote.source_at!=null&&now-selectedQuote.source_at>=0&&now-selectedQuote.source_at<=5&&now-selectedQuote.received_at>=0&&now-selectedQuote.received_at<=5;
+  const display=(value:unknown)=>value==null||!Number.isFinite(Number(value))?'—':Number(value).toLocaleString('en-US',{maximumSignificantDigits:10});
+  const assetName=(value:string)=>({ZUSD:'USD',XXBT:'BTC',XBT:'BTC',XETH:'ETH'} as Record<string,string>)[value]||value;
 
   function invalidateReview(){setPreview(null);setConfirmation('')}
   async function connect() {
@@ -232,55 +240,66 @@ export default function KrakenAccount({auth,online}:{auth:boolean;online:boolean
     });
   }
 
-  return <>
-    <section className="panel" aria-label="Your Kraken account"><div className="panel-head"><div><span className="eyebrow">YOUR EXCHANGE ACCOUNT · RESTRICTED SPOT ACCESS</span><h2>Your Kraken account</h2></div><span className={'badge '+(connected?'live':'unavailable')}>{connected?'Connected':'Not connected'}</span></div>
+  return <div className="kraken-desk">
+    {auth&&error&&<div className="error-banner" role="alert">{error}</div>}
+    {auth&&notice&&<div className="toast" role="status">{notice}</div>}
+    {auth&&unresolved&&view!=='trade'&&<div className="order-lock"><strong>One order needs reconciliation</strong><p>The saved submission may have reached Kraken. Open Trade ticket to check it; it will never be resent automatically.</p></div>}
+    {(view==='all'||view==='connection')&&<section className="panel" aria-label="Your Kraken account">
+      <div className="panel-head"><div><span className="eyebrow">ENCRYPTED ACCOUNT CONNECTION</span><h2>Your Kraken account</h2></div><span className={'badge '+(connected?'live':'unavailable')}>{connected?'Connected':'Not connected'}</span></div>
       <div className="wallet-details">
-        <p>This connects your own Kraken exchange account. Watching or connecting a public wallet does not link a Kraken account or authorize an order.</p>
-        <p>Every real order needs a fresh, exact review and your individual approval. Autonomous trading, withdrawals and transfers are unavailable.</p>
+        <p>Your assets stay at Kraken. This connection allows account reads and the spot orders you individually approve. Withdrawals, transfers and autonomous trading are unavailable.</p>
         {!auth?<p>Sign in to manage your restricted account connection.</p>:<>
-          {error&&<p className="negative" role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
-          <p><strong>Real order submission: {submissionEnabled?'Enabled for individually approved orders':'Disabled by backend configuration or account permissions'}</strong></p>
-          {connection?.requirements?.map(line=><p key={line}>{line}</p>)}
-          {connected&&<><p>Connection verified: {date(connection!.connection?.verified_at||0)}</p><p>Verified permissions: {connection!.connection?.permissions?.join(', ')||'Unavailable'}</p><p>Removing this app’s credentials does not cancel existing real orders. They can remain active and fill at Kraken.</p><button type="button" className="danger" style={actionButtonStyle} disabled={busy||!online} onClick={disconnect}>Remove app credentials · keep existing orders</button></>}
+          <div className="connection-facts"><div><small>Account access</small><strong>{connected?'Verified dedicated key':'Not connected'}</strong></div><div><small>Trading permission</small><strong>{connected?tradingPermission?'Manual spot orders':'Read-only key':'Awaiting connection'}</strong></div><div><small>Server capability</small><strong>{connection?.live_order_submission_enabled?'Manual trading enabled':'Real orders disabled'}</strong></div></div>
+          {connected&&<><p>Connection verified: {date(connection!.connection?.verified_at||0)}</p><details className="help-details"><summary>Permissions and connection controls</summary><p>Verified permissions: {connection!.connection?.permissions?.join(', ')||'Unavailable'}</p><p>Removing the credentials does not cancel existing real orders. Manage those directly in Kraken.</p><button type="button" className="danger" style={actionButtonStyle} disabled={busy||!online} onClick={disconnect}>Remove app credentials · keep existing orders</button></details></>}
           {!connected&&connection?.credential_entry_enabled&&secureContext&&<form autoComplete="off" onSubmit={event=>{event.preventDefault();connect()}}>
-            <p>Create a new, dedicated Kraken Spot API key used only by this app. Reusing it in another app can cause conflicting API request nonces.</p>
-            <p>Enable Query funds, Query open orders and trades, and Query closed orders and trades. Enable Modify orders and Close orders only if you want individually approved trading. Leave every other permission off, including withdrawals, funding, transfers, exports and WebSocket access. The server rejects excess permissions.</p>
-            <p>Enter the dedicated key only in this authenticated form, never in chat.</p>
+            <details className="help-details"><summary>How to create the right Kraken key</summary><p>Create a newly dedicated Spot API key used only by Market Sentinel. Enable Query funds, Query open orders and trades, and Query closed orders and trades. Add Modify orders and Close orders only for individually approved trading. Leave all other permissions off, including funding, withdrawals, exports and WebSocket access. Remove history-date restrictions.</p><p>In Kraken Pro: profile menu → Settings → API → Create API key. Kraken calls the API secret the Private key. Never send either value in chat.</p></details>
             <div className="settings-grid"><label>Kraken API key<input aria-label="Kraken API key" type="password" autoComplete="off" spellCheck={false} autoCapitalize="none" required value={apiKey} onChange={event=>setApiKey(event.target.value)} disabled={busy}/></label><label>Kraken API secret<input aria-label="Kraken API secret" type="password" autoComplete="off" spellCheck={false} autoCapitalize="none" required value={apiSecret} onChange={event=>setApiSecret(event.target.value)} disabled={busy}/></label></div>
-            <div className="settings-grid"><label>Residence country · two-letter ISO code<input aria-label="Kraken residence country code" placeholder="Two-letter country code" value={countryCode} onChange={event=>setCountryCode(event.target.value.toUpperCase())} pattern="[A-Z]{2}" maxLength={2} required disabled={busy}/></label><label>State or province · country if none<input aria-label="Kraken residence region" value={region} onChange={event=>setRegion(event.target.value)} required maxLength={100} disabled={busy}/></label></div>
-            <p><label><input type="checkbox" checked={eligibilityConfirmed} onChange={event=>setEligibilityConfirmed(event.target.checked)} required disabled={busy}/> I confirm that this Kraken account and spot product are permitted for my residence. Kraken remains the final authority on account and regional eligibility.</label></p>
+            <div className="settings-grid"><label>Residence country · two-letter code<input aria-label="Kraken residence country code" placeholder="For example CA for Canada" value={countryCode} onChange={event=>setCountryCode(event.target.value.toUpperCase())} pattern="[A-Z]{2}" maxLength={2} required disabled={busy}/></label><label>State or province<input aria-label="Kraken residence region" value={region} onChange={event=>setRegion(event.target.value)} required maxLength={100} disabled={busy}/></label></div>
+            <p><label><input type="checkbox" checked={eligibilityConfirmed} onChange={event=>setEligibilityConfirmed(event.target.checked)} required disabled={busy}/> I confirm that this Kraken account and spot product are permitted for my residence. Kraken determines final eligibility.</label></p>
             <p><label><input type="checkbox" checked={dedicatedKeyConfirmed} onChange={event=>setDedicatedKeyConfirmed(event.target.checked)} required disabled={busy}/> This is a newly dedicated API key used only in Market Sentinel AI.</label></p>
             <button className="primary" style={actionButtonStyle} disabled={busy||!online||!apiKey||!apiSecret||!eligibilityConfirmed||!dedicatedKeyConfirmed||!/^[A-Z]{2}$/.test(countryCode)||!region.trim()}>Verify restricted Kraken connection</button>
-            <p>The server encrypts accepted credentials. This browser clears the entry fields after each attempt and does not store them. No real order is submitted by connecting.</p>
           </form>}
-          {!connected&&(!connection?.credential_entry_enabled||!secureContext)&&<p>Credential entry is disabled until the secure backend connection flow is configured and this page uses a secure connection. No credentials are requested here while that gate is closed.</p>}
-          <p><button type="button" className="secondary" style={actionButtonStyle} disabled={busy} onClick={refreshConnection}>Refresh connection status</button></p>
-          {connected&&<p><button type="button" className="secondary" style={actionButtonStyle} disabled={busy||!online} onClick={refreshAccount}>Refresh balances and open orders</button></p>}
-          {account&&<><h3>Kraken balances</h3><p>Verified {date(account.verified_at)} · {accountFresh?'recent account snapshot':'stale account snapshot; refresh before reviewing an order'}. Balances can change after this read.</p><div className="table-scroll"><table><thead><tr><th>Asset</th><th>Balance</th><th>Available</th></tr></thead><tbody>{account.balances.map(row=><tr key={row.asset}><td>{row.asset}</td><td>{row.balance}</td><td>{row.available}</td></tr>)}</tbody></table></div>{account.balances.length===0&&<p>Kraken returned no balances in this account response.</p>}
-            <h3>Current open Kraken orders</h3><div className="table-scroll"><table><thead><tr><th>Order ID / status</th><th>Market / side</th><th>Quantity / executed</th><th>Limit price</th></tr></thead><tbody>{account.open_orders.map(row=><tr key={row.id}><td>{row.id} · {row.status}</td><td>{row.pair} · {row.side}</td><td>{row.quantity} / {row.executed}</td><td>{row.limit_price}</td></tr>)}</tbody></table></div>{account.open_orders.length===0&&<p>No open orders were returned in this snapshot. This does not establish that an earlier request was rejected or that no order has filled.</p>}<p>{account.fees_note}</p></>}
+          {!connected&&!connection?.credential_entry_enabled&&<p>Credential entry is disabled until encrypted server storage is ready.</p>}
+          {!connected&&connection?.credential_entry_enabled&&!secureContext&&<p>Open the authenticated HTTPS app to enter credentials.</p>}
+          <p><button type="button" className="secondary" style={actionButtonStyle} disabled={busy||!online} onClick={refreshConnection}>Refresh connection status</button></p>
         </>}
-      </div><div className="panel-foot">Free Render hosting can sleep or be unavailable. Orders already accepted by Kraken can stay active and fill while this app is offline. This app does not guarantee continuous monitoring, cancellation or protective exits. Kraken trading fees apply.</div>
-    </section>
-
-    {auth&&<section className="panel" aria-label="Individually approved Kraken limit order"><div className="panel-head"><div><span className="eyebrow">REAL FUNDS · ONE REVIEW, ONE APPROVAL</span><h2>Review a Kraken spot limit order</h2></div><span className={'badge '+(submissionEnabled?'wait':'unavailable')}>{submissionEnabled?'Individual approval required':'Submission disabled'}</span></div><div className="wallet-details">
-      <p>These orders use your actual Kraken assets. A provider validation or risk PASS does not establish profitability or recommend trading.</p>
-      <p>Confirm your real-capital profile and limits in Settings before creating a review. The initial hard maximum is 500 USD per order. Only currently verified Kraken USD spot markets can be reviewed.</p>
-      <p>To investigate another asset, search Live Markets and select its Kraken USD market for detailed observation. Listings do not establish trading eligibility; the server checks actual pair rules, account permissions and your declared residence for each review. Coverage is limited by available markets and data.</p>
-      {!connected&&<p>Verify your restricted Kraken account connection first.</p>}
-      {connected&&!accountFresh&&<p>Refresh Kraken balances and open orders before creating a review. Account observations expire after 60 seconds.</p>}
-      {connected&&!tradingPermission&&<p>The verified connection does not permit trading.</p>}
-      {!submissionEnabled&&<p>Backend live-order submission is disabled. Any available validation creates no real order.</p>}
-      {unresolved&&<p role="alert">A previous submission requires reconciliation. New order reviews are blocked. Check Kraken directly and reconcile the original request; refreshing an empty open-order list does not prove that no order filled.</p>}
-      <form className="lab-form" autoComplete="off" onSubmit={event=>{event.preventDefault();validateOrder()}}>
-        <label>USD spot market<select aria-label="Kraken real order market" value={symbol} onChange={event=>{setSymbol(event.target.value);invalidateReview()}} disabled={busy||unresolved}><option value="">Select an observed Kraken USD market</option>{markets.map(row=><option key={row.symbol} value={row.symbol} disabled={!row.ready}>{row.symbol}{row.ready?'':' · awaiting fresh verified data'}</option>)}</select></label>
-        <label>Side<select aria-label="Kraken real order side" value={side} onChange={event=>{setSide(event.target.value as 'buy'|'sell');invalidateReview()}} disabled={busy||unresolved}><option value="buy">Buy with USD</option><option value="sell">Sell owned asset for USD</option></select></label>
-        <label>Quantity · base asset units<input aria-label="Kraken real order quantity" inputMode="decimal" value={quantity} onChange={event=>{setQuantity(event.target.value);invalidateReview()}} pattern="[0-9]+(\.[0-9]+)?" required disabled={busy||unresolved}/></label>
-        <label>Limit price · USD<input aria-label="Kraken real order limit price" inputMode="decimal" value={limitPrice} onChange={event=>{setLimitPrice(event.target.value);invalidateReview()}} pattern="[0-9]+(\.[0-9]+)?" required disabled={busy||unresolved}/></label>
-        <button className="secondary" style={actionButtonStyle} disabled={!canPreview}>Validate and review · no order placed</button>
-      </form>
-      {preview&&<div aria-label="Exact Kraken order review"><h3>Exact order awaiting your approval</h3><PreviewDetails preview={preview}/><p>Review expires: {date(preview.expires_at)} · {reviewFresh?'review is current':'expired; validate a new review'}</p><form autoComplete="off" onSubmit={event=>{event.preventDefault();approveOrder()}}><label>Type {CONFIRMATION} to approve this exact real order<input aria-label="Real Kraken order approval phrase" autoComplete="off" spellCheck={false} value={confirmation} onChange={event=>setConfirmation(event.target.value)} disabled={busy||!submissionEnabled||!reviewFresh||!accountFresh}/></label><p><button className="danger" style={actionButtonStyle} disabled={!canApprove}>Place this real {preview.side} limit order</button></p></form></div>}
-      {result&&<div role="status"><h3>{result.status==='submitted'?'Kraken accepted the order submission':result.status==='rejected'?'Order request rejected':result.status==='resolved'?'Kraken order reconciled to a terminal status':result.status==='submitting'?'Order submission is unresolved':'Order submission outcome unknown'}</h3><PreviewDetails preview={result.order}/><p>{result.message}</p>{result.order_ids.length>0&&<p>Kraken order IDs: {result.order_ids.join(', ')}</p>}<p>Submission is not proof of a fill. Review the actual account and order status at Kraken. No automatic retry is sent.</p>{unresolved&&<button type="button" className="secondary" style={actionButtonStyle} disabled={busy||!online} onClick={reconcileOrder}>Reconcile this order with Kraken · no resend</button>}</div>}
-    </div></section>}
-  </>;
+      </div>
+    </section>}
+    {(view==='all'||view==='overview')&&<section className="panel" aria-label="Kraken account balances">
+      <div className="panel-head"><div><span className="eyebrow">ACTUAL EXCHANGE ACCOUNT</span><h2>Your holdings</h2></div><span className={'badge '+(accountFresh?'live':'unavailable')}>{accountFresh?'Recent snapshot':account?'Refresh needed':'Not loaded'}</span></div>
+      <div className="wallet-details"><p>Source: Kraken account API · {account?'verified '+date(account.verified_at):'Read your balances to see actual amounts.'}</p>
+      {connected?<button type="button" className="secondary" style={actionButtonStyle} disabled={busy||!online} onClick={refreshAccount}>Refresh balances and open orders</button>:<p>Open Connection to verify your own Kraken account.</p>}</div>
+      {account?<><div className="table-scroll"><table><thead><tr><th>Asset</th><th>Balance · asset units</th><th>Available · asset units</th></tr></thead><tbody>{account.balances.map(row=><tr key={row.asset}><td><span className="asset-symbol">{assetName(row.asset).slice(0,3)}</span><strong>{assetName(row.asset)}</strong></td><td className="mono">{display(row.balance)}</td><td className="mono">{display(row.available)}</td></tr>)}</tbody></table></div>{account.balances.length===0&&<div className="empty"><h3>No balances returned</h3><p>Kraken returned no holdings in this account snapshot.</p></div>}
+      <div className="panel-head"><h3>Current open Kraken orders</h3><span className="badge wait">{account.open_orders.length} returned</span></div>
+      <div className="table-scroll"><table><thead><tr><th>Market / side</th><th>Quantity / executed</th><th>Limit price</th><th>Status</th></tr></thead><tbody>{account.open_orders.map(row=><tr key={row.id}><td><strong>{row.pair} · {row.side}</strong><small className="source-detail">{row.id}</small></td><td>{row.quantity} / {row.executed}</td><td>{row.limit_price}</td><td>{row.status}</td></tr>)}</tbody></table></div>
+      {!account.open_orders.length&&<div className="wallet-details"><p>No open orders returned in this snapshot. Earlier requests may already have filled or closed.</p></div>}
+      <div className="panel-foot"><small>{account.fees_note} Account data expires for review after 60 seconds. No total portfolio value or real P&amp;L is inferred from these asset amounts.</small></div></>:<div className="empty"><h3>{connected?'Load your live account':'Connect your Kraken account'}</h3><p>Actual amounts appear after a successful account read. No sample balance is shown.</p></div>}
+    </section>}
+    {auth&&(view==='all'||view==='trade')&&<section className="panel trade-ticket" aria-label="Individually approved Kraken limit order">
+      <div className="panel-head"><div><span className="eyebrow">REAL MONEY · KRAKEN USD SPOT</span><h2>Review a Kraken spot limit order</h2></div><span className={'badge '+(submissionEnabled?'wait':'unavailable')}>{submissionEnabled?'Individual approval required':unresolved?'Reconcile prior order':'Submission disabled'}</span></div>
+      <div className="wallet-details">
+        <div className="ticket-instruction"><span>01</span><p>Choose your market and price.</p><span>02</span><p>Validate the exact costs and limits.</p><span>03</span><p>Approve only if you want the real order.</p></div>
+        {!riskReady&&<p className="order-lock">Open Budget &amp; limits and confirm your current USD budget before reviewing a real order.</p>}
+        <p>No protective stop is attached. A buy’s full cost plus fee reserve must fit your declared risk budget. The initial hard maximum is 500 USD per order.</p>
+        {!connected&&<p className="negative">Connect your Kraken account in the Connection tab first.</p>}
+        {connected&&!accountFresh&&<p>Refresh Kraken balances and open orders before creating a review. Account observations expire after 60 seconds.</p>}
+        {connected&&<button type="button" className="secondary" style={actionButtonStyle} disabled={busy||!online} onClick={refreshAccount}>Refresh balances and open orders</button>}
+        {account&&<p className="source-detail">{accountFresh?'recent account snapshot':'stale account snapshot'} · verified {date(account.verified_at)}</p>}
+        {connected&&!tradingPermission&&<p>The verified connection does not permit trading.</p>}
+        {!connection?.live_order_submission_enabled&&<p>Backend live-order submission is disabled. No real order can be sent.</p>}
+        {unresolved&&<p className="order-lock" role="alert">A previous submission requires reconciliation. New order reviews are blocked. Check Kraken directly; an empty open-order list does not prove that no order filled.</p>}
+        <form className="lab-form" autoComplete="off" onSubmit={event=>{event.preventDefault();validateOrder()}}>
+          <label>USD spot market<select aria-label="Kraken real order market" value={symbol} onChange={event=>{setSymbol(event.target.value);invalidateReview()}} disabled={busy||unresolved}><option value="">Select an observed Kraken USD market</option>{markets.map(row=><option key={row.symbol} value={row.symbol} disabled={!row.ready}>{row.symbol}{row.ready?'':' · awaiting fresh verified data'}</option>)}</select></label>
+          <label>Side<select aria-label="Kraken real order side" value={side} onChange={event=>{setSide(event.target.value as 'buy'|'sell');invalidateReview()}} disabled={busy||unresolved}><option value="buy">Buy with USD</option><option value="sell">Sell owned asset for USD</option></select></label>
+          <label>Quantity · units of the token<input aria-label="Kraken real order quantity" inputMode="decimal" value={quantity} onChange={event=>{setQuantity(event.target.value);invalidateReview()}} pattern="[0-9]+(\.[0-9]+)?" required disabled={busy||unresolved}/></label>
+          <label>Limit price · USD per token<input aria-label="Kraken real order limit price" inputMode="decimal" value={limitPrice} onChange={event=>{setLimitPrice(event.target.value);invalidateReview()}} pattern="[0-9]+(\.[0-9]+)?" required disabled={busy||unresolved}/></label>
+          {symbol&&<div className="wide ticket-quote"><div><small>Kraken bid</small><strong>{display(selectedQuote?.bid)}</strong></div><div><small>Kraken ask</small><strong>{display(selectedQuote?.ask)}</strong></div><div><span className={'badge '+(quoteFresh?'live':'stale')}>{quoteFresh?'Fresh book':'Book unavailable / stale'}</span><small>Source {date(selectedQuote?.source_at)} · USD per token</small></div><button type="button" className="secondary" disabled={!quoteFresh||busy||unresolved} onClick={()=>{const value=side==='buy'?selectedQuote?.ask:selectedQuote?.bid;if(value){setLimitPrice(value);invalidateReview()}}}>Use current {side==='buy'?'ask':'bid'}</button></div>}
+          <button className="primary" style={actionButtonStyle} disabled={!canPreview}>Validate and review · no order placed</button>
+        </form>
+        <details className="help-details"><summary>Market eligibility, fees and execution rules</summary><p>Use Budget &amp; limits to confirm your USD capital and current UTC-day realized P&amp;L. Search Live Markets and add detailed observation to investigate more Kraken USD markets. The server checks actual pair rules, available cash/holdings, fees, exposure and eligibility for every order. A limit sets the worst permitted price; it does not guarantee a fill.</p><p>Immediate-or-cancel may fill partly or not at all. Unfilled quantity is canceled. No borrowing, leverage, autonomous trading or withdrawals are supported.</p></details>
+        {preview&&<div className="exact-order-review" aria-label="Exact Kraken order review"><span className="eyebrow">YOUR APPROVAL IS REQUIRED</span><h3>Exact order awaiting your approval</h3><PreviewDetails preview={preview}/><p>Review expires: {date(preview.expires_at)} · {reviewFresh?'review is current':'expired; validate a new review'}</p><form autoComplete="off" onSubmit={event=>{event.preventDefault();approveOrder()}}><label>Type {CONFIRMATION} to approve this exact real order<input aria-label="Real Kraken order approval phrase" autoComplete="off" spellCheck={false} value={confirmation} onChange={event=>setConfirmation(event.target.value)} disabled={busy||!submissionEnabled||!reviewFresh||!accountFresh}/></label><p><button className="danger" style={actionButtonStyle} disabled={!canApprove}>Place this real {preview.side} limit order</button></p></form></div>}
+        {result&&<div className="saved-order-result" role="status"><h3>{result.status==='submitted'?'Kraken accepted the order submission':result.status==='rejected'?'Order request rejected':result.status==='resolved'?'Kraken order reconciled to a terminal status':result.status==='submitting'?'Order submission is unresolved':'Order submission outcome unknown'}</h3><PreviewDetails preview={result.order}/><p>{result.message}</p>{result.order_ids.length>0&&<p>Kraken order IDs: {result.order_ids.join(', ')}</p>}<p>Submission is not proof of a fill. Review actual fills directly in Kraken. No automatic retry is sent.</p>{unresolved&&<button type="button" className="secondary" style={actionButtonStyle} disabled={busy||!online} onClick={reconcileOrder}>Reconcile this order with Kraken · no resend</button>}</div>}
+      </div>
+    </section>}
+  </div>;
 }
-

@@ -357,6 +357,16 @@ class KrakenAccount:
         return {'id':doc['id'],'status':doc['status'],'order_ids':doc.get('order_ids',[]),
             'message':doc.get('message','Order intent recorded. Inspect execution status and any fills directly in Kraken.')}
 
+    def order_history(self):
+        # Own application intents only. Do not claim these are the account's
+        # complete exchange history, fills, or realized profit.
+        fields=('symbol','side','quantity','limit_price','estimated_notional','fee_reserve',
+                'recorded_at','submitted_at','expires_at','restored_execution_disabled')
+        return {'source':'Market Sentinel order journal','as_of':time.time(),
+            'orders':[dict(self._result(doc),**{key:doc.get(key) for key in fields})
+                      for doc in self.store.list('real_order',50)],
+            'limit':50,'complete_exchange_history':False}
+
     async def approve(self,preview_id,confirmation):
         if confirmation!='PLACE THIS REAL ORDER':raise AccountError('Type PLACE THIS REAL ORDER to approve these exact details.')
         doc=self.store.get('real_order',preview_id)

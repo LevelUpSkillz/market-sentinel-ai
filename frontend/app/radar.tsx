@@ -33,10 +33,13 @@ export type RadarSetup = {
 
 export type RadarPayload = {
   as_of:number;
+  last_scan_at?:number|null;
   strategy_version:string;
   mode:'paper_only';
   status:string;
   coverage:{universe:number;observed:number;warming_up:number;ready:number;candidates:number};
+  watchlist?:{market_id:string;symbol:string;provider:string;price:string;source_at:number;received_at:number;completed_bins:number;required_bins:number;baseline_ready:boolean;change_5m_bps:string|null;range_5m_bps:string|null;price_kind:string;executable:false}[];
+  feed?:{state:string;received_at:number|null;event_trigger?:string};
   setups:RadarSetup[];
   limitations:string[];
 };
@@ -89,6 +92,7 @@ function RadarGlyph({active}:{active:boolean}){
 }
 
 export default function RadarView({auth,online,now,onWatch,onPaper,onReal}:Props){
+  const [filter,setFilter]=useState('all'),[search,setSearch]=useState('');
   const [data,setData]=useState<RadarPayload|null>(null);
   const [connected,setConnected]=useState(false);
   const [error,setError]=useState('');
@@ -140,6 +144,7 @@ export default function RadarView({auth,online,now,onWatch,onPaper,onReal}:Props
   const currentNow=Math.max(now,clock);
   const currentData=auth?data:null;
   const ready=auth&&online&&connected&&!!currentData&&recent(currentData.as_of,currentNow);
+  const visibleSetups=(currentData?.setups||[]).filter(setup=>(filter==='all'||eligibility(setup,currentData!,ready,currentNow).decision===filter)&&setup.symbol.toLowerCase().includes(search.trim().toLowerCase()));
   const scanning=ready&&currentData?.status!=='stopped'&&currentData?.status!=='paused';
 
   async function act(kind:'watch'|'paper'|'real',setup:RadarSetup){
@@ -164,8 +169,8 @@ export default function RadarView({auth,online,now,onWatch,onPaper,onReal}:Props
     <div className="radar-overview">
       <RadarGlyph active={scanning}/>
       <div className="radar-overview-copy"><span className={'radar-live-label '+(scanning?'is-active':'')}><span/>{!auth?'Private workspace':error?'Feed unavailable':!ready?'Waiting for fresh evidence':currentData?.status?.replaceAll('_',' ')||'Observing markets'}</span>
-        <h3>A token. A trigger. A reason to wait.</h3><p>Entries depend on an observed price condition and fresh liquidity. The radar does not predict an exact future minute to buy.</p>
-        <small>Five minutes of continuous observed prices establish the baseline. Collection gaps reset it. Free hosting can pause collection.</small>
+        <h3>Follow the evidence. See what qualifies.</h3><p>Public Kraken USD spot observations reveal conditional research setups. Every candidate shows its trigger, costs and rejection reasons.</p>
+        <small>Five minutes of fresh observations build each baseline. GO remains paper-only; real money always has a separate review.</small>
       </div>
     </div>
     <div className="radar-coverage" aria-label="Radar coverage">
@@ -174,17 +179,19 @@ export default function RadarView({auth,online,now,onWatch,onPaper,onReal}:Props
       <div><strong>{number(currentData?.coverage.warming_up,0)}</strong><small>Baselines warming up</small></div>
       <div><strong>{number(currentData?.coverage.ready,0)}</strong><small>Baselines ready</small></div>
     </div>
+    {currentData&&<div className="radar-feed-note"><span className={'status-dot '+(scanning?'is-live':'')}/><strong>{currentData.feed?.state==='connected'?'Public feed connected':currentData.status==='stopped'?'Entry controls paused':'Observing public markets'}</strong><span>{currentData.coverage.ready>0?'Continuous baselines are available. A setup still needs the price trigger and fresh executable depth.':currentData.coverage.observed>0?'Baselines are warming. Quiet or gapped markets need more observations.':'Waiting for fresh USD market events. A retained price cannot rebuild history.'}</span><small>Last scan {date(currentData.last_scan_at??currentData.as_of)}</small></div>}
+    <div className="radar-filterbar"><div aria-label="Filter radar decisions">{[{id:'all',label:'All setups'},{id:'GO',label:'Paper eligible'},{id:'WAIT',label:'Watching'},{id:'NO-GO',label:'Rejected'}].map(item=><button key={item.id} type="button" aria-pressed={filter===item.id} onClick={()=>setFilter(item.id)}>{item.label}</button>)}</div><label><span className="sr-only">Search radar setups</span><input aria-label="Search radar setups" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Search a token…"/></label></div>
     {error&&<div className="radar-message" role="status">{error}</div>}
     {notice&&<div className="radar-message" role="status">{notice}</div>}
-    {!auth?<div className="empty"><h3>Sign in to view observed setups</h3><p>No sample trades or invented opportunities appear here.</p></div>:!currentData?<div className="empty"><h3>Waiting for the radar feed</h3><p>Actual observations, entry conditions and rejections will appear when the backend is available.</p></div>:currentData.setups.length?<div className="radar-setups">
-      {currentData.setups.map(setup=>{
+    {!auth?<div className="empty"><h3>Sign in to view observed setups</h3><p>No sample trades or invented opportunities appear here.</p></div>:!currentData?<div className="empty"><h3>Waiting for the radar feed</h3><p>Actual observations, entry conditions and rejections will appear when the backend is available.</p></div>:visibleSetups.length?<div className="radar-setups">
+      {visibleSetups.map(setup=>{
         const current=eligibility(setup,currentData,ready,currentNow);
         const deadline=setup.entry_deadline??setup.expires_at;
         const expired=deadline<=currentNow;
         const decision=current.decision;
         const action=current.reason||(decision==='GO'?'Paper entry conditions met':setup.next_action);
         return <article className={'radar-setup '+(decision==='GO'?'paper-ready':'')} key={setup.id} aria-label={setup.symbol+' radar setup'}>
-          <div className="radar-setup-heading"><div><span className="eyebrow">{setup.provider} · LONG HYPOTHESIS</span><h3>{setup.symbol}</h3><small>Research hypothesis · execution disabled</small></div><span className={'badge '+decision.toLowerCase().replaceAll(' ','-')}>{decision==='GO'?'GO · PAPER ONLY':decision}</span></div>
+          <div className="radar-setup-heading"><div><span className="eyebrow">{setup.provider} · LONG HYPOTHESIS</span><h3>{setup.symbol}</h3><small>Research setup · real order approval is separate</small></div><span className={'badge '+decision.toLowerCase().replaceAll(' ','-')}>{decision==='GO'?'GO · PAPER ONLY':decision}</span></div>
           <div className="radar-action"><span className="radar-action-marker"/><div><strong>{action}</strong><p>{setup.triggered_at==null?'Wait until the observed price crosses the trigger, then recheck the executable book.':'Trigger first observed '+date(setup.triggered_at)+'. Entry must still fit the price limit and open window.'}</p></div></div>
           <div className="radar-levels"><div><small>Entry trigger</small><strong>{price(setup.entry_trigger)}</strong></div><div><small>Maximum entry</small><strong>{price(setup.entry_limit)}</strong></div><div><small>Current entry VWAP</small><strong>{price(setup.entry_vwap)}</strong></div><div><small>Stop hypothesis</small><strong>{price(setup.stop)}</strong></div><div><small>Target hypothesis</small><strong>{price(setup.target)}</strong></div><div><small>Paper notional</small><strong>{price(setup.notional_usd)}</strong></div></div>
           <div className="radar-economics"><div><small>Net modeled reward / risk</small><strong>{number(setup.risk_reward)}{setup.risk_reward!=null?':1':''}</strong></div><div><small>Modeled loss at stop</small><strong>{price(setup.maximum_modeled_loss)}</strong></div><div><small>Round-trip cost estimate</small><strong>{number(setup.estimated_round_trip_cost_bps)}{setup.estimated_round_trip_cost_bps!=null?' bps':''}</strong></div><div><small>Success odds</small><strong className="radar-unvalidated">Not validated</strong></div></div>
@@ -193,7 +200,11 @@ export default function RadarView({auth,online,now,onWatch,onPaper,onReal}:Props
           <div className="radar-setup-actions">{onReal&&setup.stop&&setup.target&&<button className="secondary" disabled={!!busy||!online||expired||!ready} onClick={()=>act('real',setup)}>Size with my real budget</button>}{setup.state==='needs_depth'&&<button className="secondary" disabled={!!busy||!online||expired||!ready} onClick={()=>act('watch',setup)}>{busy===setup.id?'Checking…':'Inspect live depth'}</button>}{decision==='GO'&&<button className="primary" disabled={!!busy||!ready} onClick={()=>act('paper',setup)}>{busy===setup.id?'Recording…':'Record paper entry'}</button>}<small>Source: {setup.provider} · source time {date(setup.source_at)} · received {date(setup.received_at)} ({age(setup.received_at,currentNow)})</small></div>
         </article>;
       })}
-    </div>:<div className="empty radar-empty"><h3>{currentData.coverage.ready>0?'No setup currently meets the observation rules':'Building the observed baseline'}</h3><p>{currentData.coverage.ready>0?'A quiet radar is a valid result. The app will show a token only when actual observations support a conditional paper hypothesis.':'The radar needs five minutes of continuous fresh observations. It will not fill missing history or invent a trade.'}</p></div>}
+    </div>:<div className="empty radar-empty"><h3>{currentData.setups.length?'No setups match this filter':currentData.coverage.ready>0?'No setup currently meets the observation rules':'Building the observed baseline'}</h3><p>{currentData.setups.length?'Change the decision filter or token search to see the other setups.':currentData.coverage.ready>0?'A quiet radar is a valid result. The app will show a token only when actual observations support a conditional paper hypothesis.':'The radar needs five minutes of continuous fresh observations. It will not fill missing history or invent a trade.'}</p></div>}
+    {auth&&currentData&&<div className="radar-pulse" aria-label="Public market observations"><div className="panel-head"><div><span className="eyebrow">ACTUAL OBSERVATIONS · UP TO 12 MARKETS</span><h3>Inside the scan</h3></div><span className="badge wait">Observation list · not a buy ranking</span></div>
+      {currentData.watchlist?.length?<div className="table-scroll"><table><thead><tr><th>Market / source</th><th>Observed midpoint · USD</th><th>5-minute observed move</th><th>Completed baseline bins</th><th>Data status</th><th>Next step</th></tr></thead><tbody>{currentData.watchlist.map(row=>{const live=ready&&recent(row.source_at,currentNow)&&recent(row.received_at,currentNow);const change=row.change_5m_bps==null?null:Number(row.change_5m_bps)/100;return <tr key={row.market_id}><td><strong>{row.symbol}</strong><small className="source-detail">Kraken · USD spot</small></td><td className="mono">{number(row.price,Number(row.price)<1?9:4)}</td><td className={'pulse-change '+(change!=null&&change>=0?'positive':'negative')}>{change==null?'Warming up':(change>0?'+':'')+number(change)+'%'}<small className="source-detail">{row.baseline_ready?'Ten completed observed bins':'No complete five-minute estimate'}</small></td><td><div className="pulse-progress"><span className="pulse-track"><span style={{width:Math.max(0,Math.min(100,row.completed_bins/row.required_bins*100))+'%'}}/></span>{row.completed_bins} / {row.required_bins}</div></td><td><span className={'badge '+(live?'live':'stale')}>{live?'Fresh observation':'Stale'}</span><small className="source-detail">Source {date(row.source_at)}<br/>Received {date(row.received_at)}</small></td><td><button type="button" className="secondary compact" disabled={!auth||!online||!!busy} onClick={async()=>{setBusy(row.market_id);setNotice('');try{await onWatch(row.market_id);setNotice('Detailed book requested for '+row.symbol+'. A quote observation alone cannot authorize a trade.')}catch(error){setNotice((error as Error).message)}finally{setBusy('')}}>Inspect depth</button></td></tr>})}</tbody></table></div>:<div className="empty"><h3>No fresh observation list yet</h3><p>The independent collector populates this list from provider-timestamped public events. Missing observations remain unavailable.</p></div>}
+      <div className="panel-foot"><small>Source: Kraken public WebSocket · best-bid/offer changes for USD spot. List sorted by absolute observed five-minute movement where available, then baseline progress. Prices are indicative midpoints; only a verified detailed book can support an entry check.</small></div>
+    </div>}
     <div className="radar-explanation"><details><summary>What is a paper trade?</summary><p>A paper trade uses virtual money and real market prices. It records a simulated entry and exit with estimated fees and slippage. No real money moves and no exchange order is placed.</p><p>It helps test a hypothesis before relying on a signal. Paper performance can differ from real trading. A paper GO does not approve a real-money trade. The separate real-budget planner sizes a manual hypothesis against your declared limits and places no order.</p></details></div>
     <div className="panel-foot radar-foot"><p>GO means eligible for a paper experiment after current deterministic risk checks. Predictive edge and success probability remain unvalidated.</p>{currentData?.limitations.length?<details><summary>Coverage and model limits</summary>{currentData.limitations.map((line,i)=><p key={i}>{line}</p>)}</details>:null}<small>Source-aware observations · {currentData?.strategy_version||'strategy unavailable'} · last scan {date(currentData?.as_of)}</small></div>
   </section>;

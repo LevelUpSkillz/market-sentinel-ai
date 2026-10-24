@@ -135,7 +135,7 @@ def create_app(settings=None,store=None):
         finally:
             await runtime.stop()
             store.close()
-    app = FastAPI(title='Market Sentinel AI',version='0.5.0',lifespan=lifespan,
+    app = FastAPI(title='Market Sentinel AI',version='0.6.0',lifespan=lifespan,
                   docs_url='/docs' if settings.environment=='development' else None,redoc_url=None)
     app.state.store,app.state.runtime,app.state.settings = store,runtime,settings
     app.state.kraken_account = kraken_account
@@ -195,7 +195,7 @@ def create_app(settings=None,store=None):
 
     @app.get('/health/live')
     async def live():
-        return {'status':'alive','app_version':'0.5.0','live_trading':kraken_account.enabled,
+        return {'status':'alive','app_version':'0.6.0','live_trading':kraken_account.enabled,
                 'individual_order_approval_required':True,'autonomous_trading':False,'withdrawals_enabled':False}
 
     @app.get('/health/ready')
@@ -335,6 +335,10 @@ def create_app(settings=None,store=None):
     async def kraken_account_snapshot():
         if not store.rate('kraken:account',6):raise HTTPException(429,'Account refresh limit reached. Retry after one minute.')
         return await kraken_account.account()
+
+    @app.get('/api/connections/kraken/orders')
+    async def kraken_order_history():
+        return kraken_account.order_history()
 
     @app.post('/api/connections/kraken/disconnect')
     async def kraken_disconnect():

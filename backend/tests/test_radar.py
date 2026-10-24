@@ -95,6 +95,40 @@ class RadarTests(unittest.TestCase):
         self.assertEqual(record['snapshot']['provider'],'kraken')
         self.assertEqual(record['strategy_version'],VERSION)
 
+    def test_observation_list_never_calls_partial_history_a_five_minute_move(self):
+        self.quote(NOW,'100')
+        early=self.radar.tick(self.catalogue,{},now=NOW)
+        row=early['watchlist'][0]
+        self.assertIsNone(row['change_5m_bps'])
+        self.assertIsNone(row['range_5m_bps'])
+        self.assertFalse(row['baseline_ready'])
+        self.assertEqual(row['completed_bins'],0)
+        self.assertFalse(row['executable'])
+        self.assertEqual(early['status'],'warming_up')
+        ready=self.warm()
+        self.assertEqual(ready['status'],'scanning')
+        mature=ready['watchlist'][0]
+        self.assertEqual(mature['completed_bins'],10)
+        self.assertTrue(mature['baseline_ready'])
+        self.assertEqual(D(mature['change_5m_bps']),D('30'))
+        self.quote(NOW+320,'100.32')
+        reset=self.radar.tick(self.catalogue,{},now=NOW+320)['watchlist'][0]
+        self.assertIsNone(reset['change_5m_bps'])
+        self.assertFalse(reset['baseline_ready'])
+        self.assertEqual(reset['completed_bins'],0)
+
+    def test_stale_receipt_or_disconnect_cannot_fill_observation_list(self):
+        self.quote(NOW,'100')
+        fresh=self.radar.tick(self.catalogue,{},now=NOW)
+        self.assertEqual(len(fresh['watchlist']),1)
+        stale=self.radar.tick(self.catalogue,{},now=NOW+6)
+        self.assertEqual(stale['watchlist'],[])
+        self.quote(NOW+7,'100')
+        self.catalogue.sessions['kraken']['state']='reconnecting'
+        lost=self.radar.tick(self.catalogue,{},now=NOW+7)
+        self.assertEqual(lost['watchlist'],[])
+        self.assertEqual(lost['coverage']['observed'],0)
+
     def test_first_trigger_deadline_is_not_extended_by_new_quotes(self):
         result,books = self.trigger()
         original_deadline = result['setups'][0]['entry_deadline']

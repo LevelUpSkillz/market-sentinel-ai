@@ -133,6 +133,17 @@ class CatalogueTests(unittest.TestCase):
         self.assertEqual(Kraken(['XRP-USD']).subscriptions()[0]['params']['symbol'],['XRP/USD'])
         self.assertEqual(Hyperliquid(['kPEPE-USDC-PERP']).subscriptions()[0]['subscription']['coin'],'kPEPE')
 
+    def test_usd_bbo_and_other_quote_trade_subscriptions_keep_native_identity(self):
+        symbols={'BTC/USD','XRP/USD','BTC/EUR','XRP/BTC'}
+        requests=ticker_subscriptions(symbols)
+        self.assertEqual({s for r in requests for s in r['params']['symbol']},symbols)
+        for request in requests:
+            trigger=request['params']['event_trigger']
+            self.assertTrue(all(s.endswith('/USD') for s in request['params']['symbol']) if trigger=='bbo' else all(not s.endswith('/USD') for s in request['params']['symbol']))
+        unsub=ticker_subscriptions(symbols,'unsubscribe')
+        self.assertEqual([(r['params']['symbol'],r['params']['event_trigger']) for r in requests],[(r['params']['symbol'],r['params']['event_trigger']) for r in unsub])
+        self.assertTrue(all(r['method']=='unsubscribe' for r in unsub))
+
     def test_non_core_historical_cycles_use_native_units_and_exclude_spot_ids(self):
         rows = [{'coin':coin,'time':NOW*1000+i,'tid':i,'startPosition':start,'sz':'1','px':'1','fee':'0','closedPnl':pnl,'side':side,'feeToken':'USDC'}
             for coin in ('XRP','@123') for i,start,pnl,side in [(0,'0','0','B'),(1,'1','2','A')]]

@@ -115,7 +115,7 @@ class RadarApiTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(data['withdrawals_enabled'])
         self.assertEqual(data['app_hosting_plan'],'free')
         for path in ['/api/orders','/api/withdrawals','/api/connections/kraken/orders']:
-            self.assertEqual((await self.client.post(path,json={},headers=self.headers)).status_code,404)
+            self.assertEqual((await self.client.post(path,json={},headers=self.headers)).status_code,405 if path=='/api/connections/kraken/orders' else 404)
 
     async def test_stale_or_rejected_radar_snapshot_cannot_create_a_paper_entry(self):
         self.authenticate()

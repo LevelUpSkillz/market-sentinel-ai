@@ -34,7 +34,8 @@ async function routes(page:Page,state:Fixture){
     let response:unknown={records:[]};
     if(path==='/api/dashboard')response=dashboard();
     else if(path==='/api/intelligence')response={as_of:NOW,actions:[]};
-    else if(path==='/api/capital')response={profile:null,execution_enabled:false};
+    else if(path==='/api/connections/kraken/orders')response={as_of:NOW,orders:[]};
+    else if(path==='/api/capital')response={profile:{capital_usd:'5000',available_cash_usd:'100',existing_crypto_exposure_usd:'0',daily_realized_pnl_usd:'0',risk_per_trade_pct:'0.5',max_position_pct:'5',max_crypto_exposure_pct:'25',daily_loss_limit_pct:'2',currency:'USD',source:'USER_DECLARED_UNVERIFIED',confirmed_at:NOW,stale:false,stale_reasons:[],execution_enabled:false},execution_enabled:false};
     else if(path==='/api/connections')response={provider:'kraken',status:state.connected?'connected':'secure_setup_required',
       connected:state.connected,credential_entry_enabled:state.credentialEntry,
       live_order_submission_enabled:state.liveEnabled,order_submission_enabled:state.orderEnabled,
@@ -65,11 +66,13 @@ async function settings(page:Page,state:Fixture){
   await page.setViewportSize({width:390,height:844});
   await routes(page,state);await page.goto('/');
   await page.getByLabel('Open navigation').click();
-  await page.getByRole('button',{name:'Settings',exact:true}).click();
+  await page.getByRole('button',{name:'Live Money',exact:true}).click();
+  await page.getByRole('navigation',{name:'Live Money sections'}).getByRole('button',{name:'Connection',exact:false}).click();
   await expect(page.getByRole('region',{name:'Your Kraken account',exact:true})).toBeVisible();
 }
 const writes=(state:Fixture,path:string)=>state.requests.filter(row=>row.path===path&&row.method==='POST');
 async function prepareReview(page:Page){
+  await page.getByRole('navigation',{name:'Live Money sections'}).getByRole('button',{name:'Trade ticket',exact:false}).click();
   await page.getByRole('button',{name:'Refresh balances and open orders',exact:true}).click();
   await expect(page.getByText('recent account snapshot',{exact:false})).toBeVisible();
   await page.getByLabel('Kraken real order market',{exact:true}).selectOption('XRP-USD');
@@ -119,9 +122,10 @@ test('dedicated credential form sends residence confirmations, clears secrets ev
   expect(writes(state,'/api/connections/kraken/approve')).toHaveLength(0);
 });
 
-test('read-only permissions and the backend live flag prevent real approval',async({page})=>{
+test('read-only permissions and a disabled backend flag block validation and real approval',async({page})=>{
   const state=fixture({canTrade:false,liveEnabled:false,orderEnabled:false});
   await settings(page,state);
+  await page.getByRole('navigation',{name:'Live Money sections'}).getByRole('button',{name:'Trade ticket',exact:false}).click();
   await page.getByRole('button',{name:'Refresh balances and open orders',exact:true}).click();
   await page.getByLabel('Kraken real order market',{exact:true}).selectOption('XRP-USD');
   await page.getByLabel('Kraken real order quantity',{exact:true}).fill('10');
@@ -129,10 +133,13 @@ test('read-only permissions and the backend live flag prevent real approval',asy
   await expect(page.getByRole('button',{name:'Validate and review · no order placed',exact:true})).toBeDisabled();
   expect(writes(state,'/api/connections/kraken/preview')).toHaveLength(0);
   state.canTrade=true;state.orderEnabled=true;
+  await page.getByRole('navigation',{name:'Live Money sections'}).getByRole('button',{name:'Connection',exact:false}).click();
   await page.getByRole('button',{name:'Refresh connection status',exact:true}).click();
-  await prepareReview(page);
-  await expect(page.getByLabel('Real Kraken order approval phrase',{exact:true})).toBeDisabled();
-  await expect(page.getByRole('button',{name:'Place this real buy limit order',exact:true})).toBeDisabled();
+  await page.getByRole('navigation',{name:'Live Money sections'}).getByRole('button',{name:'Trade ticket',exact:false}).click();
+  await page.getByRole('button',{name:'Refresh balances and open orders',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Validate and review · no order placed',exact:true})).toBeDisabled();
+  await expect(page.getByLabel('Real Kraken order approval phrase',{exact:true})).toHaveCount(0);
+  expect(writes(state,'/api/connections/kraken/preview')).toHaveLength(0);
   expect(writes(state,'/api/connections/kraken/approve')).toHaveLength(0);
 });
 
@@ -180,6 +187,7 @@ test('ambiguous submission never resends and only explicit reconciliation can un
 
 test('durable active intent restores manual reconciliation after a page reload',async({page})=>{
   const state=fixture({restoreActive:true});await settings(page,state);
+  await page.getByRole('navigation',{name:'Live Money sections'}).getByRole('button',{name:'Trade ticket',exact:false}).click();
   await expect(page.getByRole('heading',{name:'Order submission outcome unknown',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Refresh balances and open orders',exact:true}).click();
   await expect(page.getByRole('button',{name:'Validate and review · no order placed',exact:true})).toBeDisabled();
