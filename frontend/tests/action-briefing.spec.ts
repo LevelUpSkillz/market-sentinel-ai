@@ -62,7 +62,7 @@ test('tiny unvalidated sample hides success bounds and explains Ethereum entry i
   await page.clock.install({time:new Date(NOW*1000)});
   await page.setViewportSize({width:390,height:844});
   const {writes}=await mockBriefing(page,{estimate:null,completed:2,interval:[0,65.8]});
-  await page.goto('/');
+  await page.goto('/#radar');
   const briefing=page.getByRole('region',{name:'Next action briefing'});
   await expect(briefing.getByRole('heading',{name:'Ethereum (ETH)',exact:true})).toBeVisible();
   await expect(briefing.getByText('Public wallet holds a position for a price rise (long).',{exact:true})).toBeVisible();
@@ -107,7 +107,7 @@ test('tiny unvalidated sample hides success bounds and explains Ethereum entry i
 test('a backend-validated synthetic estimate disappears once its observation becomes stale',async({page},testInfo)=>{
   await page.clock.install({time:new Date(NOW*1000)});
   const {writes,clock}=await mockBriefing(page,{estimate:61.4,completed:140,interval:[52,69]});
-  await page.goto('/');
+  await page.goto('/#radar');
   const briefing=page.getByRole('region',{name:'Next action briefing'});
   await expect(briefing.getByText('61.4%',{exact:true})).toBeVisible();
   await expect(briefing.getByText('52% – 69%',{exact:true})).toBeVisible();
@@ -131,7 +131,7 @@ test('a fresh wallet snapshot cannot validate stale executable market evidence',
   await page.clock.install({time:new Date(NOW*1000)});
   const {writes,clock}=await mockBriefing(page,{estimate:61.4,completed:140,interval:[52,69]});
   clock.marketAt=NOW-6;
-  await page.goto('/');
+  await page.goto('/#radar');
   const briefing=page.getByRole('region',{name:'Next action briefing'});
   await expect(briefing.getByRole('heading',{name:'Wait for fresh market observations',exact:true})).toBeVisible();
   await expect(briefing.getByText('A current matching market quote is unavailable or older than five seconds. Refresh the evidence before assessing an entry.',{exact:true})).toBeVisible();

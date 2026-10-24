@@ -5,8 +5,8 @@ test('unauthenticated workspace shows no invented financial data',async({page})=
   await page.goto('/');
   await expect(page.getByRole('heading',{name:'Home.'})).toBeVisible();
   await expect(page.getByLabel('Owner password')).toBeVisible();
-  await expect(page.getByText('No market observations loaded')).toBeVisible();
-  await expect(page.getByText('No signal analysis available')).toBeVisible();
+  await expect(page.getByText('Sign in to see your trade ideas',{exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Show me how',exact:true})).toBeVisible();
   await expect(page.getByText('$10,000')).toHaveCount(0);
 });
 test('mobile navigation reaches the research and live capital workspaces',async({page})=>{

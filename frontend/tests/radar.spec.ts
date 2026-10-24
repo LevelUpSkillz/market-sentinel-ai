@@ -57,7 +57,7 @@ test('real-capital configuration starts blank, saves declared inputs and keeps e
     }
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
   });
-  await page.goto('/');
+  await page.goto('/#radar');
   await navigate(page,'Live Money',true);
   await page.getByRole('navigation',{name:'Live Money sections'}).getByRole('button',{name:'Budget & limits',exact:false}).click();
   const capital=page.getByRole('region',{name:'Real-capital configuration'});
@@ -87,16 +87,16 @@ test('an old synthetic GO cannot keep authorizing a paper entry after its market
     const body=path==='/api/dashboard'?dashboard():path==='/api/radar'?radar():path==='/api/intelligence'?{as_of:NOW,actions:[]}:{records:[]};
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
   });
-  await page.goto('/');
+  await page.goto('/#radar');
   const panel=page.getByRole('region',{name:'Opportunity radar'});
-  await expect(panel.getByText('GO · PAPER ONLY',{exact:true})).toBeVisible();
+  await expect(panel.getByText('GO · PRACTICE ONLY',{exact:true})).toBeVisible();
   await expect(panel.getByRole('heading',{name:'XRP-USD',exact:true})).toBeVisible();
-  for(const label of ['Entry trigger','Maximum entry','Stop hypothesis','Target hypothesis'])await expect(panel.getByText(label,{exact:true})).toBeVisible();
+  for(const label of ['Watch for this price','Do not pay above','Price where idea fails','Possible exit price'])await expect(panel.getByText(label,{exact:true})).toBeVisible();
   await expect(panel.getByText('Not validated',{exact:true})).toBeVisible();
   await expect(panel.getByRole('button',{name:'Record paper entry',exact:true})).toBeVisible();
   // Polls continue returning the same old server observation, not a newly observed quote.
   await page.clock.fastForward(6000);
-  await expect(panel.getByText('GO · PAPER ONLY',{exact:true})).toHaveCount(0);
+  await expect(panel.getByText('GO · PRACTICE ONLY',{exact:true})).toHaveCount(0);
   await expect(panel.getByRole('button',{name:'Record paper entry',exact:true})).toHaveCount(0);
   await expect(panel.getByText('NO-GO',{exact:true})).toBeVisible();
   await expect(panel.locator('.radar-action').getByText('Wait for fresh provider observations. Retained prices cannot authorize a paper entry.',{exact:true})).toBeVisible();
@@ -119,7 +119,7 @@ test('real-budget sizing uses radar levels while risk PASS remains distinct from
     }
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
   });
-  await page.goto('/');
+  await page.goto('/#radar');
   const radarPanel=page.getByRole('region',{name:'Opportunity radar'});
   await radarPanel.getByRole('button',{name:'Size with my real budget',exact:true}).click();
   const realPlan=page.getByRole('region',{name:'Real-capital manual trade plan'});

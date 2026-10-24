@@ -6,9 +6,13 @@ Status: implementation complete; preview/production acceptance pending.
   and advanced research live under More tools. Existing deep links stay valid.
 - Show me how: six short, keyboard-accessible tutorial steps. Navigation only;
   no financial writes, order prefill, approval, or automatic trade.
+- Home is reduced to a start card, suggestions and the price chart; detailed
+  book tables and individual research reviews have their own screens.
 - Home suggestions join deterministic radar evidence with matching token
   public-wallet profiles. A token match never equates a perpetual to spot or
-  authorizes an order. Historical wins remain historical; future odds remain
+  authorizes an order. Available past execution, small samples, truncated history,
+  net trading losses and opposing direction are explained as separate evidence.
+  Historical wins remain historical; future odds remain
   unvalidated. Stale prices/expired windows remove actionable price levels.
 - Actual Kraken/Hyperliquid historical line/candlestick charts appear without
   waiting for browser observations. Current candles remain provisional; missing

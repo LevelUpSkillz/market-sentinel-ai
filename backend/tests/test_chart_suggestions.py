@@ -50,7 +50,7 @@ class SuggestionsTests(unittest.TestCase):
 
     def test_profiles_do_not_turn_wait_into_go_or_invent_follower_probability(self):
         self.store.set_state('trader_history:'+ADDRESS,{'received_at':NOW,'complete_cycles':12,
-            'historical_win_rate_pct':80,'net_before_funding_usdc':'100','provider_limit_reached':True})
+            'historical_win_rate_pct':80,'net_before_funding_usdc':'-100','provider_limit_reached':True})
         radar=self.radar();radar['setups'][0]['decision']='WAIT'
         result=suggestions(radar,{'actions':[self.action()]},self.store,now=NOW)
         card=result['cards'][0]
@@ -58,6 +58,8 @@ class SuggestionsTests(unittest.TestCase):
         self.assertEqual(card['profiles'][0]['direction'],'short')
         self.assertEqual(card['profiles'][0]['historical_win_rate_pct'],80)
         self.assertIn('not a Kraken spot',card['profiles'][0]['note'])
+        self.assertTrue(any('net trading losses' in note for note in card['trader_review']))
+        self.assertTrue(any('price fall' in note for note in card['trader_review']))
 
     def test_stale_expired_stopped_and_unknown_states_cannot_authorize_entry(self):
         for field,value in [('source_at',NOW-6),('received_at',NOW-6),('expires_at',NOW),('entry_deadline',NOW),('decision','BUY_NOW')]:
