@@ -14,3 +14,17 @@ Provider clients are disabled by default locally. The owner-only Render Blueprin
 Cross-exchange economics use visible-depth VWAP, both venue fees (conservative model: Kraken 80 bps and Coinbase 60 bps), plus 5 bps latency reserve. These are assumptions rather than verified personal fee tiers. Unverified prefunded inventory keeps an apparent executable edge at WAIT. Paper plan GO only indicates deterministic risk eligibility, with unvalidated probability of profit. No provider data is sent to an LLM or used for autonomous strategy changes.
 
 The Kraken base taker planning assumption was updated to 80 bps in spot-cross-v1.1.0 after reviewing the current public fee schedule (https://www.kraken.com/features/fee-schedule) on 2026-10-23. This is not an authenticated personal fee quote; regional/product/tier differences remain unverified. Real order economics must come from the execution venue and account. Paper records preserve entry/exit fee amounts and current fee-bps fields. OAuth account-linking prerequisites and the absence of live execution are documented in ACCOUNT_CONNECTIONS.md.
+
+### Historical display charts (0.6.1)
+Kraken public `GET /0/public/OHLC` and Hyperliquid public `POST /info`
+`candleSnapshot` supply actual 1/5/15-minute exchange trade candles. Contract
+checked against the providers' official documentation on October 24, 2026.
+Kraken returns at most 720 rows and includes an unfinished current candle;
+Hyperliquid native perpetuals require their exact metadata coin IDs. The app
+returns at most 180 rows, marks unfinished candles, preserves missing periods,
+bounds responses, caches for 20 seconds, and never uses these display candles
+as executable prices or strategy training data. Existing provider approvals and
+permitted-use limits still apply. No extra provider subscription is purchased.
+
+- https://docs.kraken.com/api-reference/market-data/get-ohlc-data
+- https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#candle-snapshot

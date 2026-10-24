@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Market } from './types';
+import PriceHistory from './price-history';
 
 type Props = {markets:Market[];online:boolean;now:number;auth:boolean};
 type Sample = {at:number;received_at:number;value:number;bid:string|null;ask:string|null;spread_bps:string|null;break_before:boolean;change:'up'|'down'|null};
@@ -26,6 +27,7 @@ function fresh(market:Market|undefined,online:boolean,auth:boolean,now:number){
 
 export default function LiveMarketChart({markets,online,now,auth}:Props){
   const [selected,setSelected]=useState('');
+  const [view,setView]=useState('history');
   const [histories,setHistories]=useState<Record<string,Sample[]>>({});
   const [hover,setHover]=useState<number|null>(null);
   const [flash,setFlash]=useState<{id:number;direction:'up'|'down'}|null>(null);
@@ -119,14 +121,15 @@ export default function LiveMarketChart({markets,online,now,auth}:Props){
   const windowLabel=plot?time(plot.first.at)+' → '+time(plot.last.at):latest?time(latest.at):'Awaiting provider observations';
 
   return <section className="panel live-market-panel" aria-label="Live market chart">
-    <div className="panel-head"><div><span className="eyebrow">TIMESTAMPED MARKET OBSERVATIONS</span><h2>Live market chart</h2></div><div className="live-market-controls"><span className={'badge '+status}>{status}</span><select aria-label="Live chart market" value={market?selected:''} onChange={event=>{manuallySelected.current=true;setSelected(event.target.value);setHover(null)}} disabled={!auth||!available.length}>
+    <div className="panel-head"><div><span className="eyebrow">LIVE PRICES + EXCHANGE HISTORY</span><h2>Live market chart</h2></div><div className="live-market-controls"><span className={'badge '+status}>{status}</span><select aria-label="Live chart market" value={market?selected:''} onChange={event=>{manuallySelected.current=true;setSelected(event.target.value);setHover(null)}} disabled={!auth||!available.length}>
       {!available.length&&<option value="">No detailed markets loaded</option>}{auth&&options.map(item=><option key={keyOf(item)} value={keyOf(item)}>{item.symbol} · {item.provider}</option>)}
     </select></div></div>
     <div className="live-market-summary"><div><span className="live-market-source">{market?market.symbol+' · '+market.provider+' · '+market.instrument:'Sign in to connect to market data'}</span><div className="live-market-price-line"><strong data-testid="live-chart-price" key={flash?.id??'stable'} className={'live-market-price '+(isFresh&&flash?'is-'+flash.direction:'')}>{price(latest?.value)}<small>{market?.quote||''}</small></strong>{plot&&<span className={'live-market-window-change '+(plot.change<0?'is-down':'is-up')}>{plot.change>0?'+':''}{n(plot.change,3)}%<small>observed window</small></span>}</div></div>
-      <div className="live-market-top-book"><div><small>Reported bid</small><strong>{price(latest?.bid)} <small>{market?.quote}</small></strong></div><div><small>Reported ask</small><strong>{price(latest?.ask)} <small>{market?.quote}</small></strong></div><div><small>Spread</small><strong>{n(latest?.spread_bps,3)} <small>bps</small></strong></div></div>
+      <div className="live-market-top-book"><div><small>Buyers offer (bid)</small><strong>{price(latest?.bid)} <small>{market?.quote}</small></strong></div><div><small>Sellers ask (ask)</small><strong>{price(latest?.ask)} <small>{market?.quote}</small></strong></div><div><small>Spread</small><strong>{n(latest?.spread_bps,3)} <small>bps</small></strong></div></div>
     </div>
     <div className="live-market-chart-meta"><span><strong data-testid="live-chart-sample-count">{samples.length}</strong> distinct provider observations</span><span>{windowLabel}</span><span>{isFresh?'Receiving verified book observations':market?.received_at?'Retained observations · feed stale or paused':'Waiting for verified book data'}</span></div>
-    {plot?<div className="live-market-plot">
+    <div className="chart-view-switch"><label>Chart view<select aria-label="Chart view" value={view} onChange={e=>setView(e.target.value)}><option value="history">Price history</option><option value="ticks">Live ticks</option></select></label><span>{view==='history'?'A ready-to-read exchange history, refreshed every 30 seconds.':'Fresh observations collected while this page is open.'}</span></div>
+    {view==='history'?<PriceHistory provider={market?.provider||''} symbol={market?.symbol||''} auth={auth} online={online} now={now}/>:plot?<div className="live-market-plot">
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label={'Observed midpoint prices for '+(market?.symbol||'selected market')+'. Source timestamps on the horizontal axis; gaps break the line.'} tabIndex={0}
         onPointerMove={event=>{
           const bounds=event.currentTarget.getBoundingClientRect();
@@ -142,7 +145,7 @@ export default function LiveMarketChart({markets,online,now,auth}:Props){
         <text className="live-market-axis" x={LEFT} y={HEIGHT-14}>{time(plot.first.at)}</text><text className="live-market-axis" x={(LEFT+WIDTH-RIGHT)/2} y={HEIGHT-14} textAnchor="middle">{time((plot.first.at+plot.last.at)/2)}</text><text className="live-market-axis" x={WIDTH-RIGHT} y={HEIGHT-14} textAnchor="end">{time(plot.last.at)}</text>
       </svg>
       {cursor&&<div className="live-market-tooltip" style={{left:Math.max(25,Math.min(78,cursor.x/WIDTH*100))+'%'}}><strong>{price(cursor.value)} {market?.quote}</strong><small>Source {date(cursor.at)}</small></div>}
-      <div className="live-market-plot-foot"><span>Source time · sampled midpoints · gaps are left open</span><span>Keyboard: ← / → inspect observed points</span></div>
+      <div className="live-market-plot-foot"><span>Live book midpoints · missing observations leave gaps</span><span>Keyboard: ← / → inspect observed points</span></div>
     </div>:<div className="empty live-market-empty"><h3>{!auth?'Sign in to view the live chart':samples.length?'Waiting for the next provider observation':'Waiting for verified market evidence'}</h3><p>The chart appears after two distinct, fresh provider timestamps. A successful API response or heartbeat does not add a price point.</p></div>}
     <div className="live-market-provenance"><div><small>Source event</small><strong>{date(latest?.at)}</strong><small>Age {age(latest?.at,clock)}</small></div><div><small>Received by backend</small><strong>{date(latest?.received_at)}</strong><small>Age {age(latest?.received_at,clock)}</small></div><div><small>Integrity / cadence</small><strong>{market?.integrity||'Unavailable'}</strong><small>Visible dashboard refresh: 2 seconds · source events vary</small></div></div>
     <div className="panel-foot live-market-foot"><span>Source: {market?.provider||'unavailable'} · {market?.quote||'quote currency unavailable'} · up to {MAX_POINTS} actual observations over ten minutes. Prices stop updating when evidence becomes stale. This chart shows sampled market observations, not a forecast or a guaranteed execution price.</span></div>

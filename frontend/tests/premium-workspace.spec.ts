@@ -62,7 +62,7 @@ test('pausing new app trades immediately blocks the real ticket and does not sub
 
 test('public radar explains partial baselines without invented five-minute returns and marks old observations stale',async({page})=>{
  await page.setViewportSize({width:1440,height:1000});const state=await fixture(page);await page.goto('/#radar');
- await expect(page.getByRole('heading',{name:'Market Radar.'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Trade Ideas.'})).toBeVisible();
  const pulse=page.getByRole('region',{name:'Opportunity radar'}).getByLabel('Public market observations');
  await expect(pulse.getByText('3 / 10',{exact:false})).toBeVisible();
  await expect(pulse.getByText('No complete five-minute estimate',{exact:true})).toBeVisible();

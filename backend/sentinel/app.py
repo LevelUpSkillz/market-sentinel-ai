@@ -25,6 +25,8 @@ from .catalogue import EXTRA_BOOK_LIMIT
 from .capital import save_profile,get_profile,evaluate_real_plan
 from .kraken_account import KrakenAccount, AccountError
 from .backup import export_backup, BackupError
+from .chart import PriceHistory
+from .suggestions import suggestions
 
 def connection_status():
     # Legacy capital-planning compatibility; never imply authenticated access.
@@ -127,6 +129,7 @@ def create_app(settings=None,store=None):
     runtime = Runtime(store,settings)
     kraken_account = KrakenAccount(store,settings,runtime.books)
     access = AccessVerifier(settings.access_team,settings.access_aud,settings.owner_email)
+    price_history = PriceHistory()
     @asynccontextmanager
     async def lifespan(app):
         try:
@@ -135,7 +138,7 @@ def create_app(settings=None,store=None):
         finally:
             await runtime.stop()
             store.close()
-    app = FastAPI(title='Market Sentinel AI',version='0.6.0',lifespan=lifespan,
+    app = FastAPI(title='Market Sentinel AI',version='0.6.1',lifespan=lifespan,
                   docs_url='/docs' if settings.environment=='development' else None,redoc_url=None)
     app.state.store,app.state.runtime,app.state.settings = store,runtime,settings
     app.state.kraken_account = kraken_account
@@ -195,7 +198,7 @@ def create_app(settings=None,store=None):
 
     @app.get('/health/live')
     async def live():
-        return {'status':'alive','app_version':'0.6.0','live_trading':kraken_account.enabled,
+        return {'status':'alive','app_version':'0.6.1','live_trading':kraken_account.enabled,
                 'individual_order_approval_required':True,'autonomous_trading':False,'withdrawals_enabled':False}
 
     @app.get('/health/ready')
@@ -263,6 +266,24 @@ def create_app(settings=None,store=None):
     @app.post('/api/markets/watch')
     async def market_watch(body:MarketWatch):
         return runtime.set_market_watch(body.market_id,body.enabled)
+
+    @app.get('/api/price-history')
+    async def historical_prices(symbol:str=Query(...,pattern=r'^[A-Z0-9.]{1,40}-(USD|USDC-PERP)$'),
+                                provider:str=Query('kraken',pattern=r'^(kraken|hyperliquid)$'),
+                                interval:int=Query(1,ge=1,le=15)):
+        if provider not in settings.providers:
+            raise HTTPException(503,'This public provider is not enabled')
+        known = any(row.get('watch_symbol')==symbol and row.get('active')
+                    for row in runtime.catalogue.venues.get(provider,{}).values())
+        if not known and (provider,symbol) not in runtime.books:
+            raise HTTPException(404,'Choose an observed spot or perpetual market')
+        try:return await price_history.get(symbol,interval,provider)
+        except ValueError as error:raise HTTPException(503,str(error)) from None
+
+    @app.get('/api/suggestions')
+    async def trade_suggestions():
+        return suggestions(runtime.radar.snapshot(runtime.books),intelligence(store,runtime.books),
+                           store,stopped=store.get_state('control')['stopped'])
 
     @app.get('/api/radar')
     async def radar():

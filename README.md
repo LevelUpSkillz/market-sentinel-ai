@@ -15,7 +15,7 @@ Private cryptocurrency investigation, paper trading, real-capital planning and i
 - Durable opportunity snapshots, explanations, five-minute edge persistence outcomes and autopsies. Missing outcomes remain unavailable. Edge persistence is not P&L.
 - Transactional manual paper trading, idempotency, modeled fees/depth/latency, exposure caps, daily realized-loss limits and persistent emergency stop.
 - Expanding-window historical strategy lab with an embargo, out-of-sample comparison, buy-and-hold/no-trade benchmarks and latency sensitivity.
-- Next.js/TypeScript mobile dashboard with all ten sections, source/freshness labels, paper labeling and actual empty states.
+- Next.js/TypeScript mobile dashboard with all research sections plus a dedicated Live Money workspace, source/freshness labels, paper labeling and actual empty states.
 - Owner authentication, secure expiring cookies, origin validation, rate limiting, audit journal and optional ntfy mobile delivery tests.
 
 ## Run locally
@@ -70,3 +70,5 @@ Owner-only research, paper execution, real-capital planning and individually app
 No profitability, statistical significance or edge claim is made.
 
 Paper hypothesis evaluation now supports GO eligibility based on stop/target, visible depth, both-leg costs, cash, exposure, loss limits and net reward/risk. GO explicitly means a paper experiment with unvalidated predictive edge. Production Access JWT verification and free-plan retention/sleep limits are documented in docs/.
+
+Live screens: [Live Money](https://market.getlevelupskillz.com/#live-money), [Market Radar](https://market.getlevelupskillz.com/#radar). Account connections, capital and real-order reviews are in Live Money. Google research invitations are a separate in-progress milestone; see HANDOFF.md.

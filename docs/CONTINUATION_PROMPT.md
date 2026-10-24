@@ -1,3 +1,5 @@
+LATEST CHECKPOINT: 0.6.0 premium UI + Live Money + BBO radar is deployed and verified on application 388ee3fced05513218b93b437bc5e6ad59ecd2ed. Read current main HANDOFF/DELIVERY first. It passed 260 backend checks with actual isolated PG/zero skips and 25 browser checks. Use /#live-money and /#radar. Preserve the separate unfinished Supabase Google/read-only-friend work in /workspace/market-sentinel-premium; the release UI directory is /workspace/market-sentinel-premium-ui. Owner directed publishing the current UI first and continuing auth afterward. Owner reports the Supabase callback redirect was added. Do not call Google auth live until its own role/PKCE/proxy/provider/browser gates pass. No Supabase app data migration or Sentinel code/DB changes; identity only. Friends have research-only access, never owner Kraken/budgets/orders/paper/private history. No paid upgrade, secret sharing, vault rotation or real-money test trade.
+
 Continue Market Sentinel AI from the current implementation; do not restart with a plan or mockup.
 
 Repo: https://github.com/LevelUpSkillz/market-sentinel-ai

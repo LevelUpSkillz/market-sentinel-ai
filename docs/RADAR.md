@@ -1,4 +1,4 @@
-# Conditional-entry radar — observed-breakout-v1
+# Conditional-entry radar — observed-breakout-v1.1
 
 This is a fixed, experimental research hypothesis, not a validated trading strategy or a prediction of the next profitable trade. GO means eligibility for a virtual paper experiment only. Real-capital calculations always retain trade WAIT and execution disabled.
 
@@ -17,3 +17,5 @@ Each setup retains its original baseline and calculated levels, source/receipt t
 Paper recording rechecks server-side status, fresh depth and portfolio limits and uses one stable idempotency key per signal. It cannot submit an exchange order. Real-capital sizing uses a separate owner-declared profile and has no effect on virtual cash. Short-lived in-app alerts record actual paper eligibility; optional ntfy delivery requires existing private configuration, and expired signals are not sent after a queued retry. Mobile delivery may be delayed and is not proof of an executable entry.
 
 Free Render hosting may sleep. Monitoring, warmup and alerts have gaps; the app cannot promise 24/7 operation or an exact future minute at which buying will be profitable.
+
+Version 0.6 changes the input subscription to documented Kraken USD BBO ticker events, rather than waiting for sparse trade events. Other quote currencies retain trade-triggered coverage. Rules, timestamps, five-second staleness, gap resets, source integrity and no-look-ahead boundaries remain. The strategy input version is observed-breakout-v1.1; old memory keeps its original version. The public observation table shows completed bins, indicative midpoint and a five-minute move only after a complete valid baseline. It is not an executable price or a ranked probability of profit.

@@ -33,3 +33,4 @@ Application commit `e30c2815f30042d111d8be6c533289d8f8d444cb` adds selectable ti
 Preview `c2a1a40a-3b2b-4f17-a338-951c2fd2764c` passed190 Python checks (187passed,3isolated PostgreSQL skipped),15Chromium checks,TypeScript/Next build,Blueprint schema and dependency audits. Cloudflare production `eb316fdc-9c34-41f3-b6f1-3c46f09b258f` succeeded2026-10-23 18:36:13UTC; Render `dep-dbdqhb59fdbs738ase9g` reachedlive18:35:23UTC. Actual external acceptance confirmed backend0.4.1/readiness200, anonymous/forged API401 and owner-sign-in302. Real provider probes observed six core books and actual public trader history; those observations do not establish profitable copyability.
 
 No owner session was impersonated and no credential, real order, production paper order or mobile delivery was submitted. Real account linking/execution is the next active request and is not part of deployed0.4.1. Passing tests does not prove trading profitability.
+

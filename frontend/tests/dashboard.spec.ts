@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test('unauthenticated workspace shows no invented financial data',async({page})=>{
   await page.route('**/api/**',route=>route.fulfill({status:401,body:'Authentication required'}));
   await page.goto('/');
-  await expect(page.getByRole('heading',{name:'Mission Control.'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Home.'})).toBeVisible();
   await expect(page.getByLabel('Owner password')).toBeVisible();
   await expect(page.getByText('No market observations loaded')).toBeVisible();
   await expect(page.getByText('No signal analysis available')).toBeVisible();
@@ -14,10 +14,11 @@ test('mobile navigation reaches the research and live capital workspaces',async(
   await page.route('**/api/**',route=>route.fulfill({status:401,body:'Authentication required'}));
   await page.goto('/');
   await page.getByLabel('Open navigation').click();
-  await page.getByRole('button',{name:'Live Markets',exact:true}).click();
-  await expect(page.getByRole('heading',{name:'Live Markets.'})).toBeVisible();
+  await page.getByRole('button',{name:'Prices',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Prices.'})).toBeVisible();
   await expect(page.getByRole('heading',{name:'Indicative swap estimates'})).toBeVisible();
   await page.getByLabel('Open navigation').click();
+  await page.getByRole('button',{name:'More tools',exact:true}).click();
   await page.getByRole('button',{name:'Strategy Lab',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Walk-forward strategy lab'})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
@@ -35,7 +36,7 @@ test('synthetic history is visibly separate from unvalidated follower odds',asyn
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
   });
   await page.goto('/');
-  await page.getByRole('button',{name:'Smart Money',exact:true}).click();
+  await page.getByRole('button',{name:'Big Traders',exact:true}).click();
   await expect(page.getByText('Historical win rate · before funding')).toBeVisible();
   await expect(page.getByText('70%',{exact:true})).toBeVisible();
   await expect(page.locator('.action-card').getByText('Not validated',{exact:true}).first()).toBeVisible();
@@ -63,7 +64,7 @@ test('all-market search keeps token identity, freshness and depth controls expli
   });
   await page.goto('/');
   await page.getByLabel('Open navigation').click();
-  await page.getByRole('button',{name:'Live Markets',exact:true}).click();
+  await page.getByRole('button',{name:'Prices',exact:true}).click();
   const directory=page.getByRole('region',{name:'All crypto markets'});
   await expect(directory.getByText('SYNTHETIC XRP/USD',{exact:true})).toBeVisible();
   await page.getByLabel('Search all crypto markets').fill('XRP');

@@ -70,7 +70,7 @@ async function routes(page:Page,state:FixtureState){
 
 async function smartMoney(page:Page){
   await page.getByLabel('Open navigation').click();
-  await page.getByRole('button',{name:'Smart Money',exact:true}).click();
+  await page.getByRole('button',{name:'Big Traders',exact:true}).click();
 }
 
 test('synthetic public candidates can be searched and tracked without turning reported ROI into copy approval',async({page})=>{

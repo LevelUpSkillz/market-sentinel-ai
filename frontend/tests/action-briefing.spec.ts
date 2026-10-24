@@ -90,7 +90,7 @@ test('tiny unvalidated sample hides success bounds and explains Ethereum entry i
   await expect(briefing.getByText(/65\.8\s*%/)).toHaveCount(0);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
   await briefing.getByRole('button',{name:/View this wallet[’']s actions/}).click();
-  await expect(page.getByRole('heading',{name:/^Smart Money \/ Whale Tracker/})).toBeVisible();
+  await expect(page.getByRole('heading',{name:/^Big Traders/})).toBeVisible();
   await expect(page.getByRole('heading',{name:'SYNTHETIC TEST WALLET',exact:true})).toBeVisible();
   const wallet=page.locator('#wallet-'+ADDRESS);
   const otherWallet=page.locator('#wallet-'+OTHER_ADDRESS);
@@ -141,3 +141,4 @@ test('a fresh wallet snapshot cannot validate stale executable market evidence',
   await expect(briefing.getByText('Favorable versus the observed average entry',{exact:true})).toHaveCount(0);
   expect(writes).toEqual([]);
 });
+

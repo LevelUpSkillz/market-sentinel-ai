@@ -2,7 +2,27 @@
 
 Updated 2026-10-24. Inspect current repository refs, deployment commits, logs and tests before acting. Preserve newer work; this is not an instruction to roll back.
 
-## Current milestone
+## Current milestone — 0.6.0 deployed
+
+Application 388ee3fced05513218b93b437bc5e6ad59ecd2ed is verified live on Cloudflare production 4103d811-df2a-4946-b367-91f8dd7ebfd5 (19:48:41 UTC) and Render dep-dbegl0tg1s2s73fhkj90 (19:44:52 UTC). Preview 20f3b097-e7b0-44d3-82a2-fcc567e86373 passed all 260 backend tests including actual isolated PG with zero skips, 25 Chromium tests, TypeScript/Next, Blueprint/audits and provider probes. External production checks at 19:48:30 UTC verified version 0.6.0, health 200, manual-only execution boundaries, unauthenticated/forged APIs 401 and sign-in302. Read DELIVERY.md and RELEASE_0_6.md.
+
+New workspace /workspace/market-sentinel-premium-ui is the verified UI source. A separate /workspace/market-sentinel-premium contains UNRELEASED Google/research-role work. Never copy that whole directory over a release. GitHub release/premium-live-money-v060 head is the deployed 388ee3f...; preserve newer main documentation commits.
+
+Live Money is now a primary navigation item: /#live-money, with Overview, Budget & limits, Trade ticket and Connection. Account setup/capital/orders moved out of Settings. The new slate/mint/gold design includes grouped/mobile navigation, plain workflows, actual-source account summaries, pause, bid/ask helper and allowlisted last-50 app order requests. Existing restricted encrypted Kraken setup and exact approval protections are preserved. The owner reports connecting their account; engineering collected no key and submitted no real order.
+
+Public USD radar now uses BBO ticker events, strategy observed-breakout-v1.1, preserving strict freshness/continuity/baseline/risk limits. Actual observation list, ten-bin progress and validated-complete five-minute observed moves explain warmup. GO remains paper-only. New production scans during warmup observed approximately 242–258 USD markets versus earlier 14–17 trade-triggered scans; these are point-in-time observations, not a guarantee of coverage or advantage. Duplicate old chart/history polling was removed; real sampled live chart remains. Test failures were corrected; no financial checks were bypassed.
+
+## Active next milestone — Supabase Google research invitations (NOT deployed)
+
+User requested Google sign-in and explicitly chose friends viewing live markets, radar and public trader research only. Then explicitly directed Supabase for this option only. Keep Next.js Cloudflare / Python Render / dedicated PostgreSQL, free only, isolated from Sentinel Intelligence. Use existing Supabase identity broker only; do not move market data, invite permissions or exchange secrets into Supabase. Existing Sentinel callback/RPC/RLS code was read to understand identity and was not modified. No Supabase management connector is available. Owner reports adding only https://market-research.getlevelupskillz.com/api/auth/google/callback to the existing project's redirect allowlist; keep original Site URL/redirects unchanged.
+
+New research hostname is attached to the same Pages project with a new CNAME, keeping the owner hostname/Access app untouched. Do not configure the earlier considered Cloudflare OTP/Google IdP approach: no provider/app/policy was created for it. Use Supabase PKCE and separate HttpOnly research-only sessions; always recheck exact-email active/revoked/expired membership server-side. Google identity can never grant owner/Kraken authority. Public research must redact owner account/capital/paper/risk inputs, labels and private history; deny every mutation for viewers. Owner password and Access continue independently.
+
+Prepared local files in /workspace/market-sentinel-premium include members.py, google_auth.py, log_safety.py, app/config/access wiring, eight synthetic research-auth tests (pass locally), research-login.tsx/members-panel.tsx, read-only UI role guards and proxy cookie/redirect support. Latest local backend result 268 run/262 pass/6 isolated-PG skips. FULL cloud/browser acceptance for this new auth is pending. No production Google login or real friend access has been verified. Public project URL/publishable key are in existing Sentinel wrangler configuration and are not service-role/provider secrets. Never read or copy Sentinel service-role, Google client secret, private app data or credentials. New login uses only Supabase /auth/v1/authorize, /token and /user; no database/RPC queries.
+
+Next: finish/test role UI, single-use encrypted PKCE, revocation, separate session audience/environment, callback cookie/Location forwarding and query redaction, public provider readiness, origin checks, restore exclusions and owner/guest isolation; save a separate checkpoint branch, preview everything, then deploy only after acceptance. Merge env updates must preserve the Kraken vault. Supabase org has a visible quota warning; do not upgrade or promise unlimited free auth. Durable DB expiry remains independent.
+
+## Prior 0.5 implementation and constraints
 
 Version 0.5.0 integrates secure own-account Kraken linking, individually approved real USD spot IOC limit orders and protected research backup download. Application source is b23fb6c559ff28c60ff683ecdad98af3bdf0d6a8. It includes current main’s owner-password OR verified-Access authentication, mobile/login fixes and 0.4.1 live chart work. The release branch is release/kraken-account-v050; it was promoted using a main expected-SHA lease. Do not return to the stale local checkout or overwrite newer branches.
 
@@ -12,7 +32,7 @@ Render deployment dep-dbe3jkvb9u1s73c2ec7g reached live at 04:54:41 UTC on that 
 
 ## Account connection and execution boundaries
 
-The user chose Kraken and explicitly requested genuine account linking and individually approved own-account trades; a readiness screen alone was insufficient. Broad eligible spot markets are intended, not just BTC/ETH/SOL. No account key was collected, no account was connected and no real order was submitted during engineering acceptance. The owner must link through Settings → Your Kraken account after signing in. Never ask for credentials in chat.
+The user chose Kraken and explicitly requested genuine account linking and individually approved own-account trades; a readiness screen alone was insufficient. Broad eligible spot markets are intended, not just BTC/ETH/SOL. No account key was collected, no account was connected and no real order was submitted during engineering acceptance. The owner must link through Live Money → Connection after signing in. Never ask for credentials in chat.
 
 Implemented in kraken.py/kraken_account.py and protected app routes:
 
@@ -62,7 +82,7 @@ Free plans only. Never add paid services/subscriptions/workers, upgrade compute/
 
 ## Working cautions
 
-Active workspace for this release: /workspace/market-sentinel-release. /workspace/market-sentinel-ai is a stale checkout and must not be bulk-added or pushed. Current refs were reconstructed through exact remote files and combined without overwriting newer main. Connected GitHub create-tree/commit/update-ref tools use expected-SHA leases. Shell HTTP proxy was unavailable; connectors and Cloudflare runners worked. Never dump credential environments.
+Previous 0.5 workspace: /workspace/market-sentinel-release. Current source/workspaces are recorded above. /workspace/market-sentinel-ai is a stale checkout and must not be bulk-added or pushed. Current refs were reconstructed through exact remote files and combined without overwriting newer main. Connected GitHub create-tree/commit/update-ref tools use expected-SHA leases. Shell HTTP proxy was unavailable; connectors and Cloudflare runners worked. Never dump credential environments.
 
 Plain local command: PYTHONPATH=backend python -m unittest discover -s backend/tests -q. Local result was 256 run/250 pass/6 PG skips; authoritative Cloudflare gate ran all 256 with no skips against ephemeral PG. Never use production for tests. Frontend dependencies are absent locally; Cloudflare runs TypeScript/Next/Chromium. Build scripts/check_deployed_auth.py makes bounded read-only production/auth probes. No owner session is impersonated to inspect private JSON.
 

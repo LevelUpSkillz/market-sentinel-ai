@@ -59,6 +59,7 @@ test('live chart changes only as actual timestamped synthetic market observation
   await page.clock.runFor(2100);
   await expect(chart.getByTestId('live-chart-price')).toContainText('103');
   await expectSamples(chart,2);
+  await chart.getByLabel('Chart view',{exact:true}).selectOption('ticks');
   const line=chart.getByTestId('live-chart-line');
   await expect(line).toBeAttached();
   const firstPath=await line.getAttribute('d');
@@ -78,12 +79,13 @@ test('API heartbeats and outages add no chart prices, and recovery leaves an exp
   await mockFeed(page,feed);
   await page.goto('/');
   await page.getByLabel('Open navigation').click();
-  await page.getByRole('button',{name:'Live Markets',exact:true}).click();
+  await page.getByRole('button',{name:'Prices',exact:true}).click();
   const chart=page.getByRole('region',{name:'Live market chart'});
   await expectSamples(chart,1);
   sourcePoint(feed,2,103);
   await page.clock.runFor(2100);
   await expectSamples(chart,2);
+  await chart.getByLabel('Chart view',{exact:true}).selectOption('ticks');
   const line=chart.getByTestId('live-chart-line');
   const lastVerifiedPath=await line.getAttribute('d');
   // The API responds and even advertises status=live, but the provider source
@@ -144,7 +146,7 @@ test('hidden pages stop live dashboard and wallet polling; removed duplicate his
   expect(requests.filter(path=>path==='/api/records/market_snapshot')).toHaveLength(0);
 
   await page.getByLabel('Open navigation').click();
-  await page.getByRole('button',{name:'Smart Money',exact:true}).click();
+  await page.getByRole('button',{name:'Big Traders',exact:true}).click();
   await expect.poll(()=>requests.filter(path=>path==='/api/traders').length).toBeGreaterThan(0);
   await visibility('hidden');
   const walletsBeforeHidden=requests.filter(path=>path==='/api/traders').length;

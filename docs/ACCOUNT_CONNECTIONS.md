@@ -4,11 +4,11 @@ Version 0.5 implements a protected connection to the owner's own Kraken account,
 
 ## Link in the protected app
 
-1. Sign in at https://market.getlevelupskillz.com and open Settings → Your Kraken account. Credential fields appear only with a configured server vault and HTTPS.
+1. Sign in at https://market.getlevelupskillz.com and open Live Money → Connection. Credential fields appear only with a configured server vault and HTTPS.
 2. Create a dedicated Kraken Spot API key. Enable funds query, open-order query and closed-order query. For manual placement also enable modify/create orders and cancel/close orders. Leave every other permission, particularly funding and withdrawals, disabled. Remove history-date restrictions so unresolved orders can be reconciled. Use this key only with this app.
 3. Enter the key and secret in the protected form. Confirm country/region, account/product eligibility and dedicated-key use. Never send credentials in chat. Actual exchange fees and regional restrictions still apply.
 4. Verify actual balances and open orders. A read-only key can link without order authority. Linking never sends a trade.
-5. Confirm real-capital settings. Select an observed eligible Kraken USD spot market, side, quantity and limit price. Additional markets require selected detailed books in Live Markets. Review actual account fees, lot/tick/minimum rules, available cash and portfolio limits.
+5. Open Live Money → Budget & limits and confirm your capital. Select an observed eligible Kraken USD spot market, side, quantity and limit price. Additional markets require selected detailed books in Live Markets. Review actual account fees, lot/tick/minimum rules, available cash and portfolio limits.
 6. A validation-only provider request creates an immutable 30-second review. To send that exact real order, type `PLACE THIS REAL ORDER`. One IOC limit instruction may fill partly or not at all. Reconcile status and inspect actual fills/fees directly in Kraken before another order.
 
 No protective stop is placed. A buy's full purchase plus fee reserve must fit declared per-trade and remaining daily loss budgets. Hard limits are 500 USD per order/asset and 2,500 USD correlated exposure, with lower owner limits enforced. Open orders, margin/credit, missing valuations, stale/unverified books, changed fees/profile/connection and emergency stop block submission. Some portfolios cannot trade through the app until every held asset can be valued with a fresh verified USD book; use Kraken directly for unsupported portfolios.
