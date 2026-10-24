@@ -1,0 +1,8 @@
+'use client';
+import {useEffect,useState} from 'react';
+export default function ResearchLogin(){
+ const [options,setOptions]=useState<{google_ready:boolean;research_url:string|null}|null>(null);
+ const [failed,setFailed]=useState(false);
+ useEffect(()=>{const controller=new AbortController();setFailed(window.location.hash==='#google-signin-failed');fetch('/api/auth/options',{cache:'no-store',credentials:'include',signal:controller.signal}).then(async response=>{if(response.ok)setOptions(await response.json())}).catch(()=>{});return()=>controller.abort()},[]);
+ return <section className="panel research-login" aria-label="Google research sign-in"><div className="panel-head"><div><span className="eyebrow">INVITED RESEARCH ACCESS</span><h2>Sign in with Google</h2></div></div><div className="wallet-details"><p>Use the Google email address the owner invited. Research access includes live markets, radar and public trader investigations.</p><p>Kraken accounts, real-money orders, budgets, paper accounts and workspace administration remain private to the owner.</p>{failed&&<p className="error-banner" role="alert">Sign-in could not be completed. Use your invited Google account and restart from this browser. The owner may need to check your invitation or the Supabase redirect configuration.</p>}{options?.google_ready&&options.research_url?<a className="google-signin" href={options.research_url+'/api/auth/google/start'}><span aria-hidden="true">G</span>Continue with Google</a>:<p>Google sign-in is awaiting its verified authentication configuration. Existing owner access remains available.</p>}<small>Supabase handles Google authentication only. Your Market Sentinel permissions are checked separately on every request.</small></div></section>;
+}

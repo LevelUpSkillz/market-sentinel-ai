@@ -8,7 +8,7 @@ import time
 import uuid
 from fastapi import FastAPI, HTTPException, Request, Response, Query
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ConfigDict
 from .config import Settings
@@ -25,6 +25,8 @@ from .catalogue import EXTRA_BOOK_LIMIT
 from .capital import save_profile,get_profile,evaluate_real_plan
 from .kraken_account import KrakenAccount, AccountError
 from .backup import export_backup, BackupError
+from .members import active_member, members, invite, revoke, VIEWER_GET, shared_research
+from .google_auth import GoogleAuth,research_session,FLOW_COOKIE,SESSION_COOKIE,TTL
 
 def connection_status():
     # Legacy capital-planning compatibility; never imply authenticated access.
@@ -107,6 +109,11 @@ class QuoteRequest(BaseModel):
     source: str = Field(pattern=r'^(btc|eth|usdc)$')
     destination: str = Field(pattern=r'^(btc|eth|usdc)$')
     amount: str = Field(pattern=r'^\d{1,7}(\.\d{1,8})?$')
+class ResearchInvite(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    email: str=Field(min_length=3,max_length=254)
+
+
 class Control(BaseModel):
     stopped: bool
 class Bar(BaseModel):
@@ -127,6 +134,7 @@ def create_app(settings=None,store=None):
     runtime = Runtime(store,settings)
     kraken_account = KrakenAccount(store,settings,runtime.books)
     access = AccessVerifier(settings.access_team,settings.access_aud,settings.owner_email)
+    google_auth=GoogleAuth(store,settings)
     @asynccontextmanager
     async def lifespan(app):
         try:
@@ -139,6 +147,7 @@ def create_app(settings=None,store=None):
                   docs_url='/docs' if settings.environment=='development' else None,redoc_url=None)
     app.state.store,app.state.runtime,app.state.settings = store,runtime,settings
     app.state.kraken_account = kraken_account
+    app.state.access,app.state.google_auth=access,google_auth
     if settings.environment=='development':
         app.add_middleware(CORSMiddleware,allow_origins=[settings.origin],allow_credentials=True,allow_methods=['GET','POST'],allow_headers=['Content-Type'])
 
@@ -163,21 +172,30 @@ def create_app(settings=None,store=None):
                 chunks.append(chunk)
             request._body = b''.join(chunks)
         # Defense in depth: origin validation is checked even on login and logout.
-        if request.method not in ['GET','HEAD','OPTIONS'] and request.headers.get('origin')!=settings.origin:
+        if request.method not in ['GET','HEAD','OPTIONS'] and request.headers.get('origin')!=(getattr(settings,'research_origin','') if path=='/api/auth/google/logout' else settings.origin):
             return Response('Origin denied',status_code=403)
         peer = request.client.host if request.client else 'unknown'
         client_key = hashlib.sha256(peer.encode()).hexdigest()
-        if not store.rate('api:'+client_key,180):
+        if not store.rate('api:'+client_key,600):
             return Response('Rate limit exceeded',status_code=429,headers={'Retry-After':'60'})
-        if path not in ['/api/session/login'] and request.method!='OPTIONS':
+        request.state.role='anonymous'
+        if path not in ['/api/session/login','/api/auth/options','/api/auth/google/start','/api/auth/google/callback','/api/auth/google/logout'] and request.method!='OPTIONS':
             token=request.headers.get('cf-access-jwt-assertion')
-            # Owner password sessions and Cloudflare Access are independent
-            # supported authentication methods. A configured Access audience
-            # must not invalidate a successfully issued owner session.
-            owner_session = verify_session(request.cookies.get('sentinel_session'),settings.session_secret,settings.environment)
-            allowed = owner_session or (bool(settings.access_aud) and await access.verify(token))
-            if not allowed:
-                return Response('Authentication required',status_code=401)
+            owner_session=verify_session(request.cookies.get('sentinel_session'),settings.session_secret,settings.environment)
+            identity=None
+            if owner_session:
+                request.state.role='owner'
+            elif settings.access_aud and await access.verify(token):
+                request.state.role='owner'
+            else:
+                identity=research_session(request.cookies.get(SESSION_COOKIE),settings.session_secret,settings.environment)
+                if identity and (active_member(store,identity['email']) or identity['email']==settings.owner_email.lower()):request.state.role='viewer'
+            if request.state.role=='anonymous':
+                return Response('Invitation required' if identity else 'Authentication required',status_code=403 if identity else 401,headers={'Cache-Control':'no-store'})
+            if request.state.role=='viewer' and not (request.method=='GET' and path in VIEWER_GET):
+                return Response('Research access only. Owner account data and changes are unavailable.',status_code=403,headers={'Cache-Control':'no-store'})
+            actor_key=hashlib.sha256(('owner' if request.state.role=='owner' else identity['email']).encode()).hexdigest()
+            if not store.rate('identity:'+actor_key,180 if request.state.role=='owner' else 90):return Response('Request limit reached',status_code=429,headers={'Retry-After':'60','Cache-Control':'no-store'})
         response = await call_next(request)
         response.headers.update({'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'})
         return response
@@ -224,8 +242,9 @@ def create_app(settings=None,store=None):
         return {'authenticated':True,'scope':'owner'}
 
     @app.get('/api/session')
-    async def session():
-        return {'authenticated':True,'scope':'owner','live_trading':kraken_account.enabled,'autonomous_trading':False}
+    async def session(request:Request):
+        if request.state.role=='viewer':return {'authenticated':True,'scope':'research','role':'viewer','read_only':True,'live_trading':False,'autonomous_trading':False}
+        return {'authenticated':True,'scope':'owner','role':'owner','read_only':False,'live_trading':kraken_account.enabled,'autonomous_trading':False}
 
     @app.post('/api/session/logout')
     async def logout(response:Response):
@@ -233,8 +252,17 @@ def create_app(settings=None,store=None):
         return {'authenticated':False}
 
     @app.get('/api/dashboard')
-    async def dashboard():
-        return {'as_of':time.time(),'environment':settings.environment,'live_trading':kraken_account.enabled,
+    async def dashboard(request:Request):
+        if request.state.role=='viewer':
+            return {'role':'viewer','read_only':True,'as_of':time.time(),'environment':settings.environment,'live_trading':False,
+                'markets':runtime.market_view(),'providers':runtime.status,'signals':[],
+                'control':{'stopped':True,'reason':'research_only'},'account':None,'opportunities':[],'paper':[],
+                'funding':list(runtime.funding.values()),'trades':list(runtime.trades)[-40:],
+                'strategy_version':VERSION,'last_persist':runtime.last_persist,'journal_error':None,
+                'changenow':{'configured':False,'approved':False,'kind':'indicative_swap_estimates'},
+                'auth_method':'supabase_google','alerts_configured':False,
+                'hosting':{'tier':settings.hosting_tier,'continuous_collection_guaranteed':False,'database_expiry':settings.database_expiry or None}}
+        return {'role':'owner','read_only':False,'as_of':time.time(),'environment':settings.environment,'live_trading':kraken_account.enabled,
             'markets':runtime.market_view(),'providers':runtime.status,'signals':runtime.current_signals(),
             'control':store.get_state('control'),'account':store.get_state('account'),
             'opportunities':store.list('opportunity',20),'paper':store.list('paper',1000),
@@ -246,10 +274,11 @@ def create_app(settings=None,store=None):
             'data_policy':'Only explicitly approved public providers are connected.'}
 
     @app.get('/api/records/{kind}')
-    async def records(kind:str,q:str='',limit:int=100):
+    async def records(request:Request,kind:str,q:str='',limit:int=100):
         if kind not in ['opportunity','paper','forensic','alert','audit','lab','market_snapshot','trader_event','quote','entry_plan','radar_signal','real_plan','trader_cohort']:
             raise HTTPException(404,'Unknown record type')
-        return {'records':store.list(kind,max(1,min(limit,1000)),q[:200]),'as_of':time.time()}
+        rows=store.list(kind,max(1,min(limit,1000)),q[:200])
+        return {'records':shared_research(rows) if request.state.role=='viewer' else rows,'as_of':time.time()}
 
     @app.get('/api/assets')
     async def assets(q:str=Query('',max_length=100),source:str=Query('live',pattern=r'^(live|all|coinpaprika|kraken|hyperliquid)$'),
@@ -265,8 +294,9 @@ def create_app(settings=None,store=None):
         return runtime.set_market_watch(body.market_id,body.enabled)
 
     @app.get('/api/radar')
-    async def radar():
-        return runtime.radar.snapshot(runtime.books)
+    async def radar(request:Request):
+        result=runtime.radar.snapshot(runtime.books)
+        return shared_research(result) if request.state.role=='viewer' else result
 
     @app.post('/api/radar/{signal_id}/paper')
     async def radar_paper(signal_id:str):
@@ -321,6 +351,53 @@ def create_app(settings=None,store=None):
         return Response(content=archive,media_type='application/json',
             headers={'Content-Disposition':'attachment; filename="market-sentinel-research-backup.json"',
                      'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'})
+
+    @app.get('/api/auth/options')
+    async def auth_options():
+        return {'google_ready':google_auth.ready,
+            'research_login_ready':google_auth.ready,
+            'research_url':getattr(settings,'research_origin','') or None,'owner_url':settings.origin,'invite_only':True}
+
+    @app.get('/api/auth/google/start')
+    async def google_start(request:Request):
+        peer=hashlib.sha256((request.client.host if request.client else 'unknown').encode()).hexdigest()
+        if not store.rate('google-start:'+peer,5,300):raise HTTPException(429,'Sign-in request limit reached. Try later.')
+        url,nonce=google_auth.start()
+        response=RedirectResponse(url,status_code=302)
+        response.set_cookie(FLOW_COOKIE,nonce,httponly=True,secure=True,samesite='lax',max_age=300,path='/api/auth/google')
+        return response
+
+    @app.get('/api/auth/google/callback')
+    async def google_callback(request:Request):
+        origin=getattr(settings,'research_origin','') or settings.origin
+        try:
+            session=await google_auth.finish(request.query_params.get('code'),request.cookies.get(FLOW_COOKIE))
+            response=RedirectResponse(origin+'/#radar',status_code=302)
+            response.set_cookie(SESSION_COOKIE,session,httponly=True,secure=True,samesite='strict',max_age=TTL,path='/')
+        except ValueError:
+            response=RedirectResponse(origin+'/#google-signin-failed',status_code=302)
+        response.delete_cookie(FLOW_COOKIE,path='/api/auth/google',secure=True,httponly=True,samesite='lax')
+        response.headers['Referrer-Policy']='no-referrer'
+        return response
+
+    @app.post('/api/auth/google/logout')
+    async def google_logout():
+        response=JSONResponse({'authenticated':False})
+        response.delete_cookie(SESSION_COOKIE,path='/',secure=True,httponly=True,samesite='strict')
+        return response
+
+    @app.get('/api/members')
+    async def member_list():
+        return {'members':members(store),'limit':10,'role':'viewer','expires_after_days':30}
+
+    @app.post('/api/members')
+    async def member_invite(body:ResearchInvite):
+        if not store.rate('members:owner',10,3600):raise HTTPException(429,'Invitation update limit reached')
+        return invite(store,body.email,settings.owner_email)
+
+    @app.post('/api/members/revoke')
+    async def member_revoke(body:ResearchInvite):
+        return revoke(store,body.email)
 
     @app.get('/api/connections')
     async def connections():
@@ -407,7 +484,7 @@ def create_app(settings=None,store=None):
         return store.get_state('control')
 
     @app.get('/api/traders')
-    async def traders():
+    async def traders(request:Request):
         items = []
         for trader in store.list('watchlist',10):
             snapshot = store.get_state('trader:'+trader['address'])
@@ -415,12 +492,14 @@ def create_app(settings=None,store=None):
             if history:history={k:v for k,v in history.items() if k!='raw_fills'}
             items.append(dict(trader,snapshot=snapshot,history=history,history_error=store.get_state('trader_history_error:'+trader['address']),error=store.get_state('trader_error:'+trader['address']),
                 freshness='live' if snapshot and time.time()-snapshot['received_at']<90 else 'stale' if snapshot else 'unavailable'))
-        return {'traders':items,'events':store.list('trader_event',100),'intelligence':intelligence(store,runtime.books),
+        result={'traders':items,'events':store.list('trader_event',100),'intelligence':intelligence(store,runtime.books),
             'disclosure':'Manual and automatically discovered large-trade participants. Size, identity and trading success are not equivalent.'}
+        return shared_research(result) if request.state.role=='viewer' else result
 
     @app.get('/api/intelligence')
-    async def market_intelligence():
-        return intelligence(store,runtime.books)
+    async def market_intelligence(request:Request):
+        result=intelligence(store,runtime.books)
+        return shared_research(result) if request.state.role=='viewer' else result
 
     @app.get('/api/trader-directory')
     async def trader_directory(q:str=Query('',max_length=100),page:int=Query(1,ge=1,le=100),

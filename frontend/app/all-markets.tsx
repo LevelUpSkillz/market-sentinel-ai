@@ -14,7 +14,7 @@ function status(row:Asset,connected:boolean,now:number){
   return q.status;
 }
 
-export default function AllMarkets({auth,online,now,onMarketChange}:{auth:boolean;online:boolean;now:number;onMarketChange:()=>void}){
+export default function AllMarkets({auth,online,now,onMarketChange,readOnly=false}:{auth:boolean;online:boolean;now:number;onMarketChange:()=>void;readOnly?:boolean}){
   const [query,setQuery]=useState(''),[search,setSearch]=useState(''),[source,setSource]=useState('live'),[active,setActive]=useState('active'),[page,setPage]=useState(1);
   const [data,setData]=useState<Directory|null>(null),[connected,setConnected]=useState(false),[error,setError]=useState(''),[busy,setBusy]=useState(''),[revision,setRevision]=useState(0);
   useEffect(()=>{const timer=setTimeout(()=>{setSearch(query);setPage(1)},300);return()=>clearTimeout(timer)},[query]);
@@ -64,7 +64,7 @@ export default function AllMarkets({auth,online,now,onMarketChange}:{auth:boolea
           <div className="catalogue-price"><strong key={q.price} className={state==='live'||state==='streaming'?'quote-tick':''}>{num(q.price,Number(q.price)<1?12:6)} <small>{row.quote_currency}</small></strong><span className={'badge '+state}>{state==='streaming'?'streaming · receipt time':state}</span>{q.price_kind&&<small>{q.price_kind}</small>}</div>
           <div className="catalogue-stat"><small>24h change</small><strong className={Number(q.change_24h_pct)<0?'negative':''}>{num(q.change_24h_pct)}{q.change_24h_pct!=null?'%':''}</strong><small>Volume {num(q.volume_24h)} {row.quote_currency}</small>{q.market_cap!=null&&<small>Market cap {num(q.market_cap)} USD</small>}</div>
           <div className="catalogue-provenance"><small>Source time: {at(q.source_at)}</small><small>Received: {at(q.received_at)}</small>{row.source==='hyperliquid'&&<small>No provider timestamp · context {at(q.context_received_at)}</small>}{row.source==='coinpaprika'&&<small>Aggregate estimate · up to 10 min updates</small>}
-            {row.watch_symbol&&<button className="secondary compact" disabled={!!busy||!online||core||!row.active} onClick={()=>watch(row,!watching)}>{core?'Core detailed book':busy===row.id?'Saving…':watching?'Remove detailed book':'Add detailed book'}</button>}
+            {!readOnly&&row.watch_symbol&&<button className="secondary compact" disabled={!!busy||!online||core||!row.active} onClick={()=>watch(row,!watching)}>{core?'Core detailed book':busy===row.id?'Saving…':watching?'Remove detailed book':'Add detailed book'}</button>}
           </div>
         </article>
       })}</div>:<div className="empty"><h3>{search?'No matching listings':'Waiting for provider coverage'}</h3><p>{search?'Try another name, native symbol or source. Identical symbols can belong to different tokens.':'The catalogue fills from actual provider responses; no sample prices are substituted.'}</p></div>}

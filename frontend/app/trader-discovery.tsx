@@ -25,7 +25,7 @@ type Directory = {
   selection_basis:string;
 };
 type ObservedEvent = JournalRecord & {observed_at?:number;side?:string|null;timing?:string;confidence?:string};
-type Props = {auth:boolean;online:boolean;now:number;events:JournalRecord[];traders:Trader[];onTrack:(address:string,label:string)=>Promise<void>};
+type Props = {readOnly?:boolean;auth:boolean;online:boolean;now:number;events:JournalRecord[];traders:Trader[];onTrack:(address:string,label:string)=>Promise<void>};
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE || '';
 const date = (value:number|null|undefined) => value!=null&&Number.isFinite(value)?new Date(value*1000).toLocaleString():'Unavailable';
@@ -45,7 +45,7 @@ function direction(before:string|undefined,after:string|undefined,reported:strin
   return 'Direction unavailable';
 }
 
-export default function TraderDiscovery({auth,online,now,events,traders,onTrack}:Props){
+export default function TraderDiscovery({auth,online,now,events,traders,onTrack,readOnly=false}:Props){
   const [query,setQuery]=useState(''),[search,setSearch]=useState(''),[page,setPage]=useState(1);
   const [data,setData]=useState<Directory|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(''),[loading,setLoading]=useState(false),[connected,setConnected]=useState(false);
   const sequence=useRef(0);
@@ -124,7 +124,7 @@ export default function TraderDiscovery({auth,online,now,events,traders,onTrack}
         return <article className="signal-card" key={candidate.address} style={{cursor:'default'}}><div className="action-heading"><span className="eyebrow">PROVIDER-REPORTED CANDIDATE</span><span className="badge">UNVALIDATED SKILL</span></div><h3 style={{overflowWrap:'anywhere'}}>{candidate.label||short(candidate.address)}</h3><small>Provider label · identity unverified</small><code style={{display:'block',fontSize:10,overflowWrap:'anywhere',margin:'12px 0'}}>{candidate.address}</code>
           <div className="evidence-metrics" style={{gap:12,margin:'18px 0'}}><div style={{padding:12}}><small>Reported month ROI</small><strong style={{fontSize:17}}>{reportedRoi(candidate.windows.month)}</strong><small>{roiUnits(candidate.windows.month)}</small><small>Reported P&amp;L: {units(candidate.windows.month?.pnl)}</small></div><div style={{padding:12}}><small>Reported all-time ROI</small><strong style={{fontSize:17}}>{reportedRoi(candidate.windows.allTime)}</strong><small>{roiUnits(candidate.windows.allTime)}</small><small>Reported P&amp;L: {units(candidate.windows.allTime?.pnl)}</small></div></div>
           <p>Reported account value: {units(candidate.account_value)}.</p><p>Skill ranking: not independently validated.</p><small style={{display:'block',lineHeight:1.8,margin:'12px 0'}}>{candidate.data_completeness}</small><p>Reported ROI is historical provider data, not a forecast or a probability of winning.</p>
-          <button className="secondary" style={{width:'100%',marginTop:14}} disabled={!!busy||!online||alreadyTracked||full||!valid} onClick={()=>track(candidate)}>{alreadyTracked?'Tracking actions':busy===candidate.address?'Adding for observation…':full?'Watchlist limit reached':'Track actions'}</button>
+          {!readOnly&&<button className="secondary" style={{width:'100%',marginTop:14}} disabled={!!busy||!online||alreadyTracked||full||!valid} onClick={()=>track(candidate)}>{alreadyTracked?'Tracking actions':busy===candidate.address?'Adding for observation…':full?'Watchlist limit reached':'Track actions'}</button>}
         </article>;
       })}</div>:<div className="empty"><h3>{loading?'Loading provider-reported candidates':error||directory?.status==='unavailable'?'Provider directory currently unavailable':directory&&search?'No matching provider candidates':'Waiting for a provider directory response'}</h3><p>No candidate identities, positions or performance are fabricated. The experimental public frontend feed may change or stop responding.</p></div>}
       {directory&&<><div className="panel-foot" style={{justifyContent:'center'}}><button className="secondary compact" disabled={page<=1||loading} onClick={()=>setPage(value=>value-1)}>Previous</button><span>Page {directory.page} / {pages}</span><button className="secondary compact" disabled={page>=pages||loading} onClick={()=>setPage(value=>value+1)}>Next</button></div>
