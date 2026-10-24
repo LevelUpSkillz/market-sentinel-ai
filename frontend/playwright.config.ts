@@ -1,2 +1,2 @@
 import { defineConfig } from '@playwright/test';
-export default defineConfig({testDir:'./tests',use:{baseURL:'http://127.0.0.1:3000',headless:true},webServer:{command:'python3 -m http.server 3000 --bind 127.0.0.1 --directory out',url:'http://127.0.0.1:3000',reuseExistingServer:!process.env.CI},reporter:'html'});
+export default defineConfig({testDir:'./tests',use:{baseURL:'http://127.0.0.1:3000',headless:true},webServer:{command:'python3 -m http.server 3000 --bind 127.0.0.1 --directory out',url:'http://127.0.0.1:3000',reuseExistingServer:!process.env.CI},timeout:20000,globalTimeout:180000,expect:{timeout:8000},workers:2,reporter:[['line'],['html',{open:'never'}]]});

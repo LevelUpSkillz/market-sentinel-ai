@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Fail quickly on UI type errors before the longer provider/database checks.
+npm run typecheck
 python3 -m venv /tmp/sentinel-verification
 /tmp/sentinel-verification/bin/pip install -q -r ../backend/requirements.txt PyYAML jsonschema pip-audit pgserver==0.1.4
 /tmp/sentinel-verification/bin/python -m compileall -q ../backend
@@ -12,7 +14,6 @@ python3 -m venv /tmp/sentinel-verification
 /tmp/sentinel-verification/bin/python ../scripts/validate_blueprint.py
 /tmp/sentinel-verification/bin/pip-audit -r ../backend/requirements.txt
 npm audit --audit-level=high
-npm run typecheck
 # Keep browser requests same-origin through Pages Functions, regardless of Pages env.
 export NEXT_PUBLIC_API_BASE=''
 npm run build

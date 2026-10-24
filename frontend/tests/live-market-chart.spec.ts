@@ -117,14 +117,14 @@ test('API heartbeats and outages add no chart prices, and recovery leaves an exp
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
 });
 
-test('hidden pages stop dashboard, history and wallet polling, then refresh on return',async({page})=>{
+test('hidden pages stop live dashboard and wallet polling; removed duplicate history polling stays absent',async({page})=>{
   await page.setViewportSize({width:390,height:844});
   await page.clock.install({time:TIME});
   const feed:Feed={at:START,sourceAt:START,receivedAt:START,mid:101,outage:false};
   const requests=await mockFeed(page,feed);
   await page.goto('/');
   await expectSamples(page.getByRole('region',{name:'Live market chart'}),1);
-  await expect.poll(()=>requests.filter(path=>path==='/api/records/market_snapshot').length).toBeGreaterThan(0);
+  expect(requests.filter(path=>path==='/api/records/market_snapshot')).toHaveLength(0);
   await expect.poll(()=>requests.filter(path=>path==='/api/intelligence').length).toBeGreaterThan(0);
 
   const visibility=async(state:'visible'|'hidden')=>{
@@ -137,10 +137,11 @@ test('hidden pages stop dashboard, history and wallet polling, then refresh on r
   const beforeHidden=requests.length;
   await page.clock.runFor(31_000);
   expect(requests.length).toBe(beforeHidden);
-  const savedBeforeReturn=requests.filter(path=>path==='/api/records/market_snapshot').length;
+  const savedBeforeReturn=requests.filter(path=>path==='/api/dashboard').length;
   sourcePoint(feed,31,102);
   await visibility('visible');
-  await expect.poll(()=>requests.filter(path=>path==='/api/records/market_snapshot').length).toBeGreaterThan(savedBeforeReturn);
+  await expect.poll(()=>requests.filter(path=>path==='/api/dashboard').length).toBeGreaterThan(savedBeforeReturn);
+  expect(requests.filter(path=>path==='/api/records/market_snapshot')).toHaveLength(0);
 
   await page.getByLabel('Open navigation').click();
   await page.getByRole('button',{name:'Smart Money',exact:true}).click();
@@ -152,3 +153,4 @@ test('hidden pages stop dashboard, history and wallet polling, then refresh on r
   await visibility('visible');
   await expect.poll(()=>requests.filter(path=>path==='/api/traders').length).toBeGreaterThan(walletsBeforeHidden);
 });
+
