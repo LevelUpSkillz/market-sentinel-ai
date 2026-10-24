@@ -19,3 +19,9 @@ ChangeNOW is read-only and unavailable until a public business API key is stored
 A Neon free PostgreSQL connection was suggested as a possible replacement for the expiring Render database; it is not connected yet. Free tiers have finite storage/compute quotas and cannot guarantee unlimited permanent retention or continuous collection.
 
 The Blueprint enables documented public Kraken and Hyperliquid reads for the private owner workspace; Coinbase remains disabled. Acceptance requires the production backend to be ready, direct unauthorized data requests to return 401, source timestamps and outages to be visible, paper accounting to survive restart, emergency stop persistence, a real provider connectivity check, and a database export/restore drill. Passing unit tests or an edge persistence measurement does not establish trading profitability.
+
+## Version 0.5 account configuration
+
+Server vault configuration is managed through Render secrets with merge-only updates; the Blueprint omits these keys and must preserve them on sync. Existing `KRAKEN_VAULT_KEY` takes precedence over the dedicated fallback `MARKET_SENTINEL_VAULT_20261024`. Do not rotate either casually or put values into source. `KRAKEN_LIVE_ENABLED=true` permits individually approved own-account USD spot orders only; no connection or trade occurs merely by setting it. Actual deployment flags are verified in DELIVERY.md. Never expose the vault to Pages or `NEXT_PUBLIC_*` variables.
+
+The Cloudflare build uses Python 3.12.14 and build-only pgserver to start a disposable local PostgreSQL. This is acceptance infrastructure, not the production database or a backend migration to Cloudflare. All backend checks must run without skips. No production database URL or credentials are provided to the build runner.

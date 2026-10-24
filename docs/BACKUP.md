@@ -1,9 +1,10 @@
 # Protected research export and offline restore
 
-This milestone adds backend backup primitives and an offline restore drill. It
-does not yet add a dashboard download or HTTP endpoint. No production export or
-PostgreSQL restore has been performed merely by adding these files. Production
-integration and acceptance must be recorded in HANDOFF.md separately.
+Settings provides a protected manual JSON download through POST
+`/api/backup/export`, limited to two exports per hour. An offline restore CLI and
+synthetic PostgreSQL restore drill verify recovery behavior. Actual release
+results are recorded in DELIVERY.md. A passing drill does not mean a production
+archive has already been downloaded or stored offsite.
 
 The current Render Free PostgreSQL expires **November 22, 2026 at 04:35 UTC**.
 A downloadable archive helps preserve research and paper accounting; it does not
@@ -33,7 +34,10 @@ research record refuse the export rather than leaking or silently changing the
 record. Do not place secrets in labels, research inputs or other free text.
 Credential recovery and secret-key rotation require a separate secure workflow.
 Encrypted `connection:kraken` state and all `kraken_nonce:*` signing state are
-explicitly excluded. Recovered accounts must be securely linked again. Future
+explicitly excluded. Recovered accounts must be securely linked again. A
+nonsecret original-key fingerprint and connection ID preserve the ability to
+reconcile an unresolved order using the same dedicated key. No credential is
+recoverable from this binding. Existing
 `real_order` financial records are retained with their original status, preview
 and exchange transaction IDs, but receive `restored_execution_disabled=true` and
 `execution_enabled=false`. Any order-submission implementation must reject those
@@ -47,9 +51,9 @@ reviewed streaming/paged archive implementation. SHA-256 detects accidental
 corruption; it is not a signature or encryption and cannot establish who created
 an archive. Restore only an archive from your own trusted export.
 
-Any future download endpoint must require the existing verified owner session,
-rate-limit exports, return `Cache-Control: no-store`, use attachment disposition,
-exclude credentials from logs and avoid constructing archives on every poll.
+The download requires the verified owner session and same-origin POST,
+rate-limits exports, returns `Cache-Control: no-store`, uses attachment disposition,
+excludes credentials from logs and constructs an archive only on demand.
 There is deliberately no HTTP restore endpoint.
 
 ## Offline drill

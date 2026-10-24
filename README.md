@@ -1,6 +1,6 @@
 # Market Sentinel AI
 
-Private cryptocurrency market investigation, paper trading and manual real-capital planning. **No live order execution, withdrawals or exchange private keys.** This is independent of Sentinel Intelligence.
+Private cryptocurrency investigation, paper trading, real-capital planning and individually approved Kraken USD spot limit orders. **No autonomous trades, withdrawals, leverage or wallet seeds.** This is independent of Sentinel Intelligence.
 
 ## Implemented vertical slice
 
@@ -10,7 +10,7 @@ Private cryptocurrency market investigation, paper trading and manual real-capit
 - Hyperliquid public-address watchlist and position changes; initial snapshots are baselines, not invented new trades. No profitability ranking without adequate evidence.
 - Trader Actions: bounded experimental public candidate discovery, reported historical windows, observed wallet changes and available fill-history investigation. No worldwide best-trader claim or invented success odds.
 - Conditional Kraken USD spot radar with frozen hypotheses, short entry windows, source-gap invalidation and current depth/cost/risk checks. GO permits a paper experiment only.
-- Separate user-declared real-capital settings and manual sizing; risk PASS remains trade WAIT. Kraken secure account linking awaits provider-approved app setup.
+- Separate user-declared real-capital settings and manual sizing; risk PASS remains trade WAIT. Secure own-account Kraken linking verifies restricted permissions; each real spot order requires a separate immutable review and exact owner approval.
 - Read-only ChangeNOW standard swap estimates, stored separately from executable books. Requires a public business API key in backend secrets and confirmed research-use permission.
 - Durable opportunity snapshots, explanations, five-minute edge persistence outcomes and autopsies. Missing outcomes remain unavailable. Edge persistence is not P&L.
 - Transactional manual paper trading, idempotency, modeled fees/depth/latency, exposure caps, daily realized-loss limits and persistent emergency stop.
@@ -57,7 +57,7 @@ npm run build
 npm run test:e2e
 ```
 
-The backend suite uses clearly synthetic fixtures and one published Kraken checksum vector. Cloudflare runs the release checks. PostgreSQL integration checks require `TEST_POSTGRES_URL` pointing to a disposable testing database; they skip if that isolated database is unavailable. No test result establishes profitable trading.
+The backend suite uses clearly synthetic fixtures and one published Kraken checksum vector. Cloudflare runs the release checks. The Cloudflare release runner starts an ephemeral isolated PostgreSQL for all checks and rejects skipped tests. Plain local unittest runs require a separate disposable `TEST_POSTGRES_URL` to include PostgreSQL checks. No production database or real-money trade is used for tests. No test result establishes profitable trading.
 
 ## Hosting
 
@@ -65,7 +65,7 @@ The backend suite uses clearly synthetic fixtures and one published Kraken check
 
 ## Boundaries
 
-Read-only research, manual paper execution and real-capital planning only. Advanced cash-flow-adjusted trader rankings, chain-wide whale discovery, validated liquidation models, genuine out-of-sample strategy promotion and supervised execution require later implementation and evidence. No commercial signal launch is implied. Review Canadian/Québec regulatory applicability before commercialization or execution.
+Owner-only research, paper execution, real-capital planning and individually approved Kraken spot orders. Advanced cash-flow-adjusted trader rankings, chain-wide whale discovery, validated liquidation models, genuine out-of-sample strategy promotion and autonomous or derivative execution require later review, implementation and evidence. No commercial signal launch is implied. Review Canadian/Québec regulatory applicability before commercialization or execution.
 
 No profitability, statistical significance or edge claim is made.
 

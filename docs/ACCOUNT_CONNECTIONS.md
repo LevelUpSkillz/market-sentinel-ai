@@ -1,37 +1,35 @@
-# Real-capital planning and exchange readiness — 2026-10-23
+# Own-account Kraken connection and manual spot orders — 2026-10-24
 
-The owner selected Kraken after considering Coinbase. Both manual real-capital planning and a future individually approved exchange workflow are intended. Only manual planning and connection readiness are implemented in this release. No account is connected and no real order, withdrawal, transfer, signer or credential-upload endpoint exists.
+Version 0.5 implements a protected connection to the owner's own Kraken account, account reads and individually approved USD spot IOC limit orders. Deployment/feature-flag status is recorded in DELIVERY.md. Implemented code does not mean an account is connected. No credentials or real-money trade are used for acceptance tests. Public-wallet observation is separate from an exchange account connection.
+
+## Link in the protected app
+
+1. Sign in at https://market.getlevelupskillz.com and open Settings → Your Kraken account. Credential fields appear only with a configured server vault and HTTPS.
+2. Create a dedicated Kraken Spot API key. Enable funds query, open-order query and closed-order query. For manual placement also enable modify/create orders and cancel/close orders. Leave every other permission, particularly funding and withdrawals, disabled. Remove history-date restrictions so unresolved orders can be reconciled. Use this key only with this app.
+3. Enter the key and secret in the protected form. Confirm country/region, account/product eligibility and dedicated-key use. Never send credentials in chat. Actual exchange fees and regional restrictions still apply.
+4. Verify actual balances and open orders. A read-only key can link without order authority. Linking never sends a trade.
+5. Confirm real-capital settings. Select an observed eligible Kraken USD spot market, side, quantity and limit price. Additional markets require selected detailed books in Live Markets. Review actual account fees, lot/tick/minimum rules, available cash and portfolio limits.
+6. A validation-only provider request creates an immutable 30-second review. To send that exact real order, type `PLACE THIS REAL ORDER`. One IOC limit instruction may fill partly or not at all. Reconcile status and inspect actual fills/fees directly in Kraken before another order.
+
+No protective stop is placed. A buy's full purchase plus fee reserve must fit declared per-trade and remaining daily loss budgets. Hard limits are 500 USD per order/asset and 2,500 USD correlated exposure, with lower owner limits enforced. Open orders, margin/credit, missing valuations, stale/unverified books, changed fees/profile/connection and emergency stop block submission. Some portfolios cannot trade through the app until every held asset can be valued with a fresh verified USD book; use Kraken directly for unsupported portfolios.
+
+Durable intent is committed before the sole submission POST. Duplicate approval cannot resend it. Transport timeouts, deadline/duplicate errors and uncertain acknowledgments lock subsequent orders until exchange reconciliation. Absence from bounded history is never proof of failure. Disconnect removes credentials but does not cancel an exchange order. Restore permanently disables historical order execution; a nonsecret original-key fingerprint/connection binding allows the same dedicated key to reconcile an unresolved restored order without restoring its credentials.
+
+## Secret storage and provider boundaries
+
+Credentials use Fernet encryption with a separate server-only Render vault key. Keys never enter source, frontend configuration, browser storage, backups or audit records. Transient form values clear after an attempt and validation errors do not reflect raw input. Never rotate an existing vault key casually: a different key cannot decrypt the connection. A separate server feature flag, verified trading permissions and individual owner approval are all required for real submission.
+
+Kraken's documented owner-created API-key route does not require partner OAuth approval. Kraken Connect OAuth is a separate B2B route and is not implemented. Coinbase own-account CDP keys and partner OAuth, and Crypto.com Exchange keys versus retail App Agent Keys, are distinct integrations; neither is implemented here. Crypto.com App Agent Key availability/third-party protocol remains unsuitable or unverified for this deployment. Coinbase market-data restrictions separately keep Coinbase disabled as a research source; personal account permission would not automatically authorize that data use. ChangeNOW still awaits its separate public business key/use approval.
+
+No self-custody wallet signer or on-chain spending connection is implemented. A watched public address allows observation only and does not identify its real owner. Connecting a dApp wallet or signing an ownership message would not itself authorize spending or expose exchange balances. Never request wallet private keys, seeds or recovery phrases.
+
+Free hosting does not make trading free. Render Free can sleep: inspect orders directly in Kraken and do not rely on this app for protective execution or continuous monitoring. The free database expires November 22, 2026; use the protected backup export and preserve archives outside the repository. Manual owner-account trading is separate from a commercial signal/advisory service. Commercialization or wider execution needs qualified Canadian/Québec review; no legal or profitability conclusion is implied.
 
 ## Real-capital profile
 
 The authenticated owner supplies USD-denominated total capital, available cash, existing correlated crypto exposure, current UTC-day realized P&L, per-trade risk, position, total exposure and daily loss limits. Actual monetary amounts start blank. Editable initial percentage examples are labeled as examples, not advice. Inputs are explicitly USER_DECLARED_UNVERIFIED and are separate from the virtual paper account. They expire after 24 hours and across a UTC-day boundary until reconfirmed. CAD, USDC and USD are not silently converted.
 
 The manual planner uses current source-venue USD spot depth, modeled fees and latency, risk and daily-loss budgets, declared cash, position and concentration limits, downward quantity rounding and post-VWAP limit checks. A risk PASS is arithmetic only: trade decision stays WAIT, predictive edge is unvalidated and execution remains disabled. Prices expire after five seconds. Future exit liquidity, lot rules, eligibility, balances and actual fees are unverified. A stop is not a guaranteed maximum loss. The current Kraken fee assumption is 80 bps per leg based on the public base spot taker schedule, with regional/product/account-tier uncertainty.
-
-## Secure account-linking boundary
-
-The owner wants real, individually approved in-app trades and also has Coinbase and Crypto.com accounts. Kraken remains the selected exchange. A supported provider API makes this technically possible; this release has no secret-ingestion, account-linking or real-order implementation. No account is connected. The connection screen now says “Secure setup required” and describes both owner API keys and partner OAuth, without accepting credentials or offering real order submission.
-
-Provider routes were rechecked against official documentation on 2026-10-23:
-
-| Account | Supported route | Current constraint |
-| --- | --- | --- |
-| Kraken exchange account | Owner-created Spot API key with restricted permissions; alternatively Kraken Connect OAuth/Fast API | Standard API-key integration is documented for third-party apps. OAuth is under Embed and requires B2B partner approval and a provisioned client. Neither route is configured here. |
-| Coinbase exchange account | An owner's own account can use a CDP API key for Advanced Trade; other users require OAuth | Coinbase App authentication requires ECDSA/ES256 keys and supports portfolio/permission restrictions. New OAuth clients remain disabled except for approved partners. No connector is implemented. |
-| Crypto.com Exchange | Exchange API key, initially read-only, with trading enabled deliberately | Trading requires an IP allowlist. Exchange account access and current deployment egress addresses must be verified; having the retail app does not establish Exchange API eligibility. |
-| Crypto.com App Agent Key | Separate provider-documented OpenClaw/Agent Key integration | Current official availability excludes Canada and South Korea, and the documented integration offers market orders. General Market Sentinel integration rights, protocol, eligibility and permissions remain unverified. Do not assume an Exchange key and an App Agent Key are interchangeable. |
-
-Kraken explicitly documents owner-created keys for third-party account balances, history and orders; this route does not depend on obtaining an OAuth client. A future private owner integration could provision a restricted key through secure server-side secret storage, outside chat. Permission checks must reject funding/withdrawal/transfer authority. Begin with verified account access and non-executing validation before enabling individually approved orders. Kraken's `AddOrder` supports `validate=true` without trading in the matching engine. The app must keep validation requests separate from the real submission operation. A provider validation result is not a fill, available-liquidity guarantee or profitable trade.
-
-Public wallet observation, wallet dApp connection and exchange account linking are distinct. A public address allows observation only. Connecting a self-custody wallet or signing an ownership message does not authorize spending or expose exchange account balances. Any future on-chain swap path would need a separate network/asset/fee review and the owner's transaction signature in their wallet for each action; no wallet private key, seed or recovery phrase belongs in this app or chat.
-
-No exchange secret, password, recovery phrase or seed is requested in chat, committed to source, stored in browser storage or logged. This release has no secure credential-entry flow and must not solicit keys until that flow and server-side secret protection have been implemented and reviewed. No paid hosting or provider plan is selected automatically. Provider account permission is separate from individual order approval.
-
-Coinbase market-data terms separately restrict AI/automated-system uses absent suitable consent. Coinbase remains disabled as a radar source; a personal account API connection would not by itself authorize that data use. Neither a provider connection nor a paper result establishes profitable trading or commercial signal permission.
-
-Future execution must verify regional/account/product eligibility, execution-venue quotes, available balances, actual fees, lot/price minima and current portfolio exposure. Enforce immutable order details, a short expiry, explicit per-order owner confirmation, durable idempotency and reconciliation after ambiguous timeouts. Kraken's `cl_ord_id` uniqueness covers open orders, so it cannot replace application-level prevention of duplicate completed orders. Strictly increasing per-key nonces must also survive overlapping instances and restarts. Transfers, withdrawals, autonomous orders and real-money acceptance tests remain outside scope.
-
-Kraken and Coinbase charge transaction fees; free app hosting does not make actual trading free. Applicable Canadian/Québec requirements must be reviewed before any commercial signal service or execution capability is introduced; catalogue listing does not imply that a product can be traded by a particular resident/account.
 
 ## Official references
 
@@ -53,3 +51,4 @@ Kraken and Coinbase charge transaction fees; free app hosting does not make actu
 - Crypto.com Exchange API keys and IP restrictions: https://help.crypto.com/en/articles/3511424-api
 - Crypto.com App Agent Key scope and regional availability: https://help.crypto.com/en/articles/13843765-openclaw-trading-overview
 - Crypto.com App Agent Key setup and secret handling: https://help.crypto.com/en/articles/13843782-getting-started
+
