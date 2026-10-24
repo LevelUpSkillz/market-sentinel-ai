@@ -71,9 +71,9 @@ test('real-capital configuration starts blank, saves declared inputs and keeps e
   await capital.getByRole('button',{name:'Save real-capital limits',exact:true}).click();
   await expect(capital.getByText('Real-capital limits saved as your declared inputs. No money moved and no exchange order was placed.')).toBeVisible();
   expect(posted).toEqual([{capital_usd:'5000',available_cash_usd:'1000',existing_crypto_exposure_usd:'200',daily_realized_pnl_usd:'-10',risk_per_trade_pct:'0.5',max_position_pct:'5',max_crypto_exposure_pct:'25',daily_loss_limit_pct:'2'}]);
-  const exchange=page.getByRole('region',{name:'Kraken account connection'});
-  await expect(exchange).toContainText('Account connected: No · Order submission: Disabled');
-  await expect(exchange.locator('input')).toHaveCount(0);
+  const exchange=page.getByRole('region',{name:'Your Kraken account'});
+  await expect(exchange).toContainText('Not connected');
+  await expect(exchange).toContainText('Real order submission: Disabled by backend configuration or account permissions');
   await expect(exchange.getByRole('button',{name:/place|submit|approve.*order/i})).toHaveCount(0);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
 });
@@ -128,3 +128,4 @@ test('real-budget sizing uses radar levels while risk PASS remains distinct from
   expect(postPaths).toEqual(['/api/capital/plans']);
   await expect(realPlan.getByRole('button',{name:/place|submit|approve.*order/i})).toHaveCount(0);
 });
+

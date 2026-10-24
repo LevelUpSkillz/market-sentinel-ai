@@ -21,6 +21,7 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
     const result = new Headers({'Content-Type':response.headers.get('content-type') || 'application/json',
       'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY'});
     const cookie = response.headers.get('set-cookie'); if (cookie) result.set('Set-Cookie',cookie);
+    const download=response.headers.get('content-disposition'); if(download)result.set('Content-Disposition',download);
     const retry = response.headers.get('retry-after'); if (retry) result.set('Retry-After',retry);
     return new Response(response.body,{status:response.status,headers:result});
   } catch {

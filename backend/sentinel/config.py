@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass,field
 import os
 import re
 
@@ -20,8 +20,17 @@ class Settings:
     changenow_approved: bool = os.getenv('CHANGENOW_RESEARCH_APPROVED', 'false').lower() == 'true'
     ntfy_topic: str = os.getenv('NTFY_TOPIC', '')
     ntfy_token: str = os.getenv('NTFY_TOKEN', '')
+    kraken_vault_key: str = field(default=os.getenv('KRAKEN_VAULT_KEY') or os.getenv('MARKET_SENTINEL_VAULT_20261024',''),repr=False)
+    kraken_live_enabled: bool = os.getenv('KRAKEN_LIVE_ENABLED', 'false').lower() == 'true'
 
     def validate(self):
+        # Never allow real order submission without an explicitly provisioned vault.
+        if self.kraken_live_enabled:
+            from cryptography.fernet import Fernet
+            try:
+                Fernet(self.kraken_vault_key.encode('ascii'))
+            except (ValueError, TypeError, AttributeError, UnicodeError) as exc:
+                raise ValueError('Live Kraken mode requires a valid server-side Fernet vault key') from None
         if self.environment not in {'development', 'test', 'production', 'staging'}:
             raise ValueError('Unknown environment')
         if self.environment in {'production', 'staging'}:
@@ -38,3 +47,4 @@ class Settings:
             raise ValueError('Invalid private ntfy topic')
         if self.access_aud and (not re.fullmatch(r'https://[a-z0-9-]+\.cloudflareaccess\.com',self.access_team) or '@' not in self.owner_email):
             raise ValueError('Invalid Cloudflare Access configuration')
+

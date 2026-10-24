@@ -7,6 +7,8 @@ import re
 import time
 import uuid
 from fastapi import FastAPI, HTTPException, Request, Response, Query
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ConfigDict
 from .config import Settings
@@ -21,20 +23,49 @@ from .access import AccessVerifier
 from .smart_money import intelligence
 from .catalogue import EXTRA_BOOK_LIMIT
 from .capital import save_profile,get_profile,evaluate_real_plan
+from .kraken_account import KrakenAccount, AccountError
+from .backup import export_backup, BackupError
 
 def connection_status():
-    # A preferred venue is not an authenticated account connection.
+    # Legacy capital-planning compatibility; never imply authenticated access.
     return {'provider':'kraken','status':'secure_setup_required','connected':False,
         'order_submission_enabled':False,'withdrawals_enabled':False,
-        'app_hosting_plan':'free','trading_fees':'Kraken transaction fees apply; no fee-free trading is promised.',
-        'requirements':['Kraken supports owner-created API keys for account access and trading; OAuth is an alternative that requires a provider-approved client.',
-            'This app still needs an encrypted server-side credential flow and verified account permissions before either route can connect.',
-            'A future restricted connection must exclude funding, transfers and withdrawals. Public wallet watching does not authorize trading.',
-            'Provider permission for this app’s market-data use and regional eligibility must be verified.',
-            'Every future order requires verified Kraken balances/product rules, current venue costs and a separate user approval.'],
+        'app_hosting_plan':'free',
+        'trading_fees':'Kraken transaction fees apply; no fee-free trading is promised.',
+        'requirements':[
+            'Use a dedicated Kraken API key with funds and order-query permissions.',
+            'Only enable trading permissions for individually approved spot orders.',
+            'Never enable withdrawals, funding or transfers.',
+            'Regional eligibility, actual balances, pair rules and fees must be verified.',
+            'Live orders require a configured encrypted server-side vault and explicit owner approval.'
+        ],
         'documentation':'https://support.kraken.com/au/articles/360041395271-using-the-kraken-api-with-a-third-party-service',
-        'oauth_documentation':'https://docs-legacy.kraken.com/api/docs/oauth/kraken-connect/',
         'fees_url':'https://www.kraken.com/features/fee-schedule'}
+
+class KrakenConnect(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    api_key: str = Field(min_length=8,max_length=512)
+    api_secret: str = Field(min_length=8,max_length=4096)
+    country_code: str = Field(pattern=r'^[A-Z]{2}$')
+    region: str = Field(min_length=1,max_length=100)
+    eligibility_confirmed: bool
+    dedicated_key_confirmed: bool
+
+class KrakenOrderPreviewRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    symbol: str = Field(pattern=r'^[A-Z0-9.]{1,20}-USD$')
+    side: str = Field(pattern=r'^(buy|sell)$')
+    quantity: str = Field(min_length=1,max_length=40)
+    limit_price: str = Field(min_length=1,max_length=40)
+
+class KrakenOrderApproval(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    preview_id: uuid.UUID
+    confirmation: str = Field(max_length=64)
+
+class KrakenOrderReconcile(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    order_id: uuid.UUID
 
 class Login(BaseModel):
     password: str = Field(min_length=1,max_length=256)
@@ -94,6 +125,7 @@ def create_app(settings=None,store=None):
     settings.validate()
     store = store or Store(settings.database_url)
     runtime = Runtime(store,settings)
+    kraken_account = KrakenAccount(store,settings,runtime.books)
     access = AccessVerifier(settings.access_team,settings.access_aud,settings.owner_email)
     @asynccontextmanager
     async def lifespan(app):
@@ -103,9 +135,10 @@ def create_app(settings=None,store=None):
         finally:
             await runtime.stop()
             store.close()
-    app = FastAPI(title='Market Sentinel AI',version='0.4.1',lifespan=lifespan,
+    app = FastAPI(title='Market Sentinel AI',version='0.5.0',lifespan=lifespan,
                   docs_url='/docs' if settings.environment=='development' else None,redoc_url=None)
     app.state.store,app.state.runtime,app.state.settings = store,runtime,settings
+    app.state.kraken_account = kraken_account
     if settings.environment=='development':
         app.add_middleware(CORSMiddleware,allow_origins=[settings.origin],allow_credentials=True,allow_methods=['GET','POST'],allow_headers=['Content-Type'])
 
@@ -138,13 +171,22 @@ def create_app(settings=None,store=None):
             return Response('Rate limit exceeded',status_code=429,headers={'Retry-After':'60'})
         if path not in ['/api/session/login'] and request.method!='OPTIONS':
             token=request.headers.get('cf-access-jwt-assertion')
-            owner_session=verify_session(request.cookies.get('sentinel_session'),settings.session_secret,settings.environment)
-            allowed=owner_session or (bool(settings.access_aud) and await access.verify(token))
+            # Owner password sessions and Cloudflare Access are independent
+            # supported authentication methods. A configured Access audience
+            # must not invalidate a successfully issued owner session.
+            owner_session = verify_session(request.cookies.get('sentinel_session'),settings.session_secret,settings.environment)
+            allowed = owner_session or (bool(settings.access_aud) and await access.verify(token))
             if not allowed:
                 return Response('Authentication required',status_code=401)
         response = await call_next(request)
         response.headers.update({'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'})
         return response
+
+    @app.exception_handler(RequestValidationError)
+    async def safe_request_validation(request,error):
+        # Pydantic validation errors can contain rejected API credentials in
+        # their input fields. Never echo raw validation details to clients.
+        return JSONResponse({'detail':'Invalid request fields.'},status_code=422)
 
     @app.exception_handler(ValueError)
     async def invalid(request,error):
@@ -153,7 +195,8 @@ def create_app(settings=None,store=None):
 
     @app.get('/health/live')
     async def live():
-        return {'status':'alive','app_version':'0.4.1','live_trading':False}
+        return {'status':'alive','app_version':'0.5.0','live_trading':kraken_account.enabled,
+                'individual_order_approval_required':True,'autonomous_trading':False,'withdrawals_enabled':False}
 
     @app.get('/health/ready')
     async def ready(response:Response):
@@ -164,7 +207,8 @@ def create_app(settings=None,store=None):
             ok = False
         if not ok:
             response.status_code=503
-        return {'status':'ready' if ok else 'degraded','live_trading':False}
+        return {'status':'ready' if ok else 'degraded','live_trading':kraken_account.enabled,
+                'individual_order_approval_required':True,'autonomous_trading':False,'withdrawals_enabled':False}
 
     @app.post('/api/session/login')
     async def login(body:Login,request:Request,response:Response):
@@ -177,11 +221,11 @@ def create_app(settings=None,store=None):
         response.set_cookie('sentinel_session',session_token(settings.session_secret,settings.environment),
             httponly=True,secure=settings.environment!='development',samesite='strict',max_age=SESSION_TTL,path='/')
         store.put('audit',{'action':'login.success','actor':'owner'})
-        return {'authenticated':True,'scope':'paper'}
+        return {'authenticated':True,'scope':'owner'}
 
     @app.get('/api/session')
     async def session():
-        return {'authenticated':True,'scope':'paper','live_trading':False}
+        return {'authenticated':True,'scope':'owner','live_trading':kraken_account.enabled,'autonomous_trading':False}
 
     @app.post('/api/session/logout')
     async def logout(response:Response):
@@ -190,7 +234,7 @@ def create_app(settings=None,store=None):
 
     @app.get('/api/dashboard')
     async def dashboard():
-        return {'as_of':time.time(),'environment':settings.environment,'live_trading':False,
+        return {'as_of':time.time(),'environment':settings.environment,'live_trading':kraken_account.enabled,
             'markets':runtime.market_view(),'providers':runtime.status,'signals':runtime.current_signals(),
             'control':store.get_state('control'),'account':store.get_state('account'),
             'opportunities':store.list('opportunity',20),'paper':store.list('paper',1000),
@@ -242,7 +286,7 @@ def create_app(settings=None,store=None):
 
     @app.get('/api/capital')
     async def capital():
-        return {'profile':get_profile(store),'execution_enabled':False,'connection':connection_status()}
+        return {'profile':get_profile(store),'execution_enabled':kraken_account.status()['order_submission_enabled'],'connection':dict(connection_status(),**kraken_account.status())}
 
     @app.post('/api/capital')
     async def capital_update(body:CapitalProfile):
@@ -254,13 +298,62 @@ def create_app(settings=None,store=None):
         if not book:raise HTTPException(409,'Inspect the matching detailed market book before calculating a real-capital plan')
         result = evaluate_real_plan(store,book,body.stop,body.target)
         result['preferred_execution_venue'] = 'kraken'
-        result['connection'] = connection_status()
+        result['connection'] = dict(connection_status(),**kraken_account.status())
         result['venue_warning'] = 'This plan uses the named source venue. Other venues require their own actual quotes, balances, fee tiers and product rules.'
         return store.put('real_plan',result)
 
+    @app.exception_handler(AccountError)
+    async def kraken_account_error(request,error):
+        # AccountError messages are fixed and contain no submitted credentials.
+        return JSONResponse({'detail':str(error)},status_code=409)
+
+    @app.exception_handler(BackupError)
+    async def backup_error(request,error):
+        return JSONResponse({'detail':str(error)},status_code=409)
+
+    @app.post('/api/backup/export')
+    async def backup_export():
+        # Guard middleware authenticates the owner before this handler.
+        # A deliberately low limit prevents costly repeated snapshots.
+        if not store.rate('backup:owner',2,3600):
+            raise HTTPException(429,'Backup export limit reached; retry later.')
+        archive=export_backup(store)
+        return Response(content=archive,media_type='application/json',
+            headers={'Content-Disposition':'attachment; filename="market-sentinel-research-backup.json"',
+                     'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'})
+
     @app.get('/api/connections')
     async def connections():
-        return connection_status()
+        return dict(connection_status(),**kraken_account.status())
+
+    @app.post('/api/connections/kraken')
+    async def kraken_connect(body:KrakenConnect):
+        if not store.rate('kraken:connect',3,300):raise HTTPException(429,'Account verification limit reached. Retry after five minutes.')
+        return await kraken_account.connect(**body.model_dump())
+
+    @app.get('/api/connections/kraken/account')
+    async def kraken_account_snapshot():
+        if not store.rate('kraken:account',6):raise HTTPException(429,'Account refresh limit reached. Retry after one minute.')
+        return await kraken_account.account()
+
+    @app.post('/api/connections/kraken/disconnect')
+    async def kraken_disconnect():
+        return kraken_account.disconnect()
+
+    @app.post('/api/connections/kraken/preview')
+    async def kraken_preview(body:KrakenOrderPreviewRequest):
+        if not store.rate('kraken:preview',4):raise HTTPException(429,'Order review limit reached. Retry after one minute.')
+        return await kraken_account.preview(**body.model_dump())
+
+    @app.post('/api/connections/kraken/approve')
+    async def kraken_approve(body:KrakenOrderApproval):
+        if not store.rate('kraken:approve',4):raise HTTPException(429,'Order approval limit reached. Check the saved order status before trying again.')
+        return await kraken_account.approve(str(body.preview_id),body.confirmation)
+
+    @app.post('/api/connections/kraken/reconcile')
+    async def kraken_reconcile(body:KrakenOrderReconcile):
+        if not store.rate('kraken:reconcile',6):raise HTTPException(429,'Reconciliation limit reached. Retry a read after one minute; do not resend the order.')
+        return await kraken_account.reconcile(str(body.order_id))
 
     @app.get('/api/opportunities/{id}')
     async def opportunity(id:str):
@@ -368,3 +461,4 @@ def create_app(settings=None,store=None):
         return store.put('alert',{'title':'Market Sentinel mobile delivery test — no trading action.','status':'queued','attempts':0,'mode':'delivery_test'})
 
     return app
+

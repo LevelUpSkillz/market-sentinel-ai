@@ -26,9 +26,11 @@ with httpx.Client(timeout=25,follow_redirects=False) as client:
         response = get(client,origin+path)
         response.raise_for_status()
         data = response.json()
-        if response.status_code!=200 or data.get('live_trading') is not False:
+        if response.status_code!=200 or not isinstance(data.get('live_trading'),bool):
             raise SystemExit('Production health/mode check failed: '+path)
-        print('PRODUCTION_ACCEPTANCE '+path+' HTTP 200 live_trading=false app_version='+str(data.get('app_version','not_in_ready_response')))
+        if data.get('live_trading') and (data.get('individual_order_approval_required') is not True or data.get('autonomous_trading') is not False or data.get('withdrawals_enabled') is not False):
+            raise SystemExit('Manual execution boundaries failed: '+path)
+        print('PRODUCTION_ACCEPTANCE '+path+' HTTP 200 live_trading='+str(data.get('live_trading'))+' app_version='+str(data.get('app_version','not_in_ready_response')))
 
     for url,headers in [
         (origin+'/api/dashboard',{}),
