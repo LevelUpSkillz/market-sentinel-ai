@@ -8,8 +8,10 @@ from collections import OrderedDict
 from decimal import Decimal, InvalidOperation
 import re
 import time
+import logging
 import httpx
 
+log = logging.getLogger('sentinel')
 ROOT = 'https://api.kraken.com/0/public/OHLC'
 HL_ROOT = 'https://api.hyperliquid.xyz/info'
 SYMBOL = re.compile(r'^[A-Z0-9.]{1,40}-USD$')
@@ -86,7 +88,8 @@ class PriceHistory:
                     payload={'error':[],'result':{pair:rows}}
                 value=parse_candles(payload,symbol,interval,time.time())
                 value.update(provider=provider,source=ROOT if provider=='kraken' else HL_ROOT)
-            except (httpx.HTTPError,ValueError,TypeError,KeyError,OverflowError,AttributeError):
+            except (httpx.HTTPError,ValueError,TypeError,KeyError,OverflowError,AttributeError) as error:
+                log.warning('public_chart_unavailable provider=%s reason=%s detail=%s',provider,type(error).__name__,str(error)[:160])
                 self.failures[key]=now
                 self.failures={k:v for k,v in self.failures.items() if now-v<20}
                 raise ValueError('Historical provider is temporarily unavailable') from None
