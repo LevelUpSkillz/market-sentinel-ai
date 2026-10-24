@@ -37,3 +37,14 @@ https://developers.cloudflare.com/workers-ai/platform/pricing/
 https://developers.cloudflare.com/workers-ai/models/llama-3.2-3b-instruct/
 https://developers.cloudflare.com/ai-gateway/usage/providers/workersai/
 https://developers.cloudflare.com/vectorize/platform/pricing/
+
+Model licenses: Llama 3.2 is provided through Cloudflare under Meta's Llama 3.2
+Community License (https://github.com/meta-llama/llama-models/blob/main/models/llama3_2/LICENSE).
+The app displays “Built with Llama.” No model weights are redistributed.
+BGE Small is a hosted embeddings model; see the Cloudflare model page for its
+upstream license and model-card links. Text relevance never becomes a win-rate estimate.
+
+Owner login: a separate Market Sentinel email-code IdP was added on October 24,
+2026, with automatic Cloudflare-account redirection disabled. Exact owner email
+policy, application audience and eight-hour duration were preserved. Other
+Sentinel applications and their login settings were not edited.

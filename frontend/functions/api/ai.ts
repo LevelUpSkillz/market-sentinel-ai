@@ -42,7 +42,7 @@ export async function onRequest(context:{request:Request;env:Env}):Promise<Respo
  if(body.mode==='search'){
  const input=[body.query!.slice(0,180),...packet.evidence.map(e=>e.text.slice(0,1000))];
  const value=await env.AI.run(EMBEDDINGS,{text:input},options);
- if(!value.data||value.data.length!==input.length)return fail('Semantic search is temporarily unavailable',503);
+ if(!('data' in value)||!Array.isArray(value.data)||value.data.length!==input.length)return fail('Semantic search is temporarily unavailable',503);
  const query=value.data[0];const matches=packet.evidence.map((e,i)=>({evidence:e,relevance:cosine(query,value.data[i+1])})).sort((a,b)=>b.relevance-a.relevance).slice(0,3);
  return Response.json({provider:'Cloudflare Workers AI',kind:'semantic_search',model:EMBEDDINGS,matches,as_of:packet.as_of,financial_action:false,note:'Relevance measures a text match, not trading quality or odds of profit.'},{headers:HEADERS});
  }

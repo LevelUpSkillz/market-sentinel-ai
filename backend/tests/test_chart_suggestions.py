@@ -33,6 +33,14 @@ class ChartTests(unittest.TestCase):
         self.assertFalse(value['executable'])
         self.assertEqual(value['source_at'],NOW)
 
+    def test_bounded_provider_history_can_include_a_current_candle_beyond_the_committed_window(self):
+        rows=[[NOW-(720-i)*60,'100','103','99','102','101','2',3] for i in range(721)]
+        value=parse_candles({'error':[],'result':{'XXBTZUSD':rows,'last':NOW}},'BTC-USD',1,NOW)
+        self.assertEqual(len(value['candles']),180)
+        self.assertFalse(value['candles'][-1]['closed'])
+        with self.assertRaises(ValueError):
+            parse_candles({'error':[],'result':{'XXBTZUSD':rows*2,'last':NOW}},'BTC-USD',1,NOW)
+
     def test_invalid_ranges_order_duplicates_future_or_nonfinite_are_rejected(self):
         for column,value in [(0,NOW+120),(0,NOW-60),(1,'NaN'),(2,'100'),(3,'110'),(6,'-1')]:
             data=candles();data['result']['XXBTZUSD'][-1][column]=value

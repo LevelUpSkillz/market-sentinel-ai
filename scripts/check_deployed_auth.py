@@ -21,6 +21,16 @@ with httpx.Client(timeout=25,follow_redirects=False) as client:
     if response.status_code not in (301,302,303,307,308,401,403):
         raise SystemExit('Custom hostname did not deny/redirect anonymous access: '+str(response.status_code))
     print('PRODUCTION_ACCEPTANCE custom_domain_anonymous HTTP '+str(response.status_code))
+    if response.status_code in (301,302,303,307,308):
+        from urllib.parse import urlparse, urljoin
+        location=urljoin('https://market.getlevelupskillz.com/',response.headers.get('location',''))
+        if urlparse(location).hostname=='dash.cloudflare.com':
+            raise SystemExit('Owner sign-in incorrectly redirects to Cloudflare administration')
+        if urlparse(location).hostname and urlparse(location).hostname.endswith('.cloudflareaccess.com'):
+            login=get(client,location)
+            next_host=urlparse(urljoin(location,login.headers.get('location',''))).hostname
+            if next_host=='dash.cloudflare.com':raise SystemExit('Owner login must offer email-code sign-in')
+            print('PRODUCTION_ACCEPTANCE owner_login_not_cloudflare_admin HTTP '+str(login.status_code))
 
     for path in ['/health/live','/health/ready']:
         response = get(client,origin+path)
