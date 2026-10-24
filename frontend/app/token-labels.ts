@@ -1,0 +1,3 @@
+const NAMES:Record<string,string>={BTC:'Bitcoin',XBT:'Bitcoin',ETH:'Ethereum',SOL:'Solana',XRP:'XRP',ADA:'Cardano',DOGE:'Dogecoin',AVAX:'Avalanche',DOT:'Polkadot',LINK:'Chainlink',LTC:'Litecoin',BCH:'Bitcoin Cash',ATOM:'Cosmos',UNI:'Uniswap',AAVE:'Aave',XLM:'Stellar',ETC:'Ethereum Classic',ALGO:'Algorand',FIL:'Filecoin',NEAR:'NEAR Protocol',USDT:'Tether',USDC:'USD Coin',DAI:'Dai',TRX:'TRON',SHIB:'Shiba Inu',SUI:'Sui',APT:'Aptos',ARB:'Arbitrum',OP:'Optimism',PEPE:'Pepe',WIF:'dogwifhat',BONK:'Bonk','0G':'0G'};
+export const tokenSymbol=(symbol:string)=>symbol.split('-')[0].split('/')[0];
+export const tokenName=(symbol:string)=>NAMES[tokenSymbol(symbol)]||tokenSymbol(symbol);

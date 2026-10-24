@@ -185,7 +185,7 @@ class Runtime:
                                     log.info('provider_book_observed provider=%s symbol=%s source_at=%s received_at=%s integrity=%s',provider,event.symbol,event.source_at,event.received_at,event.integrity)
                             elif kind=='trade':
                                 self.trades.append(event)
-                                self.flow.observe(event)
+                                if provider!='coinbase' or not getattr(self.settings,'coinbase_display_only',False):self.flow.observe(event)
                                 if provider=='hyperliquid' and event.get('public_participants') and D(event['price'])*D(event['quantity'])>=THRESHOLD and now-self.last_discovery_check>=2:
                                     self.last_discovery_check = now
                                     try:discover(self.store,event,now)
@@ -229,6 +229,7 @@ class Runtime:
         return views
 
     def current_signals(self):
+        if getattr(self.settings,'coinbase_display_only',False):return []
         signals = []
         stopped = self.store.get_state('control')['stopped']
         for symbol in ['BTC-USD','ETH-USD','SOL-USD']:
@@ -243,6 +244,7 @@ class Runtime:
         while True:
             try:
                 for view in self.market_view():
+                    if getattr(self.settings,'coinbase_display_only',False) and view['provider']=='coinbase':continue
                     if not view['received_at']:
                         continue
                     key = (view['provider'],view['symbol'])
@@ -257,6 +259,7 @@ class Runtime:
                             'conclusion':'Observed anomaly; evidence does not establish manipulation.'})
                     previous[key] = view
                 for flow in self.flow.anomalies(time.time()):
+                    if getattr(self.settings,'coinbase_display_only',False) and flow['provider']=='coinbase':continue
                     self.store.put('forensic',{'facts':flow['facts'],'flow':flow,'snapshot':next((v for v in self.market_view() if v['provider']==flow['provider'] and v['symbol']==flow['symbol']),None),
                         'hypotheses':['Changing participation or liquidity could explain these observations.'],
                         'unknowns':['Complete off-venue flow, trader intent and causal mechanism.'],
@@ -281,6 +284,7 @@ class Runtime:
             await asyncio.sleep(10)
 
     def resolve_outcomes(self):
+        if getattr(self.settings,'coinbase_display_only',False):return
         now = time.time()
         for opportunity in self.store.list('opportunity',500):
             if opportunity.get('outcome') or now-opportunity['detected_at'] < 300:

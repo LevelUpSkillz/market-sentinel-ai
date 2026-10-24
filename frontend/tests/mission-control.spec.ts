@@ -36,7 +36,7 @@ async function fixture(page:Page,options:{gap?:boolean;invalid?:boolean;outage?:
 async function review(page:Page,name:string) {
  await page.evaluate(()=>{const tag=document.createElement('div');tag.textContent='SYNTHETIC VISUAL REVIEW · NO REAL PRICES OR MONEY';tag.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#3c294a;color:#fff;font:8px monospace;text-align:center;padding:3px';document.body.append(tag)});
  const data=(await page.screenshot({type:'jpeg',quality:65,fullPage:false})).toString('base64');
- const count=Math.ceil(data.length/5000);for(let i=0;i<count;i++)console.log('MISSION_REVIEW '+name+' '+i+' '+count+' '+data.slice(i*5000,(i+1)*5000));
+ const count=Math.ceil(data.length/200);for(let i=0;i<count;i++)console.log('MISSION_REVIEW '+name+' '+i+' '+count+' '+data.slice(i*200,(i+1)*200));
 }
 
 for(const width of [320,390])test('complete beginner mobile journey at '+width+'px preserves the money boundary',async({page})=>{

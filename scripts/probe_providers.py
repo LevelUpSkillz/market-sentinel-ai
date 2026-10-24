@@ -30,7 +30,7 @@ async def probe(provider):
 
 
 async def main():
-    rows = await asyncio.gather(*(probe(p) for p in ['kraken','hyperliquid']))
+    rows = await asyncio.gather(*(probe(p) for p in ['kraken','coinbase','hyperliquid']))
     print('PUBLIC_PROVIDER_PROBE '+json.dumps({'checked_at':time.time(),'context':'Cloudflare build runner; does not verify deployed Render collectors','results':rows}))
 
 

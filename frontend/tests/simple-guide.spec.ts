@@ -35,7 +35,7 @@ test('suggestions show actual profile evidence separately from unvalidated odds 
  await page.setViewportSize({width:390,height:844});const writes=await mock(page);await page.goto('/');const ideas=page.getByRole('region',{name:'Trade suggestions'});
  await expect(ideas).toContainText('12 completed positions');await expect(ideas).toContainText('75.0% historical wins');await expect(ideas.getByText('Not validated',{exact:true})).toBeVisible();
  await expect(ideas).toContainText('different market');await expect(ideas.getByText('Watch for this price',{exact:true})).toBeVisible();
- await page.clock.runFor(6500);await expect(ideas.getByText('Watch for this price',{exact:true})).toHaveCount(0);await expect(ideas).toContainText('Wait for a fresh check');
+ await page.clock.runFor(6500);await expect(ideas.getByText('Watch for this price',{exact:true})).toBeVisible();await expect(ideas).toContainText('Previous levels · do not use for entry');await expect(ideas.getByText('Practice ready',{exact:true})).toHaveCount(0);await expect(ideas).toContainText('Wait for a fresh check');
  await ideas.getByRole('button',{name:'View trader’s profile and actions',exact:false}).click();await expect(page.getByRole('heading',{name:'Big Traders.'})).toBeVisible();expect(writes).toEqual([]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
 });

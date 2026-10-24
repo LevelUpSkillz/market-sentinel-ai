@@ -67,10 +67,11 @@ class Catalogue:
             items[key] = {'id':'coinpaprika:'+key,'provider_id':key,'source':'coinpaprika',
                 'name':str(row.get('name',''))[:200],'symbol':str(row.get('symbol',''))[:60],
                 'rank':row.get('rank') if isinstance(row.get('rank'),int) else 0,
+                'is_new':row.get('is_new') if isinstance(row.get('is_new'),bool) else None,
                 'active':row.get('is_active') is True,'kind':str(row.get('type','token'))[:40],
                 'quote_currency':'USD','instrument':'aggregate','watch_symbol':None}
         if not items:raise ValueError('No valid coin identities')
-        value = {'items':items,'at':now}
+        value = {'items':items,'at':now,'display_schema':1}
         self.store.set_state('catalogue:coins',value)
         self.assets = value
         self.errors.pop('coinpaprika:coins',None)
@@ -214,7 +215,7 @@ class Catalogue:
     async def refresh(self,client,now=None):
         now = time.time() if now is None else now
         jobs = []
-        if now-self.assets['at']>=6*3600:
+        if now-self.assets['at']>=6*3600 or self.assets.get('display_schema')!=1:
             jobs.append(('coinpaprika:coins',COIN_ROOT+'/coins',None,self.set_coins))
         if now-self.global_quotes['at']>=600:
             jobs.append(('coinpaprika:quotes',COIN_ROOT+'/tickers?quotes=USD',None,self.set_global_quotes))

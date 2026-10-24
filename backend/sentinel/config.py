@@ -23,7 +23,18 @@ class Settings:
     kraken_vault_key: str = field(default=os.getenv('KRAKEN_VAULT_KEY') or os.getenv('MARKET_SENTINEL_VAULT_20261024',''),repr=False)
     kraken_live_enabled: bool = os.getenv('KRAKEN_LIVE_ENABLED', 'false').lower() == 'true'
 
+    coinbase_display_only: bool = os.getenv('COINBASE_DISPLAY_ONLY','false').lower()=='true'
+    google_owner_enabled: bool = os.getenv('GOOGLE_OWNER_ENABLED','false').lower()=='true'
+    research_origin: str = os.getenv('RESEARCH_ORIGIN','')
+    supabase_auth_url: str = os.getenv('SUPABASE_AUTH_URL','')
+    supabase_publishable_key: str = os.getenv('SUPABASE_PUBLISHABLE_KEY','')
+
     def validate(self):
+        if self.research_origin:
+            from urllib.parse import urlparse
+            parsed=urlparse(self.research_origin)
+            if parsed.scheme!='https' or not parsed.hostname or parsed.path or parsed.query or parsed.fragment or parsed.username or parsed.password or parsed.port:
+                raise ValueError('Research origin must be a fixed HTTPS origin')
         # Never allow real order submission without an explicitly provisioned vault.
         if self.kraken_live_enabled:
             from cryptography.fernet import Fernet

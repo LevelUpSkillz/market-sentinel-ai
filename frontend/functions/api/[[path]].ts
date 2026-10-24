@@ -19,8 +19,19 @@ export async function onRequest({ request, env }: Context): Promise<Response> {
       body:['GET','HEAD'].includes(request.method)?undefined:request.body,
       redirect:'manual',signal:AbortSignal.timeout(20000)});
     const result = new Headers({'Content-Type':response.headers.get('content-type') || 'application/json',
-      'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY'});
-    const cookie = response.headers.get('set-cookie'); if (cookie) result.set('Set-Cookie',cookie);
+      'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'no-referrer'});
+    const cookieHeaders=response.headers as Headers & {getSetCookie?:()=>string[];getAll?:(name:string)=>string[]};
+    const cookies=cookieHeaders.getSetCookie?.()||cookieHeaders.getAll?.('Set-Cookie')||[response.headers.get('set-cookie')].filter((value):value is string=>!!value);
+    for(const cookie of cookies)result.append('Set-Cookie',cookie);
+    if(incoming.pathname.startsWith('/api/auth/google/')&&response.status>=300&&response.status<400){
+      const location=response.headers.get('location');
+      if(!location)return Response.json({detail:'Authentication redirect is unavailable'}, {status:502});
+      const target=new URL(location);
+      const provider=incoming.pathname==='/api/auth/google/start'&&target.protocol==='https:'&&target.origin==='https://scftnhmrdxrysvnofcyd.supabase.co'&&target.pathname==='/auth/v1/authorize';
+      const callback=incoming.pathname==='/api/auth/google/callback'&&target.protocol==='https:'&&target.hostname==='market-research.getlevelupskillz.com'&&target.pathname==='/'&&!target.search&&['#radar','#mission-control','#google-signin-failed'].includes(target.hash);
+      if(!provider&&!callback)return Response.json({detail:'Authentication redirect denied'}, {status:502});
+      result.set('Location',target.toString());
+    }
     const download=response.headers.get('content-disposition'); if(download)result.set('Content-Disposition',download);
     const retry = response.headers.get('retry-after'); if (retry) result.set('Retry-After',retry);
     return new Response(response.body,{status:response.status,headers:result});

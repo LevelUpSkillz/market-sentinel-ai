@@ -1,0 +1,8 @@
+'use client';
+import {useEffect,useState} from 'react';
+export default function ResearchLogin(){
+ const [options,setOptions]=useState<{google_ready:boolean;owner_google_enabled?:boolean;research_url:string|null}|null>(null);
+ const [failed,setFailed]=useState(false);
+ useEffect(()=>{const controller=new AbortController();setFailed(window.location.hash==='#google-signin-failed');fetch('/api/auth/options',{cache:'no-store',credentials:'include',signal:controller.signal}).then(async response=>{if(response.ok)setOptions(await response.json())}).catch(()=>{});return()=>controller.abort()},[]);
+ return <section className="panel research-login" aria-label="Google sign-in"><div className="panel-head"><div><span className="eyebrow">YOUR SECURE WORKSPACE</span><h2>Sign in with Google</h2></div></div><div className="wallet-details"><p>Use your approved Google account to open Market Sentinel.</p><p>Your owner account opens your full workspace. Invited friends can view research only. Every real order still requires your separate approval.</p>{failed&&<p className="error-banner" role="alert">We couldn’t complete sign-in. Try again with your approved Google account. Friends need an active invitation.</p>}{options?.google_ready&&options.research_url?<a className="google-signin" href={options.research_url+'/api/auth/google/start'}><span aria-hidden="true">G</span>Continue with Google</a>:<p>Google sign-in is temporarily unavailable. Your existing owner login remains available.</p>}<small>Private sign-in. Your account permissions are checked each time you open data or take an action.</small></div></section>;
+}

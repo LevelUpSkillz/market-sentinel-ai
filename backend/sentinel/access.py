@@ -13,7 +13,7 @@ class AccessVerifier:
         self.last_attempt=0
         self.lock=asyncio.Lock()
 
-    async def verify(self,token,client=None):
+    async def identity(self,token,client=None):
         if not token or len(token)>16384 or not self.team or not self.audience or not self.owner:
             return False
         parsed=urlparse(self.team)
@@ -44,6 +44,12 @@ class AccessVerifier:
             if key is None:return False
             claims=jwt.decode(token,key=key,algorithms=['RS256'],issuer=self.team,audience=self.audience,
                 leeway=5,options={'require':['exp','iat','iss','aud','sub']})
-            return claims.get('email','').lower()==self.owner and claims.get('type','app')=='app'
+            email=claims.get('email')
+            if not isinstance(email,str) or len(email)>254 or '@' not in email or claims.get('type','app')!='app':return None
+            return {'email':email.lower(),'sub':claims['sub']}
         except (jwt.PyJWTError,httpx.HTTPError,ValueError,KeyError,TypeError):
             return False
+
+    async def verify(self,token,client=None):
+        identity=await self.identity(token,client)
+        return bool(identity and identity['email']==self.owner)
