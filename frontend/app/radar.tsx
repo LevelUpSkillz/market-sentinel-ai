@@ -45,6 +45,7 @@ export type RadarPayload = {
 };
 
 type Props = {
+  focusSymbol?:string;
   auth:boolean;
   online:boolean;
   now:number;
@@ -91,8 +92,9 @@ function RadarGlyph({active}:{active:boolean}){
   </div>;
 }
 
-export default function RadarView({auth,online,now,onWatch,onPaper,onReal}:Props){
+export default function RadarView({auth,online,now,onWatch,onPaper,onReal,focusSymbol}:Props){
   const [filter,setFilter]=useState('all'),[search,setSearch]=useState('');
+  useEffect(()=>{setSearch(focusSymbol?.split('-')[0]||'')},[focusSymbol]);
   const [data,setData]=useState<RadarPayload|null>(null);
   const [connected,setConnected]=useState(false);
   const [error,setError]=useState('');

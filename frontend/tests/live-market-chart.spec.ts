@@ -79,7 +79,7 @@ test('API heartbeats and outages add no chart prices, and recovery leaves an exp
   await mockFeed(page,feed);
   await page.goto('/');
   await page.getByLabel('Open navigation').click();
-  await page.getByRole('button',{name:'Prices',exact:true}).click();
+  await page.getByRole('button',{name:'Markets',exact:true}).click();
   const chart=page.getByRole('region',{name:'Live market chart'});
   await expectSamples(chart,1);
   sourcePoint(feed,2,103);

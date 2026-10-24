@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 const STEPS=[
- {title:'Start with the prices',screen:1,button:'Open Prices',text:'Prices shows what each exchange is reporting. “Live” means the source is fresh. “Old” means wait for an update.',tip:'The line chart shows actual exchange prices. It does not predict the next move.'},
+ {title:'Start with the prices',screen:1,button:'Open Markets',text:'Markets shows what each exchange is reporting. “Live” means the source is fresh. “Old” means wait for an update.',tip:'The line chart shows actual exchange prices. It does not predict the next move.'},
  {title:'Find an idea, not a command',screen:4,button:'Open Trade Ideas',text:'Trade Ideas combines market activity with public trader research. Each card explains what to watch and why an entry passes or fails.',tip:'GO = ready for a practice review. WAIT = a condition is missing. NO-GO = skip this entry. None promises a profit.'},
  {title:'Understand the big traders',screen:2,button:'Open Big Traders',text:'See public wallets, their reported positions and available past trades. Open a wallet’s profile to see its actual actions.',tip:'A wallet is an anonymous public account. Its past win rate is not your chance of winning, and its trade may already be too late to follow.'},
  {title:'Practice before risking money',screen:7,button:'Open Practice',text:'A practice trade uses virtual money. The app models fees and records what happened without sending an exchange order.',tip:'Practice results help test an idea. They are not real profits or proof that it will work with real money.'},

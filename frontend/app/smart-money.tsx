@@ -57,10 +57,10 @@ export function ActionBriefing({intel,online,now,onInspectWallet}:{intel:Intelli
   </section>;
 }
 
-export default function SmartMoneyView({traders,events,intel,online,now,auth,busy,onAdd,onInspectWallet}:{traders:Trader[];events:JournalRecord[];intel:Intelligence|null;online:boolean;now:number;auth:boolean;busy:boolean;onAdd:(address:string,label:string)=>Promise<void>;onInspectWallet?:(address:string)=>void}) {
+export default function SmartMoneyView({traders,events,intel,online,now,auth,busy,onAdd,onInspectWallet,focusSymbol}:{focusSymbol?:string;traders:Trader[];events:JournalRecord[];intel:Intelligence|null;online:boolean;now:number;auth:boolean;busy:boolean;onAdd:(address:string,label:string)=>Promise<void>;onInspectWallet?:(address:string)=>void}) {
   const [address,setAddress]=useState(''),[label,setLabel]=useState('');
   return <>
-    <ActionBriefing intel={intel} online={online} now={now} onInspectWallet={onInspectWallet}/>
+    <ActionBriefing intel={intel&&focusSymbol?{...intel,actions:intel.actions.filter(a=>a.symbol.split("-")[0]===focusSymbol.split("-")[0])}:intel} online={online} now={now} onInspectWallet={onInspectWallet}/>
     <section className="panel"><div className="panel-head"><div><span className="eyebrow">AUTOMATIC DISCOVERY + YOUR WATCHLIST</span><h2>Investigate a public wallet</h2></div></div><div className="wallet-details"><p>Up to five wallets are discovered from genuine large public trade prints. Both buyer and seller are investigated; print size does not establish skill, wealth, identity or directional intent.</p></div>
       <form className="inline-form" onSubmit={async e=>{e.preventDefault();await onAdd(address,label||'Public wallet');setAddress('');setLabel('')}}><input aria-label="Public wallet address" placeholder="Public address · 0x…" value={address} onChange={e=>setAddress(e.target.value)} pattern="0x[0-9a-fA-F]{40}" required/><input aria-label="Wallet label" placeholder="Your label, not verified identity" maxLength={60} value={label} onChange={e=>setLabel(e.target.value)}/><button className="primary" disabled={!auth||busy}>Add public wallet</button></form>
       <div className="panel-foot">Hyperliquid public data · ten wallets total · position rounds approximately 30 seconds at full capacity · available history refreshes every six hours · gaps possible on free hosting</div>

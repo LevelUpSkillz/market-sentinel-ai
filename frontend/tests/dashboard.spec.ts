@@ -14,11 +14,11 @@ test('mobile navigation reaches the research and live capital workspaces',async(
   await page.route('**/api/**',route=>route.fulfill({status:401,body:'Authentication required'}));
   await page.goto('/');
   await page.getByLabel('Open navigation').click();
-  await page.getByRole('button',{name:'Prices',exact:true}).click();
-  await expect(page.getByRole('heading',{name:'Prices.'})).toBeVisible();
+  await page.getByRole('button',{name:'Markets',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Markets.'})).toBeVisible();
   await expect(page.getByRole('heading',{name:'Indicative swap estimates'})).toBeVisible();
   await page.getByLabel('Open navigation').click();
-  await page.getByRole('button',{name:'More tools',exact:true}).click();
+  await page.getByRole('button',{name:'More Tools',exact:true}).click();
   await page.getByRole('button',{name:'Strategy Lab',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Walk-forward strategy lab'})).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
@@ -64,7 +64,7 @@ test('all-market search keeps token identity, freshness and depth controls expli
   });
   await page.goto('/');
   await page.getByLabel('Open navigation').click();
-  await page.getByRole('button',{name:'Prices',exact:true}).click();
+  await page.getByRole('button',{name:'Markets',exact:true}).click();
   const directory=page.getByRole('region',{name:'All crypto markets'});
   await expect(directory.getByText('SYNTHETIC XRP/USD',{exact:true})).toBeVisible();
   await page.getByLabel('Search all crypto markets').fill('XRP');

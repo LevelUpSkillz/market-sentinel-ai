@@ -12,8 +12,8 @@ const format=(value:unknown)=>value==null||value===''||!Number.isFinite(Number(v
 const date=(at?:number|null)=>at&&Number.isFinite(at)?new Date(at*1000).toLocaleString():'Unavailable';
 const VIEWS:{id:LiveMoneyView;label:string;number:string}[]=[{id:'overview',label:'Overview',number:'01'},{id:'risk',label:'Budget & limits',number:'02'},{id:'trade',label:'Trade ticket',number:'03'},{id:'connection',label:'Connection',number:'04'}];
 
-export default function LiveMoney({auth,online,now,markets,stopped,busy,onStop,onMarkets,view,onView,plan,onRefreshPlan}:{
- auth:boolean;online:boolean;now:number;markets:Market[];stopped:boolean;busy:boolean;onStop:()=>Promise<void>;onMarkets:()=>void;
+export default function LiveMoney({auth,online,now,markets,stopped,busy,onStop,onMarkets,view,onView,plan,onRefreshPlan,planning}:{
+ planning?:React.ReactNode;auth:boolean;online:boolean;now:number;markets:Market[];stopped:boolean;busy:boolean;onStop:()=>Promise<void>;onMarkets:()=>void;
  view:LiveMoneyView;onView:(value:LiveMoneyView)=>void;plan:RealPlan|null;onRefreshPlan:()=>Promise<void>;
 }){
  const [summary,setSummary]=useState<KrakenSummary>({connection:null,account:null,unresolved:false});
@@ -55,6 +55,7 @@ export default function LiveMoney({auth,online,now,markets,stopped,busy,onStop,o
   <div hidden={view==='risk'}><KrakenAccount auth={auth} online={online} view={view==='risk'?'overview':view} onSummary={setSummary} liveMarkets={markets} stopped={stopped} riskReady={profileFresh}/></div>
   <div hidden={view!=='risk'}><CapitalSettings auth={auth} online={online} onProfile={setProfile}/></div>
   {view==='trade'&&<>
+   <details className="capital-planning-help"><summary>Calculate a plan with your real budget</summary>{planning}</details>
    {plan&&<section className="research-handoff"><div><span className="eyebrow">RESEARCH → CAPITAL PLANNING</span><h3>Your research sizing</h3><p>This separate plan places no order and attaches no stop to a Kraken order.</p></div><button className="secondary" disabled={!auth||!online||planBusy} onClick={async()=>{setPlanBusy(true);setPlanError('');try{await onRefreshPlan()}catch(error){setPlanError((error as Error).message)}finally{setPlanBusy(false)}}}>Refresh real-capital plan</button>{planError&&<p role="alert">{planError}</p>}<div className="wide"><RealPlanView plan={plan}/></div></section>}
    <div className="desk-note"><div><strong>Need another token?</strong><p>Add its Kraken USD detailed book in Live Markets, then refresh Connection. Listings and indicative prices alone cannot authorize an order.</p></div><button type="button" className="secondary" onClick={onMarkets}>Explore live markets ↗</button></div>
   </>}

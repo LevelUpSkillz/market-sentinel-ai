@@ -20,9 +20,9 @@ test('simple navigation and six-step guide explain decisions without creating a 
  for(let i=0;i<5;i++)await page.getByRole('dialog').getByRole('button',{name:'Next',exact:true}).click();
  await expect(page.getByRole('dialog')).toContainText('Preview is not buying');await expect(page.getByRole('dialog')).toContainText('exact approval');
  await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toHaveCount(0);
- await page.getByRole('button',{name:'Show me how',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'Open Prices',exact:false}).click();
- await expect(page.getByRole('heading',{name:'Prices.'})).toBeVisible();expect(writes).toEqual([]);
- await page.getByLabel('Open navigation').click();await expect(page.getByRole('button',{name:'Strategy Lab',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'More tools',exact:true}).click();await expect(page.getByRole('button',{name:'Practice',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Show me how',exact:true}).click();await page.getByRole('dialog').getByRole('button',{name:'Open Markets',exact:false}).click();
+ await expect(page.getByRole('heading',{name:'Markets.'})).toBeVisible();expect(writes).toEqual([]);
+ await page.getByLabel('Open navigation').click();await expect(page.getByRole('button',{name:'Strategy Lab',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'More Tools',exact:true}).click();await expect(page.getByRole('button',{name:'Practice',exact:true})).toBeVisible();
 });
 
 test('exchange history draws a real series immediately with line and candlestick modes',async({page})=>{
