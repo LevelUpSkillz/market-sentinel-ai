@@ -56,7 +56,7 @@ const CONFIRMATION='PLACE THIS REAL ORDER';
 const ACCOUNT_MAX_AGE=60;
 const actionButtonStyle={whiteSpace:'normal' as const,minHeight:44,maxWidth:'100%'};
 const positiveDecimal=(value:string)=>/^\d+(?:\.\d+)?$/.test(value)&&Number.isFinite(Number(value))&&Number(value)>0;
-const date=(at:number)=>Number.isFinite(at)?new Date(at*1000).toLocaleString():'Unavailable';
+const date=(at?:number|null)=>Number.isFinite(at)?new Date(at*1000).toLocaleString():'Unavailable';
 class KrakenRequestError extends Error {
   constructor(message:string,readonly status:number){super(message)}
 }
