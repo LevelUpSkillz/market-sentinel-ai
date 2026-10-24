@@ -163,7 +163,7 @@ export default function KrakenAccount({auth,online,view='all',onSummary,liveMark
   const reviewFresh=preview!=null&&Number.isFinite(preview.expires_at)&&now>0&&now<preview.expires_at;
   const validPreview=preview?.status==='validated'&&preview.provider_validation===true&&preview.quote_currency==='USD'&&
     positiveDecimal(preview.quantity)&&positiveDecimal(preview.limit_price)&&maximumBuyCost(preview.estimated_notional,preview.fee_reserve)!==null;
-  const canApprove=auth&&online&&!busy&&!unresolved&&submissionEnabled&&accountFresh&&reviewFresh&&validPreview&&confirmation===CONFIRMATION;
+  const canApprove=riskReady&&auth&&online&&!busy&&!unresolved&&submissionEnabled&&accountFresh&&reviewFresh&&validPreview&&confirmation===CONFIRMATION;
   const markets=connection?.markets?.filter(row=>typeof row.symbol==='string'&&row.symbol.endsWith('-USD'))||[];
   const marketReady=markets.some(row=>row.symbol===symbol&&row.ready);
   const canPreview=riskReady&&auth&&online&&!busy&&!unresolved&&submissionEnabled&&accountFresh&&marketReady&&positiveDecimal(quantity)&&positiveDecimal(limitPrice);
