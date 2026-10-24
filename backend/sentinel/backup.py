@@ -24,7 +24,7 @@ RECORD_KINDS = frozenset({
     'radar_signal', 'entry_plan', 'real_plan', 'real_order', 'lab', 'quote',
 })
 STATE_KEYS = frozenset({
-        'kraken_live_active',
+    'kraken_live_active','kraken_order_binding',
     'control', 'account', 'market_watch', 'real_capital_profile',
     'catalogue:coins', 'catalogue:quotes', 'catalogue:venues',
     'public_leaderboard', 'public_leaderboard_error',
@@ -259,6 +259,11 @@ def validate_backup(blob, *, max_bytes=MAX_BACKUP_BYTES):
     if not {'control', 'account'}.issubset(seen_state):
         raise BackupError('Backup lacks required account/control state.')
     state = {row['key']: row['data'] for row in payload['state']}
+    binding=state.get('kraken_order_binding')
+    if binding is not None and (not isinstance(binding,dict) or set(binding)!={'id','fingerprint'} or
+            not isinstance(binding['id'],str) or not re.fullmatch(r'[0-9a-f-]{36}',binding['id']) or
+            not isinstance(binding['fingerprint'],str) or not re.fullmatch(r'[0-9a-f]{64}',binding['fingerprint'])):
+        raise BackupError('Invalid nonsecret order-account binding.')
     active_order = state.get('kraken_live_active')
     if active_order is not None and (not isinstance(active_order, str) or
             not 1 <= len(active_order) <= 512 or

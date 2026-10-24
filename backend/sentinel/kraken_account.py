@@ -183,10 +183,12 @@ class KrakenAccount:
             self._active_lock()
             previous=self.store.get_state(CONNECTION_KEY)
             if self.store.get_state('kraken_live_active'):
+                previous=previous or self.store.get_state('kraken_order_binding')
                 if not previous or previous.get('fingerprint')!=fingerprint:
                     raise AccountError('Reconnect the original dedicated key to reconcile the prior order before replacing this connection.')
                 doc['id']=previous['id']
             self.store.set_state(CONNECTION_KEY,doc)
+            self.store.set_state('kraken_order_binding',{'id':doc['id'],'fingerprint':fingerprint})
             self.store.put('audit',{'action':'kraken.connect','connection_id':doc['id'],'permissions':permissions,'actor':'owner'})
         return self.status()
 

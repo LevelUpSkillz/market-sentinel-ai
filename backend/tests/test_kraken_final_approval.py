@@ -13,6 +13,30 @@ class FinalApprovalTests(unittest.IsolatedAsyncioTestCase):
     connect=fixtures.KrakenAccountTests.connect
     preview=fixtures.KrakenAccountTests.preview
 
+    async def test_unresolved_restore_can_reconnect_original_key_only_for_reconciliation(self):
+        from sentinel.backup import export_backup,restore_backup
+        from sentinel.kraken_account import KrakenAccount
+        from sentinel.kraken import KrakenError
+        from sentinel.storage import Store
+        await self.connect();review=await self.preview()
+        self.state.submit_error=KrakenError('unknown','SYNTHETIC uncertain response',uncertain=True)
+        self.assertEqual((await self.account.approve(review['id'],'PLACE THIS REAL ORDER'))['status'],'unknown')
+        blob=export_backup(self.store,now=self.now)
+        self.assertNotIn(fixtures.API_KEY.encode(),blob)
+        self.assertNotIn(fixtures.API_SECRET.encode(),blob)
+        destination=Store('sqlite:///:memory:')
+        try:
+            restore_backup(destination,blob,environment='test',offline=True,confirm_empty=True,now=self.now+1)
+            restored=KrakenAccount(destination,self.settings,self.books,lambda key,secret,nonce:fixtures.FakeKraken(self.state,key,secret,nonce))
+            args=dict(api_key=fixtures.API_KEY,api_secret=fixtures.API_SECRET,country_code='US',region='SYNTHETIC REGION',eligibility_confirmed=True,dedicated_key_confirmed=True)
+            with self.assertRaises(AccountError):await restored.connect(**dict(args,api_key=fixtures.OTHER_KEY))
+            await restored.connect(**args)
+            self.state.reconciled={'orders':{'SYNTHETIC_ID':{'status':'closed'}},'complete':True}
+            self.assertEqual((await restored.reconcile(review['id']))['status'],'resolved')
+            self.assertTrue(destination.get('real_order',review['id'])['restored_execution_disabled'])
+            self.assertEqual(len(self.state.submitted),1)
+        finally:destination.close()
+
     async def test_profile_change_during_provider_checks_cannot_reuse_approval(self):
         await self.connect();review=await self.preview()
         original=type(self.account._client()[2].client).fees
