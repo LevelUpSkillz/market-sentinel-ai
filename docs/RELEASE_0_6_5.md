@@ -1,6 +1,12 @@
 # 0.6.5 — Contextual visual instruments across the app
 
-Status: implementation prepared; preview acceptance pending. Not deployed.
+Status: DEPLOYED. Production `ca7801f9-fb27-4861-8afe-e33976d93c80` completed `2026-10-25T04:48:25.970837Z`
+on source `262db38f09be81dc2b647df884ba97e9b9f528d4`.
+
+Verified: 273 backend checks / real isolated PostgreSQL / zero skips,
+45 Chromium tests, app/Worker types and builds, model/AI contracts, audits with
+zero known vulnerabilities, real provider/history probes, protected production
+health/auth checks and canonical Cloudflare source. Render unchanged.
 
 Retains the Home orbital scene and adds a distinct instrument to every other
 main section: visible order-book landscape, public wallet/token constellation,

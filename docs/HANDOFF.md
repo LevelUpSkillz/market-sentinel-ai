@@ -6,14 +6,58 @@ Verified October 25, 2026. Inspect current refs before editing; preserve newer w
 
 - App: https://market.getlevelupskillz.com
 - Repository: https://github.com/LevelUpSkillz/market-sentinel-ai
-- Cloudflare dashboard: flight deck **0.6.4**, source `4404948b11dd76ddb17cb382b4dd3c808f1b6c24`.
-- Production deployment: `6171079a-4c5b-4d26-b01f-97f88b102bf7`, completed `2026-10-25T03:58:31.497916Z`.
+- Cloudflare dashboard: visual array **0.6.5**, source `262db38f09be81dc2b647df884ba97e9b9f528d4`.
+- Production deployment: `ca7801f9-fb27-4861-8afe-e33976d93c80`, completed `2026-10-25T04:48:25.970837Z`.
 - Render backend remains **0.6.2**, source `4b768b3ff1c9452a34b2bb4b7027c5db6c977f00`, deployment `dep-dbei4m4s728c73cagdg0`.
 - Current editable source: `/workspace/market-sentinel-cloudflare-ai`.
 - Do not deploy the older premium-ui, premium, release or market-sentinel-ai local directories over current main.
 
-## This release
 
+
+## Latest — visual instruments, real-data overlays and calm issue status
+
+0.6.5 retains and enriches the Home globe and adds distinct instruments across
+all other main sections: actual displayed order-book landscape, public wallet /
+token constellation, recorded opportunity timeline, signal evaluation pipeline,
+saved-spread forensic spectrum, real walk-forward fold map, virtual cash / entry
+cost orbit, alert record relay, settings core and Live Money readiness shield.
+The exact trade-ticket subview remains focused on order review. Controls include
+3D / flat, grid layer and recorded-item inspection; wallet links open the exact
+existing wallet with correct focus. No visual control requests an order.
+
+The user explicitly wants stronger futuristic complexity. Added layered rotating
+segmented shells, a projected engineering cage, ornamental trails/helix guides
+and a scanning holographic stage. Home has richer shells/trails and REAL observed
+BTC/ETH/SOL book-midpoint beacons with provider, quote currency, source time and
+age. Only verified fresh observations enter the cache; old ones say Last observed.
+Price-change light pulses require an actual observed midpoint change. Decorative
+geometry does not represent real transactions, predictions or geographic positions.
+
+Models use existing loaded data only: no extra provider, account or AI requests.
+USD and USDC stay separate. Wallet edges are reported positions, not transfers,
+identities or trader rankings. Practice allocation uses virtual cash / original
+entry cost, not invented equity. Lab bands use actual validation boundaries.
+Empty data stays empty. FX/reduced-motion/hidden/offscreen handling is preserved.
+
+User found Fresh books / Awaiting fresh data flipping visually alarming. Removed
+the technical Connections panel from Home and placed diagnostics in collapsed
+Settings. Stable source labels replace the orbital transport-state text. A compact
+header issue indicator remains visible: actual API/collector/persistence/provider
+problems are reported, including long message gaps or all observed book receipts
+older than 30s. Disabled providers are expected and ignored for issue detection.
+A quiet book crossing 5s alone does not show a global fault. Exact per-quote 5s
+trade guards remain intact. User-requested empty Coinbase shortcut tiles are
+omitted when no source observation has ever arrived; no price substitution.
+
+Acceptance: 273 backend tests with actual isolated PostgreSQL / zero skips and
+45 Chromium tests, generated Worker/app types, builds, AI contracts, new instrument
+and health-model contracts, public providers/history, schema, audits and protected
+production probes. Initial new-wallet focus race and native-summary role mismatch
+were fixed in the product; assertions were retained. Canonical deployment/source
+verified. No actual account, credentials or order used in acceptance. Render backend
+stays 0.6.2; no backend/collector/database/vault/config/plan changes. Free only.
+
+## Previous release foundation
 
 The user explicitly rejected the previous design as too restrained and requested
 prominent futuristic animation. 0.6.4 adds a large rotating projected wireframe
@@ -62,7 +106,7 @@ configuration changed for this frontend release. No Render action is required.
 ## Verified acceptance
 
 273 backend tests passed with actual isolated PostgreSQL and ZERO skips;
-41 Chromium browser tests passed. Includes phone/tablet/desktop widths
+45 Chromium browser tests passed. Includes phone/tablet/desktop widths
 320/390/768/1440, chart navigation without invented samples or account reads,
 stale-feed handling, trader P&L distinctions and existing Kraken approval /
 unknown-outcome no-resend safety contracts. Generated Worker types, TypeScript,
@@ -74,9 +118,9 @@ forged APIs, with individual approval required, autonomous trading false and
 withdrawals false. Owner sign-in offered an HTTP 200 login rather than forced
 Cloudflare administration. No owner session, key or real order was used.
 
-The first preview's single failing assertion matched help text instead of a live
-status list; it was corrected without weakening freshness. The revised preview
-and final production acceptance passed. Design captures are labeled synthetic
+An earlier 0.6.3 preview assertion matched help text instead of a live status
+list; that selector was corrected without weakening freshness. The 0.6.5 product
+fixes and acceptance are recorded above; final production acceptance passed. Design captures are labeled synthetic
 fixtures, never inserted into production. Passing tests does not prove profits.
 
 ## Existing features to preserve

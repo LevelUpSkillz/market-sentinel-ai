@@ -1,10 +1,15 @@
-# Published delivery — Market Sentinel AI flight deck 0.6.4
+# Published delivery — Market Sentinel AI visual array 0.6.5
 
 Live: https://market.getlevelupskillz.com
-Cloudflare production `6171079a-4c5b-4d26-b01f-97f88b102bf7` succeeded at `2026-10-25T03:58:31.497916Z` on source
-`4404948b11dd76ddb17cb382b4dd3c808f1b6c24`. Existing Render backend 0.6.2 remains unchanged.
+Cloudflare production `ca7801f9-fb27-4861-8afe-e33976d93c80` succeeded at `2026-10-25T04:48:25.970837Z` on source
+`262db38f09be81dc2b647df884ba97e9b9f528d4`. Existing Render backend 0.6.2 remains unchanged.
 
-Published: animated orbital globe/lights/rings, stellar backdrop, perspective
+Published: distinct contextual instruments across all main sections, 3D/flat/grid
+controls, actual-depth/wallet/record/fold data, richer holographic geometry and
+real sourced Home quote beacons. Calm compact issue indicator; technical
+Connections diagnostics moved into collapsed Settings; empty never-observed
+Coinbase shortcut tiles omitted. Existing animated orbital globe/lights/rings,
+stellar backdrop, perspective
 grid, radar sweeps, illuminated cyan-blue mission-control panels and FX control,
 plus the existing simple Home, real source coverage and
 connection telemetry, actual public-trade tape, market shortcuts, historical
@@ -14,7 +19,7 @@ margin, fees and available open/closed results. Missing evidence stays unavailab
 Existing tutorial, Cloudflare AI, radar, practice and Live Money are preserved.
 
 Verified: 273 backend tests with actual isolated PostgreSQL / zero skips;
-41 Chromium tests; generated Worker and app types; Next build; AI contracts;
+45 Chromium tests; generated Worker and app types; Next build; AI contracts;
 Blueprint schema; real public provider/trader/history probes; audits with no known
 vulnerabilities; protected production health and anonymous/forged denial probes.
 No owner account, key or real trade was used. Production source and canonical
@@ -32,8 +37,9 @@ strategy. Open P&L can change; reconstructed closed results exclude funding.
 Historical performance is not follower success odds. Google research invitations
 remain on an unreleased feature branch. Passing tests proves no trading return.
 
-The user specifically requested prominent futuristic motion. Effects are purely
-decorative, not fabricated market activity. FX can pause motion while real data
-continues updating. Reduced-motion preferences, offscreen/hidden-page work and
+The user specifically requested prominent futuristic motion. Orbital shells,
+trails and layout geometry are decorative; quote markers, depth bars, wallet
+links and recorded-event plots use actual loaded evidence. FX can pause motion
+while real data continues updating. Reduced-motion preferences, offscreen/hidden-page work and
 pause persistence are tested. No new library, asset service, hosting resource or
 financial/account execution behavior was introduced.

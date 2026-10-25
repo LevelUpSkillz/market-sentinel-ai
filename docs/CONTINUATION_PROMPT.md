@@ -2,9 +2,9 @@ Continue Market Sentinel AI from its CURRENT implementation. Do not restart,
 produce only a plan, or overwrite newer source with an older checkout.
 
 First read current main docs/HANDOFF.md and docs/DELIVERY.md, then inspect actual
-refs, source, tests and deployments. Current published dashboard is flight deck
-0.6.4 on Cloudflare, source 4404948b11dd76ddb17cb382b4dd3c808f1b6c24, production 6171079a-4c5b-4d26-b01f-97f88b102bf7, completed
-2026-10-25T03:58:31.497916Z. Backend remains 0.6.2 on Render source
+refs, source, tests and deployments. Current published dashboard is visual array
+0.6.5 on Cloudflare, source 262db38f09be81dc2b647df884ba97e9b9f528d4, production ca7801f9-fb27-4861-8afe-e33976d93c80, completed
+2026-10-25T04:48:25.970837Z. Backend remains 0.6.2 on Render source
 4b768b3ff1c9452a34b2bb4b7027c5db6c977f00. Use
 /workspace/market-sentinel-cloudflare-ai if this workspace exists; old premium,
 premium-ui, release and market-sentinel-ai directories are stale.
@@ -61,7 +61,7 @@ A validated automatic PRACTICE bot is possible future work, not shipped. Glitche
 may be invalid or unfillable; all-time lows do not guarantee a rebound.
 
 Latest release passed 273 backend checks with actual isolated PostgreSQL / zero
-skips and 41 Chromium tests, type/build/AI/schema/audit gates, real public probes
+skips and 45 Chromium tests, type/build/AI/schema/audit gates, real public probes
 and protected production checks. These tests prove no profitability. Work
 autonomously, give concise updates, validate meaningful behavior, verify the
 actual published source and save an accurate checkpoint. Avoid asking me to
@@ -76,3 +76,23 @@ never imply invented trades, prices, success odds or worldwide coverage. Respect
 reduced motion and pause hidden/offscreen work; FX preference never controls
 collector or trading authority. This is a browser-only rendering feature, not
 a paid Cloudflare service or a backend migration.
+
+Latest completed instruction: keep futuristic visuals on almost every page and
+make them complex and data-aware. Preserve 0.6.5's contextual 3D/flat/grid
+instruments, actual depth bars, public wallet/token links, saved timelines/spreads,
+real validation fold map, virtual-capital basis, capital readiness shield and
+richer holographic shells/cage/trails. Home now includes verified real quote
+markers (provider, USD/USDC, time, age); stale markers remain Last observed.
+Never invent prices, quantities, flows, profits, identities or success odds.
+
+I dislike the noisy Home Connections panel flipping Fresh books / Awaiting data.
+It is removed. Technical diagnostics belong collapsed in Settings. I still want
+a small visible issue indicator for actual API/feed/persistence problems, with
+details on click. A quiet book aging past 5s alone is not a global outage; the
+5s trade guard still applies. Keep disabled/never-observed Coinbase shortcuts
+out of the primary market strip. Existing sources/quotes remain honest.
+
+The user explicitly requested more dramatic futuristic complexity than the prior
+Home design, and real data within it. Keep the simple navigation, readable exact
+order review and existing FX/accessibility/performance controls. No new paid
+resources, backend migration, extra account requests or autonomous trading.
