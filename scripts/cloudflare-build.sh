@@ -6,8 +6,9 @@ npx tsc --noEmit --skipLibCheck --target ES2022 --module ESNext --moduleResoluti
 npx tsc --skipLibCheck --target ES2022 --module commonjs --rootDir functions/api --outDir /tmp/sentinel-ai-check functions/api/ai.ts functions/worker-configuration.d.ts
 node ../scripts/test_ai_function.cjs
 npm run typecheck
-npx tsc --skipLibCheck --target ES2022 --module commonjs --rootDir app --outDir /tmp/sentinel-instrument-check app/instrument-model.ts
+npx tsc --skipLibCheck --target ES2022 --module commonjs --rootDir app --outDir /tmp/sentinel-instrument-check app/instrument-model.ts app/system-health-model.ts
 node ../scripts/test_instrument_models.cjs
+node ../scripts/test_system_health.cjs
 python3 -m venv /tmp/sentinel-verification
 /tmp/sentinel-verification/bin/pip install -q -r ../backend/requirements.txt PyYAML jsonschema pip-audit pgserver==0.1.4
 /tmp/sentinel-verification/bin/python -m compileall -q ../backend

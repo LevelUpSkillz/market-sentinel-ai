@@ -25,9 +25,9 @@ export default function WorkspaceHero({data,online,effectsRunning,onMoney,onRada
       <div className="visual-coordinate"><span>ORBITAL OBSERVATORY</span><span>MS / 01</span></div>
       <OrbitalScene running={effectsRunning}/>
       <div className="orbital-hud-rim" aria-hidden="true"><span/><i/><b/></div>
-      <div className="source-nodes" aria-label="Provider source status">{['kraken','hyperliquid','coinbase'].map((name,index)=>{
-        const current=data?.markets.some(row=>row.provider===name&&freshBook(row));const reported=data?.providers[name]?.state;
-        return <div key={name} className={'source-node source-node-'+index+(current?' is-fresh':'')}><span className="source-node-light"/><div><strong>{name}</strong><small>{current?'Verified fresh books':reported==='connected'?'Awaiting fresh books':reported||'Unavailable'}</small></div></div>;
+      <div className="source-nodes" aria-label="Market source map">{['kraken','hyperliquid','coinbase'].map((name,index)=>{
+        const reported=data?.providers[name]?.state;
+        return <div key={name} className={'source-node source-node-'+index}><span className="source-node-light"/><div><strong>{name}</strong><small>{reported==='disabled'?'Not enabled':name==='hyperliquid'?'Perpetual market data':'Spot market data'}</small></div></div>;
       })}</div>
       <div className="visual-caption"><span className="status-dot"/> Decorative orbital animation · source diagram, not a geographic map</div>
     </div>

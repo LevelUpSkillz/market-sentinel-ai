@@ -31,3 +31,29 @@ New model contracts cover real-depth/currency/stale-data boundaries, wallet link
 recorded-only forensic values and virtual-account basis. Browser acceptance adds
 all-section mobile coverage, 3D/flat inspection, quote separation, aging books,
 exact wallet navigation and absence of automatic account reads/order writes.
+
+User steering: removed the technical Connections card from Home because its
+rapidly changing freshness labels looked like an application fault. Optional
+provider diagnostics now live in a collapsed Settings disclosure, separating
+reported connection state from actual book event age. The orbital provider
+map shows stable market-source labels. Quote timestamps, stale indicators and
+five-second trade safeguards remain unchanged. Live Render logs showed ongoing
+radar scans; no backend or rate-limit change was required for this UI correction.
+
+The new wallet-constellation test found a real focus race when inspecting a
+wallet already on the Big Traders page: the page-navigation RAF stole focus
+back from the target wallet. Wallet navigation now skips that generic focus
+step and preserves exact-wallet focus. The assertion remains intact.
+
+User clarification: retain a compact issue indicator. Header status now reports
+actual API/collector/persistence/provider issues, enabled-feed message gaps over
+one minute, or all loaded books without receipts over 30 seconds. Disabled
+providers are expected, and a quiet book crossing five seconds alone does not
+raise a global fault. Exact per-quote five-second guards remain unchanged. The
+status disclosure explains scope and opens Settings diagnostics. No new health
+probe, exchange request, smoothing of source timestamps or risk-limit change.
+
+User image also showed empty Coinbase shortcut tiles alongside real Kraken
+quotes. Main chart shortcuts now omit never-observed markets (zero receipt
+time). Previously observed stale markets remain explicitly old; prices are
+not substituted, and full market/provider diagnostics remain available.

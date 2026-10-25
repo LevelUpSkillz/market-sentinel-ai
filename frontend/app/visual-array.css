@@ -69,3 +69,33 @@
   .instrument-caption p { font-size:10px; }
   .instrument-caption small { font-size:9px; }
 }
+
+.provider-diagnostics { border:1px solid #304c63; border-radius:6px; margin:0 0 23px; color:#98b4ca; background:#0b1a2b7a; }
+.provider-diagnostics > summary { cursor:pointer; padding:14px 18px; font-size:11px; }
+.provider-diagnostics .panel { margin:0; border:0; border-top:1px solid #304c63; border-radius:0; background:transparent; }
+.provider-diagnostics .panel::before { display:none; }
+.provider-diagnostics .health-list > div { align-items:flex-start; }
+.diagnostic-status { margin-left:auto; text-align:right; font-size:11px; color:#c4dae8; }
+.diagnostic-status small { display:block; color:#91adc4; font-size:9px; margin-top:4px; line-height:1.7; }
+@media(max-width:600px) { .provider-diagnostics > summary { padding:14px 16px; } .diagnostic-status { max-width:65%; font-size:11px; } }
+
+.system-health { position:relative; flex-shrink:0; }
+.system-health > summary { display:flex; gap:7px; align-items:center; cursor:pointer; min-height:34px; color:#a8d8ca; font-size:10px; padding:7px 9px; border:1px solid #34574f; border-radius:5px; background:#12312c90; list-style:none; }
+.system-health > summary::-webkit-details-marker { display:none; }
+.system-health-dot { width:6px; height:6px; border-radius:50%; background:#80e5bc; flex-shrink:0; }
+.system-health.is-warning > summary { color:#f2d29d; border-color:#7b623b; background:#3a2c1ba6; }
+.system-health.is-warning .system-health-dot { background:#e6bd70; }
+.system-health.is-critical > summary { color:#ffd0d8; border-color:#995368; background:#442533c9; }
+.system-health.is-critical .system-health-dot { background:#ffa7ba; }
+.system-health.is-neutral > summary { color:#aebfd3; border-color:#3b536a; background:#122438; }
+.system-health.is-neutral .system-health-dot { background:#9ab1cd; }
+.system-health-short { display:none; }
+.system-health-popover { position:absolute; top:calc(100% + 13px); right:0; width:340px; max-width:calc(100vw - 24px); background:#0c1c2efc; border:1px solid #54728c; box-shadow:0 20px 70px #0009; padding:22px; border-radius:8px; z-index:90; }
+.system-health-popover h3 { font-size:18px; color:#e0f0fc; font-weight:500; margin:10px 0 14px; }
+.system-health-popover p { color:#b7cfe0; font-size:12px; line-height:1.8; margin:10px 0; }
+.system-health-popover .system-health-note { font-size:10px; color:#91afc8; border-top:1px solid #325069; padding-top:13px; }
+.system-health-popover > small { display:block; color:#8caac3; font-size:9px; line-height:1.7; }
+.system-health-popover > button { margin-top:16px; min-height:40px; width:100%; }
+@media(max-width:1100px) { .system-health-label { display:none; } .system-health-short { display:inline; } .system-health > summary { font-size:9px; padding:7px; gap:5px; } }
+@media(max-width:600px) { .topbar .crumb { min-width:0; } .topbar .crumb strong { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:85px; } .topbar-right { flex-shrink:0; gap:6px; } .system-health-popover { position:fixed; right:12px; top:66px; } .system-health > summary { min-height:33px; } }
+@media(max-width:350px) { .topbar .crumb strong { max-width:60px; } .topbar-right { gap:4px; } .help-button { padding:8px 5px; } }

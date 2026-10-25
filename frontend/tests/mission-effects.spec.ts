@@ -24,8 +24,8 @@ test('orbital animation is visible, pausable and persistent without account read
   await expect(page.getByTestId('live-chart-price')).toContainText('101');
   await page.reload();await expect(page.getByRole('button',{name:'Enable visual effects',exact:true})).toBeVisible();await expect(page.getByTestId('orbital-visual')).toHaveAttribute('data-animating','false');
   await page.getByRole('button',{name:'Enable visual effects',exact:true}).click();await expect(page.getByTestId('orbital-visual')).toHaveAttribute('data-animating','true');
-  await expect(page.getByLabel('Provider source status')).toContainText('kraken');
-  await expect(page.getByLabel('Provider source status')).toContainText('disconnected');
+  await expect(page.getByLabel('Market source map')).toContainText('kraken');
+  await expect(page.getByLabel('Market source map')).toContainText('Perpetual market data');
   expect(calls.writes).toEqual([]);expect(calls.privateReads).toEqual([]);
 });
 

@@ -55,5 +55,7 @@ test('the activity feed and coverage ring become old when source events stop des
   await page.clock.runFor(6500);
   await expect(feed).not.toContainText('units · fresh');
   await expect(page.getByRole('img',{name:'0 of 2 detailed market books are fresh'})).toBeVisible();
-  await expect(page.getByRole('region',{name:'Data connection status'}).locator('.health-list')).not.toContainText('Fresh books');
+  await expect(page.getByRole('region',{name:'Data connection status'})).toHaveCount(0);
+  await page.goto('/#settings');await page.getByText('Technical data diagnostics',{exact:true}).click();
+  const diagnostics=page.getByRole('region',{name:'Data connection status'});await expect(diagnostics).toContainText('Connected');await expect(diagnostics).toContainText('0 / 2 books within 5s');
 });

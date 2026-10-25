@@ -2,12 +2,12 @@ import {expect,test,type Page} from '@playwright/test';
 // SYNTHETIC fixtures only. No real balance, public identity or exchange request.
 const NOW=1800000000,ADDRESS='0x'+'d'.repeat(40);
 async function setup(page:Page) {
- const writes:string[]=[],accountReads:string[]=[];await page.clock.install({time:new Date(NOW*1000)});
+ const writes:string[]=[],accountReads:string[]=[],health={kraken:'connected'};await page.clock.install({time:new Date(NOW*1000)});
  await page.route('**/api/**',async route=>{
   const req=route.request(),url=new URL(req.url()),path=url.pathname;if(req.method()!=='GET')writes.push(path);if(path==='/api/connections/kraken/account')accountReads.push(path);
   const book={provider:'kraken',symbol:'BTC-USD',instrument:'spot',quote:'USD',status:'live',integrity:'crc32_verified',source_at:NOW,received_at:NOW,bid:'100',ask:'101',mid:'100.5',spread_bps:'10',imbalance:'0',visible_depth_usd:'10000',bids:[['100','2']],asks:[['101','3']]};
   let value:unknown={records:[]};
-  if(path==='/api/dashboard')value={as_of:NOW,environment:'SYNTHETIC',auth_method:'owner_password',live_trading:false,markets:[book,{...book,provider:'hyperliquid',symbol:'ETH-USDC-PERP',instrument:'perpetual',quote:'USDC',integrity:'ordered_stream'}],providers:{kraken:{state:'connected'},hyperliquid:{state:'connected'}},signals:[],control:{stopped:false},account:{cash:'10000',initial_cash:'10000',realized_pnl:'0'},opportunities:[],paper:[],funding:[],trades:[],strategy_version:'SYNTHETIC',last_persist:NOW,journal_error:null,alerts_configured:false,changenow:{configured:false,approved:false}};
+  if(path==='/api/dashboard')value={as_of:NOW,environment:'SYNTHETIC',auth_method:'owner_password',live_trading:false,markets:[book,{...book,provider:'hyperliquid',symbol:'ETH-USDC-PERP',instrument:'perpetual',quote:'USDC',integrity:'ordered_stream'},{...book,provider:'coinbase',status:'unavailable',received_at:0,source_at:null,bid:null,ask:null,mid:null,bids:[],asks:[]}],providers:{kraken:{state:health.kraken},hyperliquid:{state:'connected'},coinbase:{state:'disabled'}},signals:[],control:{stopped:false},account:{cash:'10000',initial_cash:'10000',realized_pnl:'0'},opportunities:[],paper:[],funding:[],trades:[],strategy_version:'SYNTHETIC',last_persist:NOW,journal_error:null,alerts_configured:false,changenow:{configured:false,approved:false}};
   if(path==='/api/intelligence')value={as_of:NOW,actions:[]};
   if(path==='/api/suggestions')value={as_of:NOW,cards:[],strategy_version:'SYNTHETIC',limitations:[]};
   if(path==='/api/radar')value={as_of:NOW,strategy_version:'SYNTHETIC',mode:'paper_only',status:'warming_up',coverage:{universe:0,observed:0,warming_up:0,ready:0,candidates:0},setups:[],limitations:[]};
@@ -18,7 +18,7 @@ async function setup(page:Page) {
   if(path==='/api/connections/kraken/orders')value={as_of:NOW,orders:[]};
   if(path==='/api/capital')value={profile:null,execution_enabled:false};
   await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(value)});
- });return {writes,accountReads};
+ });return {writes,accountReads,health};
 }
 async function capture(page:Page,name:string) {
  await page.evaluate(()=>{const label=document.createElement('div');label.id='instrument-design-label';label.textContent='SYNTHETIC DESIGN REVIEW — NO REAL TRADES';label.style.cssText='position:fixed;top:0;left:0;right:0;padding:5px;background:#4a2756;color:white;text-align:center;font:9px sans-serif;z-index:9999';document.body.append(label)});
@@ -48,4 +48,16 @@ test('wallet constellation opens the exact observed wallet and live-money instru
  await expect(panel.getByLabel('Inspect Public wallet constellation')).toBeVisible();await expect(panel).toContainText(ADDRESS);await panel.getByRole('button',{name:'Open wallet details',exact:false}).click();await expect(page.locator('#wallet-'+ADDRESS)).toBeFocused();
  await panel.scrollIntoViewIfNeeded();await capture(page,'wallet-instrument-mobile');
  await page.goto('/#live-money');const capital=page.getByRole('region',{name:'Capital protection array'});await expect(capital).toBeVisible();await expect(capital).toContainText('Last available USD—');await expect(capital).not.toContainText('$10,000');await capital.getByRole('button',{name:'Flat',exact:true}).click();expect(calls.accountReads).toEqual([]);expect(calls.writes).toEqual([]);
+});
+
+
+test('compact status ignores quiet-book aging and disabled sources but reveals actual feed issues',async({page})=>{
+ await page.setViewportSize({width:390,height:844});const calls=await setup(page);await page.goto('/');
+ await expect(page.getByRole('button',{name:'System status: Data connected',exact:true})).toBeVisible();
+ await expect(page.getByRole('region',{name:'Data connection status'})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Chart BTC-USD on coinbase',exact:true})).toHaveCount(0);
+ await page.clock.runFor(6500);await expect(page.getByRole('button',{name:'System status: Data connected',exact:true})).toBeVisible();
+ calls.health.kraken='reconnecting';await page.clock.runFor(2100);await page.getByRole('button',{name:'System status: Feed needs attention',exact:true}).click();await expect(page.getByText('kraken is reconnecting.',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Open technical diagnostics',exact:false}).click();await expect(page.getByRole('heading',{name:'Settings.'})).toBeVisible();await expect(page.getByRole('region',{name:'Data connection status'})).toBeVisible();
+ expect(calls.writes).toEqual([]);expect(calls.accountReads).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
 });
