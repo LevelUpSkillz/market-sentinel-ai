@@ -1,37 +1,20 @@
 'use client';
+import {useState} from 'react';
 import type {Dashboard} from './types';
+import {freshBook,shown,timestamp} from './instrument-model';
 import OrbitalScene from './orbital-scene';
 import OrbitalQuotes from './orbital-quotes';
-
 type Props={data:Dashboard|null;online:boolean;effectsRunning:boolean;onMoney:()=>void;onRadar:()=>void;onTraders:()=>void;onPrices:()=>void;onHelp:()=>void};
 export default function WorkspaceHero({data,online,effectsRunning,onMoney,onRadar,onTraders,onPrices,onHelp}:Props) {
-  const now=Date.now()/1000;
-  const freshBook=(row:Dashboard['markets'][number])=>online&&row.status==='live'&&row.source_at!=null&&now-row.source_at>=-1&&now-row.source_at<=5&&now-row.received_at>=0&&now-row.received_at<=5&&['crc32_verified','ordered_stream'].includes(row.integrity);
-  const total=data?.markets.length??0;
-  const fresh=data?.markets.filter(freshBook).length??0;
-  const connected=data?Object.values(data.providers).filter(provider=>provider.state==='connected').length:0;
-  return <section className="workspace-hero mission-hero" aria-label="Workspace overview">
-    <div className="hero-copy">
-      <span className="eyebrow"><span className="terminal-square"/> MARKET SENTINEL // MISSION CONTROL</span>
-      <h2>See the signal.<br/><em>Own your next move.</em></h2>
-      <p>Your personal market observatory. Live prices, public trader intelligence, and every decision under your control.</p>
-      <div className="mission-metrics">
-        <div role="img" aria-label={data?`${fresh} of ${total} detailed market books are fresh`:'Market coverage unavailable until connected'}><span className="metric-coordinate">01 / COVERAGE</span><strong>{data?fresh:'—'}<small> / {data?total:'—'}</small></strong><span>Fresh detailed books</span></div>
-        <div><span className="metric-coordinate">02 / SOURCES</span><strong>{data?connected:'—'}</strong><span>Provider connections reported</span></div>
-      </div>
-      <div className="hero-actions"><button className="primary" onClick={onRadar}>Explore trade ideas <span aria-hidden="true">↗</span></button><button className="secondary" onClick={onPrices}>See live prices <span aria-hidden="true">↗</span></button><button className="text-button hero-help" onClick={onHelp}>Quick tour →</button></div>
-      <small className="mission-source">Exchange books · 5s freshness check · API received {data?new Date(data.as_of*1000).toLocaleTimeString():'unavailable'}</small>
-    </div>
-    <div className="mission-visual">
-      <div className="visual-coordinate"><span>ORBITAL OBSERVATORY</span><span>MS / 01</span></div>
-      <OrbitalScene running={effectsRunning}/><OrbitalQuotes data={data} online={online}/>
-      <div className="orbital-hud-rim" aria-hidden="true"><span/><i/><b/></div>
-      <div className="source-nodes" aria-label="Market source map">{['kraken','hyperliquid','coinbase'].map((name,index)=>{
-        const reported=data?.providers[name]?.state;
-        return <div key={name} className={'source-node source-node-'+index}><span className="source-node-light"/><div><strong>{name}</strong><small>{reported==='disabled'?'Not enabled':name==='hyperliquid'?'Perpetual market data':'Spot market data'}</small></div></div>;
-      })}</div>
-      <div className="visual-caption"><span className="status-dot"/> Decorative orbital animation · source diagram, not a geographic map</div>
-    </div>
-    <div className="hero-destinations"><button onClick={onTraders}><span>PUBLIC TRADER RESEARCH</span><strong>See what big traders are doing <span aria-hidden="true">↗</span></strong></button><button onClick={onMoney}><span className="capital-label">YOUR KRAKEN ACCOUNT</span><strong>Open Live Money <span aria-hidden="true">↗</span></strong></button></div>
-  </section>;
+ const [selected,setSelected]=useState(''),[view,setView]=useState<'radar'|'depth'>('radar'),now=Date.now()/1000;
+ const markets=data?.markets||[],observed=markets.filter(m=>m.received_at>0&&m.mid!=null&&Number.isFinite(Number(m.mid))&&Number(m.mid)>0),market=observed.find(m=>m.provider+'|'+m.symbol===selected)||observed.find(m=>m.provider==='kraken')||observed[0],id=market?market.provider+'|'+market.symbol:'';
+ const fresh=markets.filter(row=>freshBook(row,online,now)).length,total=markets.length,connected=data?Object.values(data.providers).filter(p=>p.state==='connected').length:0,isFresh=!!market&&freshBook(market,online,now);
+ return <section className="workspace-hero mission-hero spatial-command" aria-label="Workspace overview">
+  <header className="command-heading"><div><span className="eyebrow"><span className="terminal-square"/> YOUR PRIVATE MARKET OBSERVATORY</span><h2>Market <em>command.</em></h2><p>Explore the market. Inspect the evidence. Choose your move.</p></div><div className="command-modes" aria-label="Market scene display"><button aria-pressed={view==='radar'} onClick={()=>setView('radar')}>◉ Market radar</button><button aria-pressed={view==='depth'} onClick={()=>setView('depth')}>▥ Order book</button></div></header>
+  <div className="command-stage"><div className="scene-coordinate"><span>{view==='radar'?'01 / MARKET CONSTELLATION':'02 / LIQUIDITY TERRAIN'}</span><span>INTERACTIVE 3D</span></div><OrbitalScene running={effectsRunning} markets={data?observed:[]} online={online} selected={id} view={view} onSelect={setSelected}/><div className="scene-annotation">{view==='radar'?'Select a market node or use the market selector.':'Column heights show displayed order values. Buy and sell sides stay separate.'}<small>Layout and scanning light are decorative · no price prediction</small></div></div>
+  <aside className="command-focus" aria-label="Selected market details"><span className="eyebrow">MARKET FOCUS</span><label className="command-market-label">Select market<select aria-label="Observatory market" value={id} onChange={e=>setSelected(e.target.value)} disabled={!observed.length}>{!observed.length&&<option value="">Waiting for market data</option>}{observed.map(m=><option key={m.provider+m.symbol} value={m.provider+'|'+m.symbol}>{m.symbol} · {m.provider}</option>)}</select></label><div className="focus-price"><span className={'badge '+(isFresh?'live':'unavailable')}>{isFresh?'Fresh quote':market?'Last observed':'Unavailable'}</span><strong data-testid="observatory-price">{market?shown(market.mid,9):'—'}</strong><span>{market?.quote||'Quote currency unavailable'} <small>book midpoint</small></span></div><dl className="focus-book"><div><dt>Buy price · ask</dt><dd>{market?shown(market.ask,9):'—'}</dd></div><div><dt>Sell price · bid</dt><dd>{market?shown(market.bid,9):'—'}</dd></div><div><dt>Spread</dt><dd>{market?shown(market.spread_bps,5):'—'} <small>bps</small></dd></div></dl><small className="focus-source">{market?.provider||'Source unavailable'} · {market?.instrument||'no instrument'}<br/>Source {timestamp(market?.source_at)}<br/>Received {timestamp(market?.received_at)}</small><button className="secondary" onClick={onPrices}>See live prices <span aria-hidden="true">↗</span></button></aside>
+  <div className="command-strip"><OrbitalQuotes data={data} online={online}/><div className="command-coverage" role="img" aria-label={data?`${fresh} of ${total} detailed market books are fresh`:'Market coverage unavailable until connected'}><svg viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="22"/><circle cx="28" cy="28" r="22" className="coverage-value" strokeDasharray={`${total?fresh/total*138.23:0} 138.23`}/></svg><div><strong>{data?fresh:'—'}<small> / {data?total:'—'}</small></strong><span>Fresh detailed books</span><small>{data?connected:'—'} provider connections reported</small></div></div></div>
+  <div className="command-bottom"><div className="hero-actions"><button className="primary" onClick={onRadar}>Explore trade ideas <span aria-hidden="true">↗</span></button><button className="text-button hero-help" onClick={onHelp}>Quick tour →</button></div><div className="source-nodes" aria-label="Market source map">{['kraken','hyperliquid','coinbase'].map(name=><div className="source-node" key={name}><span className="source-node-light"/><div><strong>{name}</strong><small>{data?.providers[name]?.state==='disabled'?'Not enabled':name==='hyperliquid'?'Perpetual market data':'Spot market data'}</small></div></div>)}</div></div>
+  <div className="hero-destinations"><button onClick={onTraders}><span>PUBLIC TRADER RESEARCH</span><strong>See what big traders are doing <span aria-hidden="true">↗</span></strong></button><button onClick={onMoney}><span className="capital-label">YOUR KRAKEN ACCOUNT</span><strong>Open Live Money <span aria-hidden="true">↗</span></strong></button></div>
+ </section>;
 }
