@@ -6,15 +6,46 @@ Verified October 25, 2026. Inspect current refs before editing; preserve newer w
 
 - App: https://market.getlevelupskillz.com
 - Repository: https://github.com/LevelUpSkillz/market-sentinel-ai
-- Cloudflare dashboard: visual array **0.6.5**, source `262db38f09be81dc2b647df884ba97e9b9f528d4`.
-- Production deployment: `ca7801f9-fb27-4861-8afe-e33976d93c80`, completed `2026-10-25T04:48:25.970837Z`.
+- Cloudflare dashboard: spatial command **0.7.0**, source `515258dc37ecf9c8f4e98dd0a81b36cc4c47a2f9`.
+- Production deployment: `959e6cef-3416-4fa9-9f03-7b455f7d351d`, completed `2026-10-25T05:08:08.434101Z`.
 - Render backend remains **0.6.2**, source `4b768b3ff1c9452a34b2bb4b7027c5db6c977f00`, deployment `dep-dbei4m4s728c73cagdg0`.
 - Current editable source: `/workspace/market-sentinel-cloudflare-ai`.
 - Do not deploy the older premium-ui, premium, release or market-sentinel-ai local directories over current main.
 
 
 
-## Latest — visual instruments, real-data overlays and calm issue status
+## Latest — Spatial Command 0.7.0, across every section
+
+The user rejected 0.6.5's restrained previews and explicitly requested a REAL
+transformation, 3D market visuals, radar screens and layered graphics, NOT just
+Home. Rebuilt the shared renderer, instruments and product shell throughout.
+The new spatial engine provides a perspective floor, luminous radar dial, particle
+core, extruded buy/sell liquidity columns, bright public-wallet/token orbs,
+recorded-event lanes, projected validation bands, a virtual-capital torus,
+layered gold approval shield and systems stack. No decorative animation creates
+market activity, prices, results or success odds.
+
+All main sections have distinct data semantics and the same larger, brighter
+visual language: cyan/violet lighting, rounded premium panels, larger metrics,
+restyled market/trader/idea cards, charts, navigation and Live Money. Instrument
+controls include pointer rotation, 3D / flat, grid and Expand visual. Keyboard
+selectors preserve accessible inspection. Empty/stale evidence remains explicit.
+FX, reduced-motion, offscreen/hidden shutdown, capped DPR and 30/24 fps remain.
+
+Home is rebuilt as a market cockpit: Market radar / Order book modes, actual
+observed-market selection, large midpoint and bid/ask/spread, source timestamps,
+real cached quote strip and coverage. All loaded data stays on the client; no
+new provider, AI or private-account requests. USD/USDC stay separate. No change
+to authenticated authorization, backend, collectors, database, vault, order
+reviews, deterministic limits, hosting plans or fees. No Render action needed.
+
+Acceptance: 273 backend checks with isolated PostgreSQL / zero skips, 47 browser
+tests and existing type/build/AI/model/provider/history/schema/audit/auth gates.
+New interactions verify market/mode switching, pointer rotation, true source
+aging, expanded mobile depth inspection and absence of account reads/writes.
+Canonical source/deployment verified. Final design captures are synthetic only.
+
+## Previous 0.6.5 — visual instruments and calm issue status
 
 0.6.5 retains and enriches the Home globe and adds distinct instruments across
 all other main sections: actual displayed order-book landscape, public wallet /
@@ -106,7 +137,7 @@ configuration changed for this frontend release. No Render action is required.
 ## Verified acceptance
 
 273 backend tests passed with actual isolated PostgreSQL and ZERO skips;
-45 Chromium browser tests passed. Includes phone/tablet/desktop widths
+47 Chromium browser tests passed. Includes phone/tablet/desktop widths
 320/390/768/1440, chart navigation without invented samples or account reads,
 stale-feed handling, trader P&L distinctions and existing Kraken approval /
 unknown-outcome no-resend safety contracts. Generated Worker types, TypeScript,

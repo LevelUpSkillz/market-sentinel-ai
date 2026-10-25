@@ -4,16 +4,15 @@ Private cryptocurrency investigation, paper trading, real-capital planning and i
 
 ## Current published release
 
-Visual Array 0.6.5 is live at https://market.getlevelupskillz.com . See
+Spatial Command 0.7.0 is live at https://market.getlevelupskillz.com . See
 [delivery](docs/DELIVERY.md) and [current handoff](docs/HANDOFF.md) for exact
-source/deployment status, free-plan limits and continuing work. The release adds contextual real-data instruments across the app, rich
-holographic geometry, live observed quote markers, a compact actual-issue
-indicator and optional Settings diagnostics. It preserves the animated orbital
-globe, star field, radar sweeps,
-illuminated mission-control panels and an FX switch over
-the simple chart-focused interface, actual public trade/source telemetry,
-historical chart zoom/pan/reset and clear public trader entry/amount/result cards.
-Open versus closed P&L stays explicit; missing values are never invented.
+source/deployment status, free-plan limits and continuing work. The release rebuilds
+3D market graphics and premium panels across the application: interactive radar,
+extruded order-book terrain, public-wallet constellations, recorded-event stages,
+validation bands and a gold Live Money approval shield. Home is an actual market
+cockpit with selectable observed markets, radar/depth modes and prominent sourced
+prices. Pointer rotation, flat/grid/expanded instruments, readable cards and FX /
+reduced-motion controls remain. No fake prices, returns, identities or success odds.
 
 ## Implemented vertical slice
 

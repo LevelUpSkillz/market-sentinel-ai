@@ -2,9 +2,9 @@ Continue Market Sentinel AI from its CURRENT implementation. Do not restart,
 produce only a plan, or overwrite newer source with an older checkout.
 
 First read current main docs/HANDOFF.md and docs/DELIVERY.md, then inspect actual
-refs, source, tests and deployments. Current published dashboard is visual array
-0.6.5 on Cloudflare, source 262db38f09be81dc2b647df884ba97e9b9f528d4, production ca7801f9-fb27-4861-8afe-e33976d93c80, completed
-2026-10-25T04:48:25.970837Z. Backend remains 0.6.2 on Render source
+refs, source, tests and deployments. Current published dashboard is spatial command
+0.7.0 on Cloudflare, source 515258dc37ecf9c8f4e98dd0a81b36cc4c47a2f9, production 959e6cef-3416-4fa9-9f03-7b455f7d351d, completed
+2026-10-25T05:08:08.434101Z. Backend remains 0.6.2 on Render source
 4b768b3ff1c9452a34b2bb4b7027c5db6c977f00. Use
 /workspace/market-sentinel-cloudflare-ai if this workspace exists; old premium,
 premium-ui, release and market-sentinel-ai directories are stale.
@@ -61,7 +61,7 @@ A validated automatic PRACTICE bot is possible future work, not shipped. Glitche
 may be invalid or unfillable; all-time lows do not guarantee a rebound.
 
 Latest release passed 273 backend checks with actual isolated PostgreSQL / zero
-skips and 45 Chromium tests, type/build/AI/schema/audit gates, real public probes
+skips and 47 Chromium tests, type/build/AI/schema/audit gates, real public probes
 and protected production checks. These tests prove no profitability. Work
 autonomously, give concise updates, validate meaningful behavior, verify the
 actual published source and save an accurate checkpoint. Avoid asking me to
@@ -96,3 +96,17 @@ The user explicitly requested more dramatic futuristic complexity than the prior
 Home design, and real data within it. Keep the simple navigation, readable exact
 order review and existing FX/accessibility/performance controls. No new paid
 resources, backend migration, extra account requests or autonomous trading.
+
+
+LATEST USER DIRECTION: 0.6.5 previews were far from expectations. I explicitly
+want a REAL transformation with 3D market visuals, radar screens and layered
+graphics on ALL pages, not only Home. 0.7.0 rebuilt the shared spatial renderer,
+data instruments and product shell throughout. Preserve its perspective floor,
+bright radar dial, particle core, extruded actual-depth prisms, public-wallet/token
+orbs, recorded-event lanes, validation bands, virtual-capital torus, gold manual
+approval shield and systems stack. Pointer rotation, flat/grid, expanded visual
+controls and accessible selectors stay. Home now has a real market cockpit with
+Radar / Order book modes, observed-market selection and readable sourced prices.
+Do not revert to subtle small wireframes or only add another thin glow layer.
+Keep clear language, readable order review, real evidence, source aging, reduced
+motion and all existing security/trading/cost boundaries. No extra account reads.

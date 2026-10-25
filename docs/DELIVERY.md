@@ -1,45 +1,34 @@
-# Published delivery — Market Sentinel AI visual array 0.6.5
+# Published delivery — Market Sentinel AI Spatial Command 0.7.0
 
 Live: https://market.getlevelupskillz.com
-Cloudflare production `ca7801f9-fb27-4861-8afe-e33976d93c80` succeeded at `2026-10-25T04:48:25.970837Z` on source
-`262db38f09be81dc2b647df884ba97e9b9f528d4`. Existing Render backend 0.6.2 remains unchanged.
+Cloudflare production `959e6cef-3416-4fa9-9f03-7b455f7d351d` completed `2026-10-25T05:08:08.434101Z`
+on source `515258dc37ecf9c8f4e98dd0a81b36cc4c47a2f9`. Render backend remains 0.6.2.
 
-Published: distinct contextual instruments across all main sections, 3D/flat/grid
-controls, actual-depth/wallet/record/fold data, richer holographic geometry and
-real sourced Home quote beacons. Calm compact issue indicator; technical
-Connections diagnostics moved into collapsed Settings; empty never-observed
-Coinbase shortcut tiles omitted. Existing animated orbital globe/lights/rings,
-stellar backdrop, perspective
-grid, radar sweeps, illuminated cyan-blue mission-control panels and FX control,
-plus the existing simple Home, real source coverage and
-connection telemetry, actual public-trade tape, market shortcuts, historical
-chart zoom/pan/reset and crosshairs, expandable real visible order book, plus
-clear public trader cards for tokens, entry/fill prices, amounts, USDC values,
-margin, fees and available open/closed results. Missing evidence stays unavailable.
-Existing tutorial, Cloudflare AI, radar, practice and Live Money are preserved.
+Rebuilt the spatial renderer, data stages and interface ACROSS the application:
+3D liquidity prisms, layered radar dial, particle core, public wallet constellation,
+recorded-event lanes, projected validation bands, virtual-capital torus, gold
+approval shield and systems stack. Brighter cyan/violet, larger numbers, new
+panel/card/navigation/chart treatment. Pointer rotation, flat/grid and expanded
+visuals; accessible selectors and explicit FX/reduced-motion controls.
 
-Verified: 273 backend tests with actual isolated PostgreSQL / zero skips;
-45 Chromium tests; generated Worker and app types; Next build; AI contracts;
-Blueprint schema; real public provider/trader/history probes; audits with no known
-vulnerabilities; protected production health and anonymous/forged denial probes.
-No owner account, key or real trade was used. Production source and canonical
-Cloudflare deployment were checked. See HANDOFF.md for exact continuing state.
+Home rebuilt as a market cockpit with actual loaded market selection, Radar /
+Order book modes, prominent midpoint/bid/ask/spread, provenance and real quote
+strip. No fabricated ticks, results, identities or success odds; no extra account,
+provider or AI requests. Decorative scans/layout never imply trading activity.
+Existing tutorial, radar, Cloudflare AI, traders, history/autopsies, practice,
+capital limits and exact approved Kraken order review remain intact.
 
-Cost: existing free services only; no plan changes or paid resources. Kraken
-transaction fees still apply to owner-approved real orders. Render Free sleeps,
-so continuous 24/7 monitoring is not guaranteed. Free PostgreSQL expires November
-22, 2026 at 04:35 UTC. Download protected backups before expiry; the app does not
-provide permanent offsite retention. No Sentinel Intelligence changes.
+Verified: 273 backend tests / actual isolated PostgreSQL / zero skips;
+47 Chromium tests; type/build/model/AI/schema/provider/history/audit/auth gates.
+Canonical Cloudflare source verified. Design captures use synthetic fixtures only.
+No owner account, credentials or real trade used for acceptance.
 
-Limits: no automatic real trading, withdrawal/transfer capability, complete global
-market/on-chain coverage, verified world-best-trader ranking or proven profitable
-strategy. Open P&L can change; reconstructed closed results exclude funding.
-Historical performance is not follower success odds. Google research invitations
-remain on an unreleased feature branch. Passing tests proves no trading return.
+Costs and limits unchanged: existing free services; no paid upgrades, duplicates,
+credits or artificial keepalive. Render Free can sleep. Free PostgreSQL expires
+November 22, 2026 at 04:35 UTC; protected backup export is not permanent offsite
+retention. Kraken trading fees still apply to individually approved orders.
+No Sentinel Intelligence changes or Render action required.
 
-The user specifically requested prominent futuristic motion. Orbital shells,
-trails and layout geometry are decorative; quote markers, depth bars, wallet
-links and recorded-event plots use actual loaded evidence. FX can pause motion
-while real data continues updating. Reduced-motion preferences, offscreen/hidden-page work and
-pause persistence are tested. No new library, asset service, hosting resource or
-financial/account execution behavior was introduced.
+No autonomous real trading, withdrawals/transfers, guaranteed profitability,
+world-best-trader ranking or validated follower success odds. Google friend login
+remains unreleased. Tests do not establish trading returns. See HANDOFF.md.

@@ -1,6 +1,8 @@
 # 0.7.0 — Spatial Command
 
-Prepared for the Cloudflare gated production build. Not yet verified live.
+DEPLOYED: `959e6cef-3416-4fa9-9f03-7b455f7d351d` completed `2026-10-25T05:08:08.434101Z`
+on source `515258dc37ecf9c8f4e98dd0a81b36cc4c47a2f9`. Acceptance: 273 backend / real PostgreSQL / zero skips,
+47 browser tests and existing release gates. Canonical source verified.
 
 User explicitly rejected restrained previews, requested a real transformation,
 3D market visuals, layered radar screens and graphics across ALL pages.
