@@ -9,13 +9,13 @@ export default function WorkspaceHero({data,online,onMoney,onRadar,onTraders,onP
   return <section className="workspace-hero" aria-label="Workspace overview">
     <div className="hero-copy">
       <span className="eyebrow"><span className="terminal-square"/> YOUR PRIVATE MARKET DESK</span>
-      <h2>A clearer view.<br/><em>A smarter next move.</em></h2>
+      <h2>Your market.<em> In focus.</em></h2>
       <p>Follow the market. Understand the idea. Stay in control.</p>
       <div className="hero-actions">
         <button className="primary" onClick={onRadar}>Explore trade ideas <span aria-hidden="true">↗</span></button>
         <button className="secondary" onClick={onPrices}>See live prices <span aria-hidden="true">↗</span></button>
+        <button className="text-button hero-help" onClick={onHelp}>Quick tour →</button>
       </div>
-      <button className="text-button hero-help" onClick={onHelp}>New here? Take the quick tour <span aria-hidden="true">→</span></button>
     </div>
     <div className="hero-observatory">
       <div className="orbital-readout" role="img" aria-label={data?`${fresh} of ${total} detailed market books are fresh`:'Market coverage unavailable until connected'}>

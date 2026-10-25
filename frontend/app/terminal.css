@@ -502,3 +502,23 @@ footer p { font-size: 10px; }
   .trade-facts dt { font-size: 10px; }
   .trade-unit-note { padding: 16px; }
 }
+
+/* Keep the market visible sooner; Home has one introduction. */
+.home-screen .page-heading { margin-bottom: 12px; align-items: center; }
+.home-screen .page-heading > div > .eyebrow, .home-screen .page-heading p { display: none; }
+.home-screen .page-heading h1 { margin: 0; font-size: 26px; }
+.workspace-hero { padding-top: 24px; gap: 13px 26px; }
+.hero-copy h2 { font-size: 33px; margin: 13px 0 10px; }
+.hero-actions { margin-top: 17px; align-items: center; }
+.hero-actions .hero-help { min-width: auto; min-height: 34px; padding: 4px 2px; margin: 0; }
+.orbital-readout { width: 132px; }
+.orbit-value { transition: none; }
+.hero-destinations button { padding-top: 14px; padding-bottom: 14px; }
+@media(max-width:600px) {
+  .workspace-hero { padding-top: 21px; gap: 14px; }
+  .hero-copy h2 { font-size: 29px; margin: 12px 0 8px; }
+  .hero-actions { margin-top: 14px; gap: 8px; }
+  .hero-actions .hero-help { min-height: 30px; font-size: 10px; }
+  .orbital-readout { width: 76px; }
+  .hero-destinations button { padding-top: 13px; padding-bottom: 13px; }
+}
