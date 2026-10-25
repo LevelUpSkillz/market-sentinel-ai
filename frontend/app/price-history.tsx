@@ -1,23 +1,81 @@
 'use client';
 import {useEffect,useMemo,useRef,useState} from 'react';
+
 type Candle={at:number;open:string;high:string;low:string;close:string;closed:boolean};
 type History={provider:string;symbol:string;interval_minutes:number;received_at:number;source_at:number;candles:Candle[];executable:false};
 const px=(n:number)=>n.toLocaleString('en-US',{maximumSignificantDigits:8});
 const time=(n:number)=>new Date(n*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-export default function PriceHistory({provider,symbol,auth,online,now}:{provider:string;symbol:string;auth:boolean;online:boolean;now:number}){
- const frame=useRef<HTMLDivElement>(null);const [width,setWidth]=useState(980);
- useEffect(()=>{const element=frame.current;if(!element)return;const observer=new ResizeObserver(entries=>{const measured=entries[0]?.contentRect.width;if(measured)setWidth(Math.max(320,Math.round(measured)))});observer.observe(element);return()=>observer.disconnect()},[]);
- const [interval,setIntervalMinutes]=useState(1),[data,setData]=useState<History|null>(null),[error,setError]=useState(''),[style,setStyle]=useState('line'),[cursor,setCursor]=useState<number|null>(null);
- useEffect(()=>{setData(null);setError('');setCursor(null);if(!auth||!['kraken','hyperliquid'].includes(provider)||!symbol)return;let active=true,running=false;let controller:AbortController|null=null;
- const load=async()=>{if(running||document.visibilityState!=='visible')return;running=true;const request=new AbortController();controller=request;const timeout=setTimeout(()=>request.abort(),12000);try{const response=await fetch('/api/price-history?'+new URLSearchParams({symbol,provider,interval:String(interval)}),{credentials:'include',signal:request.signal});if(!response.ok)throw Error('Exchange history is temporarily unavailable.');const value:History=await response.json();if(value.symbol!==symbol||value.provider!==provider||value.interval_minutes!==interval||!Array.isArray(value.candles)||value.candles.length<2||!Number.isFinite(value.received_at)||!value.candles.every(c=>Number.isFinite(c.at)&&['open','high','low','close'].every(k=>Number.isFinite(Number(c[k as keyof Candle]))&&Number(c[k as keyof Candle])>0)))throw Error('Exchange history could not be verified.');if(active){setData(value);setError('')}}catch(e){if(active)setError((e as Error).name==='AbortError'?'Exchange history request timed out.':(e as Error).message)}finally{clearTimeout(timeout);running=false}};
- load();const timer=setInterval(load,30000);const visible=()=>{if(document.visibilityState==='visible')load()};document.addEventListener('visibilitychange',visible);return()=>{active=false;controller?.abort();clearInterval(timer);document.removeEventListener('visibilitychange',visible)}},[auth,provider,symbol,interval]);
- const plot=useMemo(()=>{if(!data||data.symbol!==symbol||data.provider!==provider||data.interval_minutes!==interval)return null;const rows=data.candles;const first=rows[0].at,last=rows.at(-1)!.at;const low=Math.min(...rows.map(c=>Number(c.low))),high=Math.max(...rows.map(c=>Number(c.high)));const pad=(high-low)*.12||low*.001;const y=(value:number)=>24+(high+pad-value)/(high-low+2*pad)*220;const x=(at:number)=>72+(at-first)/Math.max(60,last-first)*(width-92);const points=rows.map(c=>({...c,x:x(c.at),y:y(Number(c.close))}));const path=points.map((c,i)=>(i===0||c.at-points[i-1].at>interval*60?'M':'L')+c.x.toFixed(2)+','+c.y.toFixed(2)).join(' ');return {points,path,first,last,x,y,low,high,pad}},[data,symbol,provider,interval,width]);
- const fresh=online&&!error&&data&&Math.max(now,Date.now()/1000)-data.received_at<65;const point=plot?.points[Math.min(cursor??(plot.points.length-1),plot.points.length-1)];
- return <div ref={frame} className="history-chart" aria-label="Exchange price history"><div className="history-toolbar"><label>Time range<select aria-label="Price history time range" value={interval} onChange={e=>setIntervalMinutes(Number(e.target.value))}><option value="1">Last 3 hours · 1-minute prices</option><option value="5">Last 15 hours · 5-minute prices</option><option value="15">Last 45 hours · 15-minute prices</option></select></label><label>Chart style<select aria-label="Price history chart style" value={style} onChange={e=>setStyle(e.target.value)}><option value="line">Price line</option><option value="candles">Candlesticks</option></select></label><span className={'badge '+(fresh?'live':'stale')}>{fresh?'History updated':'History loading / old'}</span></div>
- {plot?<><div className="history-point"><strong>{point?px(Number(point.close)):''}</strong><span>{point?new Date(point.at*1000).toLocaleString():''} · {point?.closed?'Completed candle':'Current candle · still changing'}</span></div><svg viewBox={`0 0 ${width} 288`} role="img" aria-label={'Exchange price history for '+symbol+' from '+provider} tabIndex={0} onPointerMove={e=>{const bounds=e.currentTarget.getBoundingClientRect();const at=plot.first+((e.clientX-bounds.left)/bounds.width*width-72)/(width-92)*(plot.last-plot.first);let closest=0;for(let i=1;i<plot.points.length;i++)if(Math.abs(plot.points[i].at-at)<Math.abs(plot.points[closest].at-at))closest=i;setCursor(closest)}} onPointerLeave={()=>setCursor(null)} onBlur={()=>setCursor(null)} onKeyDown={e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();setCursor(old=>Math.max(0,Math.min(plot.points.length-1,(old??plot.points.length-1)+(e.key==='ArrowLeft'?-1:1))))}if(e.key==='Escape')setCursor(null)}}>
- {[0,1,2,3,4].map(i=>{const value=plot.high+plot.pad-(plot.high-plot.low+2*plot.pad)*i/4;return <g key={i}><line className="live-market-grid" x1="72" x2={width-20} y1={plot.y(value)} y2={plot.y(value)}/><text className="live-market-axis" x="62" y={plot.y(value)+4} textAnchor="end">{px(value)}</text></g>})}
- {style==='line'?<path data-testid="history-price-line" d={plot.path} className={'live-market-line '+(!fresh?'is-stale':'')} fill="none"/>:plot.points.map(c=><g key={c.at} className={Number(c.close)>=Number(c.open)?'candle-up':'candle-down'}><line x1={c.x} x2={c.x} y1={plot.y(Number(c.high))} y2={plot.y(Number(c.low))}/><rect x={c.x-2} y={Math.min(plot.y(Number(c.open)),c.y)} width="4" height={Math.max(1,Math.abs(plot.y(Number(c.open))-c.y))}/></g>)}
- {cursor!=null&&point&&<g><line className="live-market-crosshair" x1={point.x} x2={point.x} y1="24" y2="244"/><circle className="live-market-cursor" cx={point.x} cy={point.y} r="4"/></g>}
- <text className="live-market-axis" x="72" y="276">{time(plot.first)}</text><text className="live-market-axis" x={width-20} y="276" textAnchor="end">{time(plot.last)}</text></svg><p className="history-caption">{data?.candles.length} actual exchange candles · gaps stay open · latest candle can change. Use ← / → to inspect prices.</p></>:<div className="empty"><h3>{error||'Loading actual exchange price history…'}</h3><p>Choose “Live ticks” to see fresh book observations while history loads. No prices are invented.</p></div>}
- {plot&&error&&<p role="status">{error} Retained history is old.</p>}<small className="history-source">Source: {provider} public {provider==='kraken'?'OHLC':'candleSnapshot'} · received {data?new Date(data.received_at*1000).toLocaleString():'waiting'} · historical trade prices, not executable quotes.</small></div>;
+
+export default function PriceHistory({provider,symbol,auth,online,now}:{provider:string;symbol:string;auth:boolean;online:boolean;now:number}) {
+  const frame=useRef<HTMLDivElement>(null);
+  const [width,setWidth]=useState(980);
+  const [interval,setIntervalMinutes]=useState(1),[data,setData]=useState<History|null>(null),[error,setError]=useState('');
+  const [style,setStyle]=useState('line'),[cursor,setCursor]=useState<number|null>(null);
+  const [visibleCount,setVisibleCount]=useState(180),[offset,setOffset]=useState(0);
+  useEffect(()=>{
+    const element=frame.current;if(!element)return;
+    const observer=new ResizeObserver(entries=>{const measured=entries[0]?.contentRect.width;if(measured)setWidth(Math.max(280,Math.round(measured)))});
+    observer.observe(element);return()=>observer.disconnect();
+  },[]);
+  useEffect(()=>{
+    setData(null);setError('');setCursor(null);setVisibleCount(180);setOffset(0);
+    if(!auth||!['kraken','hyperliquid'].includes(provider)||!symbol)return;
+    let active=true,running=false;let controller:AbortController|null=null;
+    const load=async()=>{
+      if(running||document.visibilityState!=='visible')return;
+      running=true;const request=new AbortController();controller=request;const timeout=setTimeout(()=>request.abort(),12000);
+      try{
+        const response=await fetch('/api/price-history?'+new URLSearchParams({symbol,provider,interval:String(interval)}),{credentials:'include',signal:request.signal});
+        if(!response.ok)throw Error('Exchange history is temporarily unavailable.');
+        const value:History=await response.json();
+        if(value.symbol!==symbol||value.provider!==provider||value.interval_minutes!==interval||!Array.isArray(value.candles)||value.candles.length<2||!Number.isFinite(value.received_at)||!value.candles.every(c=>Number.isFinite(c.at)&&['open','high','low','close'].every(k=>Number.isFinite(Number(c[k as keyof Candle]))&&Number(c[k as keyof Candle])>0)))throw Error('Exchange history could not be verified.');
+        if(active){setData(value);setError('')}
+      }catch(e){if(active)setError((e as Error).name==='AbortError'?'Exchange history request timed out.':(e as Error).message)}
+      finally{clearTimeout(timeout);running=false}
+    };
+    load();const timer=setInterval(load,30000);const visible=()=>{if(document.visibilityState==='visible')load()};document.addEventListener('visibilitychange',visible);
+    return()=>{active=false;controller?.abort();clearInterval(timer);document.removeEventListener('visibilitychange',visible)};
+  },[auth,provider,symbol,interval]);
+  const plot=useMemo(()=>{
+    if(!data||data.symbol!==symbol||data.provider!==provider||data.interval_minutes!==interval)return null;
+    const end=Math.max(2,data.candles.length-Math.min(offset,Math.max(0,data.candles.length-visibleCount)));
+    const rows=data.candles.slice(Math.max(0,end-visibleCount),end);
+    const first=rows[0].at,last=rows.at(-1)!.at;
+    const low=Math.min(...rows.map(c=>Number(c.low))),high=Math.max(...rows.map(c=>Number(c.high)));
+    const pad=(high-low)*.12||low*.001;
+    const y=(value:number)=>24+(high+pad-value)/(high-low+2*pad)*220;
+    const x=(at:number)=>72+(at-first)/Math.max(60,last-first)*(width-92);
+    const points=rows.map(c=>({...c,x:x(c.at),y:y(Number(c.close))}));
+    const segments:typeof points[]=[];
+    points.forEach((c,i)=>{if(i===0||c.at-points[i-1].at>interval*60)segments.push([]);segments.at(-1)!.push(c)});
+    const path=segments.map(segment=>segment.map((c,i)=>(i?'L':'M')+c.x.toFixed(2)+','+c.y.toFixed(2)).join(' ')).join(' ');
+    const area=segments.filter(segment=>segment.length>1).map(segment=>segment.map((c,i)=>(i?'L':'M')+c.x.toFixed(2)+','+c.y.toFixed(2)).join(' ')+` L${segment.at(-1)!.x},244 L${segment[0].x},244 Z`).join(' ');
+    const candleWidth=Math.max(1,Math.min(9,(width-92)/Math.max(2,points.length)*.6));
+    return {points,path,area,first,last,x,y,low,high,pad,candleWidth};
+  },[data,symbol,provider,interval,width,visibleCount,offset]);
+  const age=data?Math.max(now,Date.now()/1000)-data.received_at:Infinity;
+  const fresh=online&&!error&&age>=-1&&age<65;
+  const point=plot?.points[Math.min(cursor??(plot.points.length-1),plot.points.length-1)];
+  const count=plot?.points.length??0,total=data?.candles.length??0;
+  const move=(direction:number)=>{setCursor(null);setOffset(value=>Math.max(0,Math.min(Math.max(0,total-visibleCount),value+direction*Math.max(1,Math.floor(visibleCount/2)))))};
+  return <div ref={frame} className="history-chart" aria-label="Exchange price history">
+    <div className="history-toolbar"><label>Time range<select aria-label="Price history time range" value={interval} onChange={e=>setIntervalMinutes(Number(e.target.value))}><option value="1">Last 3 hours · 1-minute prices</option><option value="5">Last 15 hours · 5-minute prices</option><option value="15">Last 45 hours · 15-minute prices</option></select></label><label>Chart style<select aria-label="Price history chart style" value={style} onChange={e=>setStyle(e.target.value)}><option value="line">Price line</option><option value="candles">Candlesticks</option></select></label><span className={'badge '+(fresh?'live':'stale')}>{fresh?'History updated':'History loading / old'}</span></div>
+    {plot?<>
+      <div className="history-point"><strong>{point?px(Number(point.close)):''}</strong><span>{point?new Date(point.at*1000).toLocaleString():''} · {point?.closed?'Completed candle':'Current candle · still changing'}</span></div>
+      <svg viewBox={`0 0 ${width} 288`} role="img" aria-label={'Exchange price history for '+symbol+' from '+provider} tabIndex={0}
+        onPointerMove={e=>{const bounds=e.currentTarget.getBoundingClientRect();const at=plot.first+((e.clientX-bounds.left)/bounds.width*width-72)/(width-92)*(plot.last-plot.first);let closest=0;for(let i=1;i<plot.points.length;i++)if(Math.abs(plot.points[i].at-at)<Math.abs(plot.points[closest].at-at))closest=i;setCursor(closest)}}
+        onPointerLeave={()=>setCursor(null)} onBlur={()=>setCursor(null)}
+        onKeyDown={e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();setCursor(old=>Math.max(0,Math.min(plot.points.length-1,(old??plot.points.length-1)+(e.key==='ArrowLeft'?-1:1))))}if(e.key==='Escape')setCursor(null)}}>
+        <defs><linearGradient id="history-area" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#66e8d6" stopOpacity=".18"/><stop offset="100%" stopColor="#66e8d6" stopOpacity="0"/></linearGradient></defs>
+        {[0,1,2,3,4].map(i=>{const value=plot.high+plot.pad-(plot.high-plot.low+2*plot.pad)*i/4;return <g key={i}><line className="live-market-grid" x1="72" x2={width-20} y1={plot.y(value)} y2={plot.y(value)}/><text className="live-market-axis" x="62" y={plot.y(value)+4} textAnchor="end">{px(value)}</text></g>})}
+        {style==='line'?<><path d={plot.area} fill="url(#history-area)" opacity={fresh?1:.35}/><path data-testid="history-price-line" d={plot.path} className={'live-market-line '+(!fresh?'is-stale':'')} fill="none"/></>:plot.points.map(c=><g key={c.at} className={Number(c.close)>=Number(c.open)?'candle-up':'candle-down'}><line x1={c.x} x2={c.x} y1={plot.y(Number(c.high))} y2={plot.y(Number(c.low))}/><rect x={c.x-plot.candleWidth/2} y={Math.min(plot.y(Number(c.open)),c.y)} width={plot.candleWidth} height={Math.max(1,Math.abs(plot.y(Number(c.open))-c.y))}/></g>)}
+        {cursor!=null&&point&&<g><line className="live-market-crosshair" x1={point.x} x2={point.x} y1="24" y2="244"/><line className="live-market-crosshair" x1="72" x2={width-20} y1={point.y} y2={point.y}/><circle className="live-market-cursor" cx={point.x} cy={point.y} r="4"/></g>}
+        <text className="live-market-axis" x="72" y="276">{time(plot.first)}</text><text className="live-market-axis" x={width-20} y="276" textAnchor="end">{time(plot.last)}</text>
+      </svg>
+      <div className="history-navigation" aria-label="Chart navigation"><div><button aria-label="Pan chart earlier" disabled={offset>=Math.max(0,total-visibleCount)} onClick={()=>move(1)}>←</button><button aria-label="Pan chart later" disabled={offset===0} onClick={()=>move(-1)}>→</button></div><span data-testid="history-window-count">{count} / {total} candles</span><div><button aria-label="Zoom out" disabled={visibleCount>=total} onClick={()=>{setVisibleCount(value=>Math.min(180,value*2));setCursor(null)}}>−</button><button aria-label="Zoom in" disabled={count<=20} onClick={()=>{setVisibleCount(Math.max(20,Math.floor(count/2)));setOffset(0);setCursor(null)}}>+</button><button className="chart-reset" onClick={()=>{setVisibleCount(180);setOffset(0);setCursor(null)}}>Reset</button></div></div>
+      <p className="history-caption">{data?.candles.length} actual exchange candles · gaps stay open · latest candle can change. Use ← / → to inspect prices.</p>
+    </>:<div className="empty"><h3>{error||(!auth?'Sign in to see exchange history':!['kraken','hyperliquid'].includes(provider)?'Choose a Kraken or Hyperliquid market':'Loading actual exchange price history…')}</h3><p>Choose “Live ticks” to see fresh book observations while history loads. No prices are invented.</p></div>}
+    {plot&&error&&<p role="status">{error} Retained history is old.</p>}
+    <small className="history-source">Source: {provider||'unavailable'} public {provider==='kraken'?'OHLC':'candleSnapshot'} · received {data?new Date(data.received_at*1000).toLocaleString():'waiting'} · historical trade prices, not executable.</small>
+  </div>;
 }

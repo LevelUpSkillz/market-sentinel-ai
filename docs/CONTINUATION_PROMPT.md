@@ -1,3 +1,54 @@
+## Latest checkpoint — October 25, 2026
+
+Cloudflare production 0.6.2 is confirmed SUCCESS, source
+593884370bc75346fcaf2ecd3dfeae1024793660, deployment
+0eaa7633-2526-41bc-b0df-88bcb2dc5935. It completed October 24 at
+21:36:49 UTC. Render backend 0.6.2 is LIVE on
+4b768b3ff1c9452a34b2bb4b7027c5db6c977f00, deployment
+dep-dbei4m4s728c73cagdg0. Previous acceptance passed 273 actual isolated
+PostgreSQL/backend tests with zero skips and 30 Chromium tests.
+
+The user now explicitly requests continuing implementation of a minimalist,
+futuristic premium panel, as easy to navigate as Coinbase / Kraken / Crypto.com,
+with restrained NASA mission-control graphics and useful real live charts.
+A new FRONTEND-ONLY 0.6.3 candidate is being prepared in
+/workspace/market-sentinel-cloudflare-ai. See docs/RELEASE_0_6_3.md and inspect
+actual deployment status before claiming it is published. It adds a chart-first
+home, coverage ring, source-aware public trade activity, provider telemetry,
+one-click market selection, chart zoom/pan/reset and expandable visible depth.
+No backend or trading-authority changes are needed for this UI release.
+
+Preserve existing plain-language navigation, six-step Show me how tutorial,
+trade suggestions from deterministic radar plus public trader profiles, real
+historical charts, on-demand Workers AI explanations / skeptical review /
+English-French / semantic search. Never invent prices, history, activity, wallet
+identities, worldwide rankings or success odds. Historical win rates are not
+follower probabilities. No automatic real trading; every real spot order still
+needs fresh immutable review and exact individual approval. No engineering
+account reads, real test orders or vault rotation.
+
+Next.js/TypeScript on Cloudflare, Python/FastAPI and independent collectors on
+Render, dedicated PostgreSQL. Free only, no paid upgrades or keep-alive tricks.
+Workers Free is confirmed by the user's actual account screenshot. Render Free
+can sleep; current free PG expires November 22, 2026. Complete isolation from
+Sentinel Intelligence. Existing vault-key precedence and credentials must stay
+intact. Never request or print keys or secrets.
+
+Owner Access offers email-code login without forced Cloudflare account redirect;
+its exact owner policy and audience are unchanged. Google friend research login
+is saved but UNRELEASED on feature/supabase-research-access at
+19fcfddac0526eeda25d307df892705cd9ea11e3. Rebase and fully validate separately;
+do not deploy that older branch over current source. Supabase identity only,
+Market roles/data in its own PostgreSQL; friends are research-only.
+
+The latest automatic-trading question established no new autonomous real-money
+authorization. A practice bot is a future option after validation, not a shipped
+feature. Price glitches can be invalid or unfillable; lows do not imply rebounds.
+Keep the current app easy to understand, run complete release gates, verify
+Cloudflare publication and protected production health, and record exact status.
+
+---
+
 LATEST CHECKPOINT: 0.6.0 premium UI + Live Money + BBO radar is deployed and verified on application 388ee3fced05513218b93b437bc5e6ad59ecd2ed. Read current main HANDOFF/DELIVERY first. It passed 260 backend checks with actual isolated PG/zero skips and 25 browser checks. Use /#live-money and /#radar. Preserve the separate unfinished Supabase Google/read-only-friend work in /workspace/market-sentinel-premium; the release UI directory is /workspace/market-sentinel-premium-ui. Owner directed publishing the current UI first and continuing auth afterward. Owner reports the Supabase callback redirect was added. Do not call Google auth live until its own role/PKCE/proxy/provider/browser gates pass. No Supabase app data migration or Sentinel code/DB changes; identity only. Friends have research-only access, never owner Kraken/budgets/orders/paper/private history. No paid upgrade, secret sharing, vault rotation or real-money test trade.
 
 Continue Market Sentinel AI from the current implementation; do not restart with a plan or mockup.

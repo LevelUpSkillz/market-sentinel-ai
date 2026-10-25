@@ -1,6 +1,10 @@
 # 0.6.2 — Simpler app and Cloudflare AI
 
-Status: preview acceptance pending; production remains 0.6.0 until verified promotion.
+Status: DEPLOYED. Cloudflare production 0eaa7633-2526-41bc-b0df-88bcb2dc5935
+completed successfully on October 24, 2026 at 21:36:49 UTC; source 5938843.
+Render backend deployment dep-dbei4m4s728c73cagdg0 is live on source 4b768b3.
+Acceptance: 273 backend tests with real isolated PostgreSQL / zero skips,
+30 browser tests, public provider/history probes and zero-known-vulnerability audits.
 Application release branch: release/cloudflare-ai-v062.
 
 Contains the plain-language navigation, tutorial, evidence-based trade
@@ -10,7 +14,7 @@ French, and meaning-based idea search. Dedicated AI Gateway, public-only context
 source citations, no numerical claims from model prose, and persistent usage
 caps. See CLOUDFLARE_AI.md for model permissions and free-only activation.
 
-Current main is still the existing premium 0.6.0 release during acceptance.
+The verified runtime source is the 0.6.2 release.
 The release must pass generated Worker types, TypeScript, mocked AI function
 contracts, actual isolated PostgreSQL tests, browser tests, public provider /
 price-history probes, audit checks and protected production API checks.
