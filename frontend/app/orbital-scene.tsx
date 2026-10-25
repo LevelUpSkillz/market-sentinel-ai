@@ -14,6 +14,7 @@ export default function OrbitalScene({running}:{running:boolean}) {
     const pixelRatio=Math.min(window.devicePixelRatio||1,1.5);
     element.width=Math.round(width*pixelRatio);element.height=Math.round(height*pixelRatio);
     ctx.setTransform(pixelRatio,0,0,pixelRatio,0,0);
+    element.dataset.animating='false';
     const project=(latitude:number,longitude:number)=>{
       const x=Math.cos(latitude)*Math.cos(longitude),z=Math.cos(latitude)*Math.sin(longitude),y=Math.sin(latitude);
       const tilt=.32,yy=y*Math.cos(tilt)-z*Math.sin(tilt),zz=y*Math.sin(tilt)+z*Math.cos(tilt);
