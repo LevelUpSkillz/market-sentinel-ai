@@ -1,0 +1,211 @@
+/* Graphite Edition — warm materials, crisp data, restrained copper accents. */
+:root { --bg:#181716; --sidebar:#141413; --panel:#1f1e1d; --panel-2:#252422; --text:#eeeae0; --muted:#aaa7a3; --line:#3b3a37; --border:#3b3a37; --green:#b5b3b0; --green-dim:#2d2c2a; --gold:#d2b28d; --orange:#d4b17d; --red:#d9a094; --copper:#cfad85; }
+body { background:#181716; color:var(--text); }
+.mission-backdrop { background:#181716; }
+.cosmic-glow,.stellar-layer,.mission-horizon,.cosmic-comet { opacity:.12; filter:none; }
+.sidebar { background:#141413f8; border-color:#373633; box-shadow:none; }
+.topbar { background:#181716f5; border-color:#3c3b38; box-shadow:none; }
+.brand-icon { color:#cfad85; filter:none; animation:none; }
+.brand-light { color:#e3ded2; }
+.brand small { color:#a2a09b; }
+.brand b { color:#c8bea9; background:#2e2c2a; }
+.workspace { background:#222120; border-color:#403f3c; box-shadow:none; }
+.workspace-logo { background:#33322f; color:#e4e0d4; border-color:#4e4c48; }
+.workspace-dot { background:#aba8a4; box-shadow:none; }
+.nav-item { color:#aeaca9; border-radius:10px; }
+.nav-item:hover { color:#efeade; background:#252423; border-color:#41403d; }
+.nav-item.active { color:#eee6d6; background:#2f2e2b; border-color:#5d5b56; box-shadow:inset 3px 0 #cfad85; }
+.nav-item.capital-nav { color:#cfb797; }
+.nav-item.capital-nav.active { color:#f0dcc0; background:#3b3425; border-color:#806d4b; box-shadow:inset 3px 0 #d6b784; }
+.profile { background:#171615; border-color:#3c3a37; }
+.avatar,.avatar.small { background:#33322f; border-color:#575552; color:#d8d7d5; }
+.crumb strong,.page-heading h1 { color:#eeeae0; }
+.crumb > span:first-of-type,.page-heading p { color:#aeaca8; }
+.page-heading .eyebrow,.page-heading > div > .eyebrow { color:#a2a09c; }
+.effects-switch,.help-button { background:#232221; border-color:#4b4946; color:#d5d4d2; }
+.effects-switch:hover:not(:disabled) { background:#31302d; border-color:#797671; box-shadow:none; }
+.app[data-effects='off'] .effects-switch { background:#21201e; border-color:#44423f; color:#b7b5b1; }
+.mode-switch { background:#373024; color:#d9bd96; border-color:#6b5e45; }
+.safety-strip { background:transparent; border-color:#3c3a37; }
+.safety-label { color:#b4b2ae; }
+.hosting-note { color:#a4a29e; }
+.panel { background:#1f1e1d; border:1px solid #3e3d3a; box-shadow:none; border-radius:16px; }
+.panel-head { background:transparent; border-color:#3c3b38; }
+.panel-head h2 { color:#ece9dc; }
+.panel-head .eyebrow { color:#adaba8; }
+.panel-head::after,.panel::before { display:none; }
+.panel-foot { background:#1b1a19; border-color:#3e3c39; color:#b8b6b3; }
+.primary { background:#d1b28c; border-color:#d1b28c; color:#232220; box-shadow:none; }
+.primary:hover { background:#e3c5a0; border-color:#e3c5a0; box-shadow:none; }
+.secondary { background:#2d2c2a; border-color:#555350; color:#e1e0df; box-shadow:none; }
+.secondary:hover { background:#383735; border-color:#85827c; }
+.text-button { color:#cdb28c; }
+.capital-button { background:#d2b28c; border-color:#d2b28c; color:#222120; box-shadow:none; }
+.capital-button:hover { background:#e3c69e; }
+.danger { background:#4b3329; color:#efc0b2; border-color:#8d6050; }
+input,select { background:#1a1918; border-color:#54524f; color:#e3e3e2; }
+input:focus,select:focus { border-color:#acaaa7; }
+button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible,svg:focus-visible { outline-color:#d9bd96; }
+.badge.live,.badge.go,.badge.connected,.badge.streaming { background:#32312e; border-color:#5c5955; color:#cdccca; }
+.badge.wait,.badge.stale,.badge.delayed { background:#403b24; border-color:#7d7246; color:#e7d6a4; }
+.badge.no-go { background:#493329; border-color:#926b53; color:#f0c6ad; }
+.badge.unavailable { background:#31302e; border-color:#555350; color:#c6c4c1; }
+.status-dot.is-live,.system-health-dot { background:#b8b6b2; box-shadow:none; }
+.system-health-trigger { color:#c8c7c4; background:#2a2928; border-color:#514f4b; }
+.system-health.is-neutral .system-health-trigger { color:#c5c4c1; border-color:#52504d; background:#262523; }
+.system-health.is-neutral .system-health-dot { background:#adaba7; }
+.system-health.is-warning .system-health-trigger { color:#ecdbab; border-color:#88784b; background:#32312e; }
+.system-health.is-warning .system-health-dot { background:#dbc48a; }
+.system-health.is-critical .system-health-trigger { color:#f1c1b0; border-color:#986e53; background:#4a3427; }
+.system-health.is-critical .system-health-dot { background:#e1ad93; }
+.system-health-popover { background:#232221; border-color:#6d6a65; box-shadow:0 18px 50px #0005; }
+.system-health-popover h3 { color:#e8e8e7; }
+.system-health-popover p { color:#c4c3c0; }
+.system-health-popover .system-health-note,.system-health-popover > small { color:#b1afac; border-color:#54524f; }
+/* Large spatial graphics remain; their material and lighting change. */
+.workspace-hero.mission-hero.spatial-command { background:#21201f; border-color:#5a5854; box-shadow:none; border-radius:20px; }
+.spatial-command::after { background:#bba278; width:54px; left:30px; height:2px; box-shadow:none; }
+.command-heading { border-color:#484744; }
+.command-heading h2 { color:#e7e6e5; }
+.command-heading h2 em { color:#d7bd96; background:none; -webkit-text-fill-color:currentColor; }
+.command-heading .eyebrow { color:#b2b0ad; }
+.terminal-square { background:#c5ae86; box-shadow:none; }
+.command-heading p { color:#bab8b5; }
+.command-modes { background:#1c1b1a; border-color:#53514e; }
+.command-modes button { color:#bdbbb8; }
+.command-modes button[aria-pressed=true] { background:#3a3936; border-color:#77746f; color:#dedddb; box-shadow:none; }
+.command-stage { background:#22211f; }
+.scene-coordinate { color:#b5b3af; }
+.scene-coordinate > span:last-child { color:#d2bd96; }
+.spatial-command .orbital-canvas,.section-instrument-canvas { filter:none; }
+.scene-annotation { color:#c1bfbc; }
+.scene-annotation small { color:#9a9792; }
+.command-focus { background:#292826; border-color:#504e4a; }
+.command-focus > .eyebrow { color:#cbb991; }
+.command-market-label { color:#b9b7b4; }
+.focus-price { border-color:#565451; }
+.focus-price > strong { color:#ebeae9; }
+.focus-price > span:last-child { color:#c4c2bf; }
+.focus-price small,.focus-source { color:#b2b0ad; }
+.focus-book dt { color:#bebcb9; }
+.focus-book dd { color:#e2e1df; }
+.command-strip { background:#1d1d1c; border-color:#4b4946; }
+.command-strip .quote-beacon { background:transparent; border-color:#4b4946; }
+.command-strip .quote-beacon > div > strong { color:#d8d7d6; }
+.command-strip .quote-beacon > div > span { color:#bab8b4; }
+.command-strip .quote-beacon p { color:#e8e8e7; }
+.command-strip .quote-beacon > small,.command-strip .quote-beacon p > small { color:#b2b0ad; }
+.command-strip .quote-beacon.is-retained p { color:#b4b2ae; }
+.command-coverage { border-color:#4b4946; }
+.command-coverage svg { stroke:#454441; }
+.command-coverage .coverage-value { stroke:#bcbab7; }
+.command-coverage strong { color:#e6e6e5; }
+.command-coverage strong small,.command-coverage div > span,.command-coverage div > small { color:#b9b7b3; }
+.command-bottom .source-node strong { color:#cfcecc; }
+.command-bottom .source-node small { color:#a9a7a2; }
+.command-bottom .source-node-light { background:#8a8781; }
+.spatial-command .hero-destinations { border-color:#4d4b48; }
+.spatial-command .hero-destinations button+button { border-color:#4d4b48; }
+.spatial-command .hero-destinations button > span { color:#acaaa7; }
+.spatial-command .hero-destinations button > .capital-label { color:#cbb68f; }
+.spatial-command .hero-destinations strong { color:#d7d6d5; }
+/* No chromatic wash or glowing card edges. */
+.instrument-panel { --instrument:#d1bb96; background:#22211f; border-color:#5a5753; }
+.instrument-depth { --instrument:#bcbbb8; }
+.instrument-network { --instrument:#d3b18b; }
+.instrument-timeline { --instrument:#c6c4c1; }
+.instrument-forensic { --instrument:#d0a08e; }
+.instrument-lab { --instrument:#bdbcb9; }
+.instrument-practice { --instrument:#c3c2bf; }
+.instrument-relay { --instrument:#cbbb9c; }
+.instrument-systems { --instrument:#c4c2bf; }
+.instrument-capital { --instrument:#dac294; border-color:#6b6863; }
+.instrument-panel::after { display:none; }
+.instrument-panel h2 { color:#e9e8e7; }
+.instrument-panel .panel-head { border-color:#52504d; }
+.instrument-panel .panel-head .eyebrow { color:#b7b5b1; }
+.instrument-description > p { color:#bebdba; }
+.instrument-stage::before { display:none; }
+.instrument-layers { background:#1d1c1b; border-color:#575552; }
+.instrument-layers button { color:#bbb9b6; }
+.instrument-layers button[aria-pressed=true],.instrument-capital .instrument-layers button[aria-pressed=true] { background:#3c3b38; border-color:#75736e; color:#e0dfdd; }
+.instrument-facts { border-color:#54524e; }
+.instrument-facts dt { color:#bab8b4; }
+.instrument-facts small { color:#a8a6a2; }
+.instrument-readout { color:#b0aeaa; }
+.instrument-inspector { background:#2b2a28; border-color:#5a5753; }
+.instrument-inspector > label { color:#c6c5c2; }
+.instrument-inspector p { color:#d2d1cf; }
+.instrument-caption { background:#1c1c1b; border-color:#4d4b48; }
+.instrument-caption p { color:#bcbbb8; }
+.instrument-caption small { color:#adaba7; }
+.instrument-panel.is-expanded .instrument-facts { border-color:#54524e; }
+.trade-detail-card,.suggestion-card,.signal-card,.radar-setup { background:#292826; border-color:#575551; box-shadow:none; }
+.trade-token-icon { background:#3c3b38; border-color:#7d7a74; color:#dcdbd9; }
+.trade-detail-tabs button[aria-pressed=true] { background:#3f3d3a; border-color:#807d77; }
+.trader-result.is-gain { background:#353431; border-color:#65635f; color:#d3d2d0; }
+.trader-result.is-loss { background:#4d3627; border-color:#966d4d; color:#efd0b2; }
+.market-tab { background:#272625; border-color:#53514d; }
+.market-tab[aria-pressed=true] { background:#3a3937; box-shadow:inset 0 -2px #bab8b4; }
+.market-tab > strong { color:#dddcdb; }
+.live-market-price { color:#eae9e8; text-shadow:none; }
+.live-market-line { stroke:#c5c4c1; filter:none; }
+.live-market-line.is-stale { stroke:#918e88; }
+.live-market-grid { stroke:#8a878130; }
+.live-market-axis { fill:#bbbab7; }
+.history-chart { background:#222120; border-color:#5e5c57; }
+.history-live-endpoint { fill:#dbdad9; stroke:#b3b1ae; filter:none; animation:none; }
+.history-point,.history-navigation button { color:#cdccca; }
+.history-navigation button { background:#32312e; border-color:#6a6762; }
+.candle-up line,.candle-up rect { fill:#bab8b4; stroke:#bab8b4; }
+.candle-down line,.candle-down rect { fill:#d9a494; stroke:#d9a494; }
+.depth-balance { box-shadow:none; background:#5a3d2a; }
+.depth-balance > span { background:#aaa8a4; }
+.radar-glyph { background:#292826; border-color:#989590; box-shadow:none; }
+.radar-glyph svg { stroke:#817e78; }
+.radar-sweep { background:conic-gradient(from 0deg,transparent 0deg 235deg,#b8b6b314 310deg,#c0bebb8c 359deg,transparent 360deg); }
+.radar-glyph .radar-center { fill:#d2d1ce; filter:none; }
+.capital-hero { background:#2a2927; border-color:#93865b; }
+.capital-command { background:#302f2c; border-color:#84774f; }
+.exact-order-review { background:#2d2b29; border-color:#ae9862; }
+.mobile-dock { background:#1c1b1af5; border-color:#5b5955; }
+.mobile-dock button[aria-current=page] { background:#383735; color:#dcdbd9; box-shadow:none; }
+.evidence-modal,.quick-tour { background:#2a2927; border-color:#7d7a75; }
+.login-panel { background:#2a2927; border-color:#7a7772; }
+footer { color:#b1afac; border-color:#585652; }
+/* Use warm neutral surfaces, with accents confined to data and controls. */
+body,.mission-backdrop { background:#181716; }
+.panel,.instrument-panel { background:#201f1e; border-color:#3f3e3b; }
+.command-stage,.workspace-hero.mission-hero.spatial-command { background:#201f1e; border-color:#484643; }
+.command-focus { background:#262524; border-color:#464542; }
+.command-strip,.command-coverage { background:#1b1b1a; border-color:#42413e; }
+.command-strip .quote-beacon { border-color:#42413e; }
+.instrument-inspector { background:#292826; border-color:#494845; }
+.instrument-caption { background:#1b1b1a; border-color:#3f3e3b; }
+.trade-detail-card,.suggestion-card,.signal-card,.radar-setup { background:#262524; border-color:#484744; }
+.history-chart { background:#1f1e1d; border-color:#494744; }
+.capital-hero { background:#272624; }
+
+/* Semantic direction/status colors are reserved for meaningful market states. */
+:root { --green:#b4c49f; --green-dim:#293125; --red:#d5a092; }
+body,.mission-backdrop { background:#171816; }
+.badge.live,.badge.go,.badge.connected,.badge.streaming { background:#2a3224; border-color:#5b6848; color:#c5d4ad; }
+.badge.no-go { background:#3a2b26; border-color:#876254; color:#dfb2a3; }
+.status-dot.is-live,.system-health-dot { background:#b0c196; }
+.system-health-trigger { color:#c1ceae; background:#262e20; border-color:#526044; }
+.system-health.is-neutral .system-health-trigger { color:#c8c8ba; border-color:#4e5043; background:#25261f; }
+.system-health.is-neutral .system-health-dot { background:#b0b3a2; }
+.system-health.is-warning .system-health-trigger { color:#e1cba3; border-color:#796847; background:#373020; }
+.system-health.is-critical .system-health-trigger { color:#e4b5a6; border-color:#916959; background:#3e2d26; }
+.system-health.is-critical .system-health-dot { background:#d5a092; }
+.candle-up line,.candle-up rect { fill:#b4c49f; stroke:#b4c49f; }
+.candle-down line,.candle-down rect { fill:#d5a092; stroke:#d5a092; }
+.trader-result.is-gain { background:#2c3425; border-color:#5e6e49; color:#cbd8b4; }
+.trader-result.is-loss { background:#3d2e27; border-color:#8c6652; color:#e0b5a1; }
+.depth-balance { background:#65483c; }
+.depth-balance > span { background:#aabf90; }
+.live-market-line { stroke:#bfcba9; }
+.instrument-depth { --instrument:#bdc9aa; }
+.instrument-network { --instrument:#d3b18b; }
+.instrument-forensic { --instrument:#cfa091; }
+.instrument-capital { --instrument:#d8bd92; }
