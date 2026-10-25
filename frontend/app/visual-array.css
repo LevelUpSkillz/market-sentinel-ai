@@ -1,0 +1,71 @@
+/* Visual Array 0.6.5 — contextual instruments throughout the workspace. */
+.instrument-panel { --instrument:#70e8e6; margin-bottom:24px; overflow:hidden; }
+.instrument-network { --instrument:#c0a9ff; border-color:#645688; }
+.instrument-timeline { --instrument:#8bc5ff; }
+.instrument-forensic { --instrument:#f9aca8; border-color:#78576e; }
+.instrument-lab { --instrument:#9ee2bc; }
+.instrument-practice { --instrument:#b0e5bc; }
+.instrument-relay { --instrument:#b4afff; }
+.instrument-capital { --instrument:#e8c98f; border-color:#8d744d; }
+.instrument-panel::before { border-color:var(--instrument); }
+.instrument-panel .panel-head { align-items:center; }
+.instrument-panel .panel-head .eyebrow { color:var(--instrument); font-size:7px; letter-spacing:1.8px; opacity:.8; }
+.instrument-panel h2 { color:#d9edf8; font-size:20px; letter-spacing:-.5px; }
+.instrument-layers { display:flex; align-items:center; padding:3px; gap:3px; border:1px solid #375770; border-radius:5px; background:#071726; }
+.instrument-layers button { min-height:30px; min-width:40px; padding:6px 9px; border:1px solid transparent; border-radius:3px; background:transparent; color:#92aec6; font:9px var(--mono); }
+.instrument-layers button[aria-pressed=true] { color:var(--instrument); background:#1d3a4a; border-color:#426779; }
+.instrument-layers button:hover { border-color:var(--instrument); }
+.instrument-description { display:flex; align-items:center; justify-content:space-between; gap:17px; padding:15px 23px 0; }
+.instrument-description > p { color:#adc4d8; font-size:11px; margin:0; line-height:1.8; max-width:650px; }
+.instrument-market { display:flex; align-items:center; gap:9px; color:#9ebcd3; font-size:9px; flex-shrink:0; }
+.instrument-market select { min-height:34px; font-size:10px; padding:7px 9px; max-width:260px; }
+.instrument-workspace { display:grid; grid-template-columns:minmax(0,1.8fr) minmax(190px,.7fr); gap:12px; padding:0 24px 14px; align-items:center; }
+.instrument-stage { min-width:0; position:relative; }
+.section-instrument-canvas { width:100%; display:block; height:auto; aspect-ratio:720/330; }
+.instrument-readout { display:flex; justify-content:space-between; gap:10px; position:absolute; left:5%; right:5%; bottom:2%; color:#88b3ca; font:7px var(--mono); letter-spacing:.7px; line-height:1.7; pointer-events:none; }
+.instrument-readout > span:first-child { color:var(--instrument); opacity:.75; }
+.instrument-facts { display:grid; grid-template-columns:minmax(0,1fr); gap:17px; margin:15px 0 20px; padding-left:22px; border-left:1px solid #34556b; }
+.instrument-facts > div { min-width:0; }
+.instrument-facts dt { color:#99b5cb; font-size:9px; line-height:1.7; }
+.instrument-facts dd { margin:4px 0; color:var(--instrument); font:17px var(--mono); line-height:1.45; letter-spacing:-.4px; overflow-wrap:anywhere; }
+.instrument-facts small { display:block; color:#8ca9c1; font-size:8px; line-height:1.7; }
+.instrument-inspector { display:flex; align-items:center; flex-wrap:wrap; gap:14px; padding:15px 23px; background:#08182b88; border-top:1px solid #2d4a61; }
+.instrument-inspector > label { display:flex; gap:10px; align-items:center; color:#9fb9d0; font-size:9px; flex-shrink:0; }
+.instrument-inspector select { font-size:10px; min-height:35px; max-width:230px; padding:7px 9px; }
+.instrument-inspector p { color:#bfd6e4; font-size:10px; line-height:1.8; margin:0; min-width:0; flex:1; overflow-wrap:anywhere; }
+.instrument-inspector > button { font-size:10px; }
+.instrument-caption { padding:13px 23px 17px; background:#09172980; border-top:1px solid #29465e; }
+.instrument-caption p { color:#a1bad0; font-size:10px; line-height:1.8; margin:0 0 6px; }
+.instrument-caption small { color:#85a7c1; font-size:9px; display:block; line-height:1.8; overflow-wrap:anywhere; }
+.instrument-capital .instrument-layers button[aria-pressed=true] { background:#3c3324; border-color:#78623e; }
+.instrument-capital .instrument-facts { border-color:#69583e; }
+.instrument-capital .instrument-caption { border-color:#69583e; }
+@media(min-width:1550px) { .instrument-workspace { grid-template-columns:minmax(0,2fr) minmax(220px,.7fr); } .instrument-facts dd { font-size:20px; } }
+@media(max-width:1100px) { .instrument-workspace { grid-template-columns:minmax(0,1.4fr) minmax(150px,.7fr); gap:5px; } .instrument-facts { padding-left:17px; gap:14px; } .instrument-facts dd { font-size:15px; } .instrument-description { flex-wrap:wrap; } }
+@media(max-width:700px) {
+  .instrument-panel { margin-bottom:19px; }
+  .instrument-panel .panel-head { padding:18px 16px; gap:12px; }
+  .instrument-panel h2 { font-size:19px; }
+  .instrument-layers { margin-left:auto; }
+  .instrument-layers button { min-height:34px; min-width:37px; padding:7px; font-size:9px; }
+  .instrument-description { padding:15px 16px 0; gap:13px; }
+  .instrument-description > p { font-size:11px; }
+  .instrument-market { width:100%; justify-content:space-between; font-size:10px; }
+  .instrument-market select { max-width:75%; font-size:11px; min-height:40px; }
+  .instrument-workspace { grid-template-columns:minmax(0,1fr); padding:0 13px 16px; gap:1px; }
+  .instrument-stage { margin-top:9px; }
+  .section-instrument-canvas { min-height:168px; }
+  .instrument-readout { font-size:6px; letter-spacing:.3px; bottom:0; }
+  .instrument-facts { grid-template-columns:repeat(2,minmax(0,1fr)); border-left:0; border-top:1px solid #304e63; padding:18px 4px 0; margin:16px 0 3px; gap:20px 18px; }
+  .instrument-facts dd { font-size:16px; margin:6px 0; }
+  .instrument-facts dt { font-size:10px; }
+  .instrument-facts small { font-size:9px; }
+  .instrument-inspector { padding:15px 16px; gap:12px; }
+  .instrument-inspector > label { width:100%; justify-content:space-between; gap:9px; font-size:10px; }
+  .instrument-inspector select { max-width:64%; font-size:11px; min-height:40px; }
+  .instrument-inspector p { flex-basis:100%; font-size:11px; }
+  .instrument-inspector > button { min-height:42px; font-size:11px; }
+  .instrument-caption { padding:14px 16px 17px; }
+  .instrument-caption p { font-size:10px; }
+  .instrument-caption small { font-size:9px; }
+}

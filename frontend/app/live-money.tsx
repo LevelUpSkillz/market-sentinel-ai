@@ -1,6 +1,7 @@
 'use client';
 
 import {useEffect,useState} from 'react';
+import InstrumentPanel from './instrument-panel';
 import CapitalSettings,{RealPlanView,type RealCapitalProfile,type RealPlan} from './capital';
 import KrakenAccount,{type KrakenSummary} from './kraken-account';
 import type {Market} from './types';
@@ -12,8 +13,8 @@ const format=(value:unknown)=>value==null||value===''||!Number.isFinite(Number(v
 const date=(at?:number|null)=>at&&Number.isFinite(at)?new Date(at*1000).toLocaleString():'Unavailable';
 const VIEWS:{id:LiveMoneyView;label:string;number:string}[]=[{id:'overview',label:'Overview',number:'01'},{id:'risk',label:'Budget & limits',number:'02'},{id:'trade',label:'Trade ticket',number:'03'},{id:'connection',label:'Connection',number:'04'}];
 
-export default function LiveMoney({auth,online,now,markets,stopped,busy,onStop,onMarkets,view,onView,plan,onRefreshPlan}:{
- auth:boolean;online:boolean;now:number;markets:Market[];stopped:boolean;busy:boolean;onStop:()=>Promise<void>;onMarkets:()=>void;
+export default function LiveMoney({auth,online,effectsRunning,now,markets,stopped,busy,onStop,onMarkets,view,onView,plan,onRefreshPlan}:{
+ auth:boolean;online:boolean;effectsRunning:boolean;now:number;markets:Market[];stopped:boolean;busy:boolean;onStop:()=>Promise<void>;onMarkets:()=>void;
  view:LiveMoneyView;onView:(value:LiveMoneyView)=>void;plan:RealPlan|null;onRefreshPlan:()=>Promise<void>;
 }){
  const [summary,setSummary]=useState<KrakenSummary>({connection:null,account:null,unresolved:false});
@@ -44,6 +45,8 @@ export default function LiveMoney({auth,online,now,markets,stopped,busy,onStop,o
   {label:'Order review',value:summary.unresolved?'Reconcile prior order':'Review before approval',ready:false,view:'trade' as const}];
  const blocked=!profileFresh||!accountFresh||stopped||summary.unresolved||!connected||!summary.connection?.connection?.can_trade||!summary.connection?.live_order_submission_enabled;
  return <div className="live-money-workspace">
+  <InstrumentPanel title="Capital protection array" subtitle="A visual checklist for your Kraken account. Every real order still needs your exact approval." model={{kind:'capital',points:[],steps:[{label:'ACCOUNT',state:connected?'ready':'unknown'},{label:'BUDGET',state:profileFresh?'ready':'unknown'},{label:'SNAPSHOT',state:accountFresh?'ready':'unknown'},{label:'APPROVAL',state:stopped||summary.unresolved?'blocked':'unknown'}]}} running={effectsRunning} facts={[{label:'Account link',value:connected?'Connected':'Not connected'},{label:'Last available USD',value:format(usd),note:account?accountFresh?'Recent Kraken snapshot':'Old snapshot · refresh below':'Read balances explicitly below'},{label:'Risk budget',value:profileFresh?'Confirmed':'Needs confirmation',note:'Declared budget, not an exchange balance'},{label:'Execution control',value:stopped?'Paused':summary.unresolved?'Reconciliation required':'Your approval required'}]} caption="The shield and orbit motion are decorative. Readiness is not an order or a profit forecast. No account balance is requested by this display; refresh balances in the account panel. USD, USDC and CAD are never combined." source={'Source: current account setup / declared budget · Kraken account snapshot '+date(account?.verified_at)}/>
+
   <section className="capital-hero" aria-label="Live money control center"><div><span className="eyebrow">YOUR CAPITAL. YOUR APPROVAL.</span><h2>A clear view of your<br/><em>real money.</em></h2><p>Read your Kraken account, define your limits, then review one spot order at a time. Every real order needs your approval.</p><div className="capital-hero-status"><span className={'status-dot '+(connected?'is-live':'')}/>{connected?'Kraken connected':'Kraken connection required'}<span className="capital-divider"/>{stopped?'New trades paused':summary.unresolved?'Order needs reconciliation':'Manual approval only'}</div></div>
    <div className="capital-command"><span className="eyebrow">EXECUTION CONTROL</span><strong>{stopped?'Trading paused':summary.unresolved?'Reconciliation required':blocked?'Setup required':'Ready for your review'}</strong><p>{stopped?'New app orders are blocked. Existing Kraken orders are unaffected.':summary.unresolved?'Inspect the original request. The app will not resend it.':'Linking an account never starts trading. No withdrawal or autonomous execution.'}</p><button className={stopped?'secondary':'danger'} disabled={!auth||!online||busy} onClick={onStop}>{stopped?'Resume new trades':'Pause new trades'}</button></div>
   </section>
