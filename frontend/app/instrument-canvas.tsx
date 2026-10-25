@@ -19,6 +19,20 @@ export default function InstrumentCanvas({model,running,flat,guides,selected,onS
       const ring=(radius:number,squash:number,rotation:number,alpha=.2)=>{ctx.save();ctx.translate(cx,cy);ctx.rotate(rotation);ctx.strokeStyle=rgba(color,alpha);ctx.lineWidth=.7;ctx.beginPath();ctx.ellipse(0,0,radius,radius*squash,0,0,Math.PI*2);ctx.stroke();ctx.restore()};
       if(grid){for(let i=0;i<9;i++){line(45+i*78,28,45+i*78,H-24,.07);line(40,30+i*35,W-40,30+i*35,.07)}line(cx,18,cx,H-18,.18);line(22,cy,W-22,cy,.12)}
       ring(253,top?.9:.34,-.18,.13);ring(219,top?.9:.45,.25,.18);
+      // Layered holographic engineering geometry. All of this cage/trail motion
+      // is ornamental; it never supplies measurements or activity counts.
+      const projectCage=(x:number,y:number,z:number)=>{const a=t*.19,xx=x*Math.cos(a)-z*Math.sin(a),zz=x*Math.sin(a)+z*Math.cos(a);return {x:cx+xx,y:cy+y*.67+zz*.32}};
+      const cage=Array.from({length:12},(_,i)=>{const a=i/12*Math.PI*2;return projectCage(Math.cos(a)*194,Math.sin(a)*100,Math.sin(a*2)*63)});
+      for(let i=0;i<cage.length;i++){const a=cage[i],b=cage[(i+1)%cage.length],c=cage[(i+4)%cage.length];line(a.x,a.y,b.x,b.y,.25);line(a.x,a.y,c.x,c.y,.09)}
+      for(let layer=0;layer<3;layer++){
+        const radius=150+layer*29,rotation=t*(layer%2?-.13:.17)+layer*.72;
+        for(let tick=0;tick<42;tick++){const a=tick/42*Math.PI*2+rotation,b=a+.07;ctx.save();ctx.translate(cx,cy);ctx.rotate(layer*.65-.3);ctx.beginPath();ctx.ellipse(0,0,radius,radius*(top?.84:.42+layer*.09),0,a,b);ctx.strokeStyle=rgba(color,tick%7===0?.6:.18);ctx.lineWidth=tick%7===0?2:.7;ctx.stroke();ctx.restore()}
+      }
+      for(let ribbon=0;ribbon<2;ribbon++){
+        ctx.beginPath();for(let step=0;step<=65;step++){const a=step/65*Math.PI*3+t*(ribbon?-.6:.6),r=58+step*.7,x=cx+Math.cos(a)*r,y=cy-105+step*3.2;step?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.strokeStyle=rgba(color,.1);ctx.lineWidth=.6;ctx.stroke();
+      }
+      for(let orbit=0;orbit<2;orbit++)for(let trail=18;trail>=0;trail--){const a=t*(orbit?-.8:1.2)+orbit*Math.PI-trail*.022,x=cx+Math.cos(a)*(267-orbit*38),y=cy+Math.sin(a)*(top?130:69+orbit*17);dot(x,y,trail===0?3:1.2,(1-trail/19)*(trail===0?.9:.35))}
+
       // These moving lights are ornamental. They never represent trade arrivals.
       for(let i=0;i<3;i++){const a=t*(i===1?-.7:1)+i*2.1;dot(cx+Math.cos(a)*253,cy+Math.sin(a)*(top?226:79),2,.55)}
       if(m.kind==='depth'||m.kind==='forensic'){

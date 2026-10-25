@@ -57,3 +57,19 @@ User image also showed empty Coinbase shortcut tiles alongside real Kraken
 quotes. Main chart shortcuts now omit never-observed markets (zero receipt
 time). Previously observed stale markets remain explicitly old; prices are
 not substituted, and full market/provider diagnostics remain available.
+
+Latest visual direction: user asked for stronger science-fiction complexity,
+including Home. Added layered rotating segmented shells, a projected engineering
+cage, ornamental light trails/helix guides and a scanning holographic stage to
+the section instruments; Home gains segmented orbital shells and violet/cyan
+trails. These layers never supply measurements, prices or transaction events.
+The status disclosure now uses an explicit accessible button rather than
+browser-dependent native-summary role behavior; the actual issue test stays.
+
+User explicitly requested real data in the animations. Home now includes
+BTC/ETH/SOL observed book-midpoint beacons over the orbital display, with exact
+provider, USD/USDC quote currency, source time and age. Only fresh, verified
+source observations enter the cache. Old observations remain labeled Last
+observed; auth loss immediately hides them. A light pulse requires an actual
+observed midpoint change, never an API heartbeat or fabricated tick. No extra
+provider/account request. The orbit geometry itself remains ornamental.

@@ -45,6 +45,13 @@ export default function OrbitalScene({running}:{running:boolean}) {
       for(let lat=-60;lat<=60;lat+=20){const points=[];for(let step=0;step<=72;step++)points.push(project(lat*Math.PI/180,step/72*Math.PI*2+angle));drawLine(points)}
       for(let lon=0;lon<180;lon+=15){const points=[];for(let step=0;step<=72;step++)points.push(project(-Math.PI+step/72*Math.PI*2,lon*Math.PI/180+angle));drawLine(points)}
       ctx.strokeStyle='rgba(115,237,255,.36)';ctx.lineWidth=.8;ctx.beginPath();ctx.arc(cx,cy,radius+.5,0,Math.PI*2);ctx.stroke();
+      // Additional rotating segmented shell and violet photon trails are purely ornamental.
+      for(let layer=0;layer<2;layer++){
+        ctx.save();ctx.translate(cx,cy);ctx.rotate(layer===0?-.32:.48);
+        for(let tick=0;tick<64;tick++){const a=tick/64*Math.PI*2+angle*(layer?-.24:.3);ctx.beginPath();ctx.ellipse(0,0,176+layer*28,68+layer*25,0,a,a+.048);ctx.strokeStyle=tick%8===0?'rgba(141,219,255,.64)':'rgba(117,154,255,.2)';ctx.lineWidth=tick%8===0?2:.6;ctx.stroke()}
+        for(let trail=22;trail>=0;trail--){const a=angle*(layer?-1.3:1.8)+layer*2.2-trail*.018,x=Math.cos(a)*(176+layer*28),y=Math.sin(a)*(68+layer*25);ctx.fillStyle=`rgba(${layer?'180,159,255':'117,248,255'},${(1-trail/23)*.5})`;ctx.beginPath();ctx.arc(x,y,trail===0?2.5:1.2,0,Math.PI*2);ctx.fill()}
+        ctx.restore();
+      }
       // HUD reticle and orbital lights are decorative, not trade markers.
       ctx.strokeStyle='rgba(109,211,249,.24)';ctx.setLineDash([2,5]);ctx.beginPath();ctx.moveTo(cx-172,cy);ctx.lineTo(cx+172,cy);ctx.moveTo(cx,cy-165);ctx.lineTo(cx,cy+165);ctx.stroke();ctx.setLineDash([]);
       ctx.save();ctx.translate(cx,cy);ctx.rotate(-.32);

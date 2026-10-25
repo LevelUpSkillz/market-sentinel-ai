@@ -1,6 +1,7 @@
 'use client';
 import type {Dashboard} from './types';
 import OrbitalScene from './orbital-scene';
+import OrbitalQuotes from './orbital-quotes';
 
 type Props={data:Dashboard|null;online:boolean;effectsRunning:boolean;onMoney:()=>void;onRadar:()=>void;onTraders:()=>void;onPrices:()=>void;onHelp:()=>void};
 export default function WorkspaceHero({data,online,effectsRunning,onMoney,onRadar,onTraders,onPrices,onHelp}:Props) {
@@ -23,7 +24,7 @@ export default function WorkspaceHero({data,online,effectsRunning,onMoney,onRada
     </div>
     <div className="mission-visual">
       <div className="visual-coordinate"><span>ORBITAL OBSERVATORY</span><span>MS / 01</span></div>
-      <OrbitalScene running={effectsRunning}/>
+      <OrbitalScene running={effectsRunning}/><OrbitalQuotes data={data} online={online}/>
       <div className="orbital-hud-rim" aria-hidden="true"><span/><i/><b/></div>
       <div className="source-nodes" aria-label="Market source map">{['kraken','hyperliquid','coinbase'].map((name,index)=>{
         const reported=data?.providers[name]?.state;

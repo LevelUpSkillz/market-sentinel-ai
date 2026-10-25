@@ -51,9 +51,11 @@ test('chart zoom and panning use only the existing candle history and reset to t
 test('the activity feed and coverage ring become old when source events stop despite successful API polling',async({page})=>{
   await fixture(page);await page.goto('/');const feed=page.getByRole('region',{name:'Recent public trades'});
   await expect(feed).toContainText('units · fresh');
+  const orbital=page.getByLabel('Observed market quotes');await expect(orbital.getByText('Live',{exact:true})).toHaveCount(2);await expect(orbital).toContainText('USD');
   await expect(page.getByRole('img',{name:'2 of 2 detailed market books are fresh'})).toBeVisible();
   await page.clock.runFor(6500);
   await expect(feed).not.toContainText('units · fresh');
+  await expect(orbital.getByText('Last observed',{exact:true})).toHaveCount(2);
   await expect(page.getByRole('img',{name:'0 of 2 detailed market books are fresh'})).toBeVisible();
   await expect(page.getByRole('region',{name:'Data connection status'})).toHaveCount(0);
   await page.goto('/#settings');await page.getByText('Technical data diagnostics',{exact:true}).click();
