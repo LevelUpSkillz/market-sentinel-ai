@@ -2,6 +2,15 @@
 
 Private cryptocurrency investigation, paper trading, real-capital planning and individually approved Kraken USD spot limit orders. **No autonomous trades, withdrawals, leverage or wallet seeds.** This is independent of Sentinel Intelligence.
 
+## Current published release
+
+Terminal 0.6.3 is live at https://market.getlevelupskillz.com . See
+[delivery](docs/DELIVERY.md) and [current handoff](docs/HANDOFF.md) for exact
+source/deployment status, free-plan limits and continuing work. The release adds
+a minimal chart-focused interface, actual public trade/source telemetry,
+historical chart zoom/pan/reset and clear public trader entry/amount/result cards.
+Open versus closed P&L stays explicit; missing values are never invented.
+
 ## Implemented vertical slice
 
 - FastAPI backend; decimal order-book calculations; timestamped provenance; reconnect backoff and stale-data rejection.

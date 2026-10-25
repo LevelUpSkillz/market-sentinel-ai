@@ -1,73 +1,68 @@
-## Latest checkpoint — October 25, 2026
+Continue Market Sentinel AI from its CURRENT implementation. Do not restart,
+produce only a plan, or overwrite newer source with an older checkout.
 
-Cloudflare production 0.6.2 is confirmed SUCCESS, source
-593884370bc75346fcaf2ecd3dfeae1024793660, deployment
-0eaa7633-2526-41bc-b0df-88bcb2dc5935. It completed October 24 at
-21:36:49 UTC. Render backend 0.6.2 is LIVE on
-4b768b3ff1c9452a34b2bb4b7027c5db6c977f00, deployment
-dep-dbei4m4s728c73cagdg0. Previous acceptance passed 273 actual isolated
-PostgreSQL/backend tests with zero skips and 30 Chromium tests.
+First read current main docs/HANDOFF.md and docs/DELIVERY.md, then inspect actual
+refs, source, tests and deployments. Current published dashboard is terminal
+0.6.3 on Cloudflare, source 1033c5fa035831bac2cf3490cf94e523d7da6edf, production 1cd76ab6-008f-460b-8bd1-ec307b449ba1, completed
+2026-10-25T03:35:24.158732Z. Backend remains 0.6.2 on Render source
+4b768b3ff1c9452a34b2bb4b7027c5db6c977f00. Use
+/workspace/market-sentinel-cloudflare-ai if this workspace exists; old premium,
+premium-ui, release and market-sentinel-ai directories are stale.
 
-The user now explicitly requests continuing implementation of a minimalist,
-futuristic premium panel, as easy to navigate as Coinbase / Kraken / Crypto.com,
-with restrained NASA mission-control graphics and useful real live charts.
-A new FRONTEND-ONLY 0.6.3 candidate is being prepared in
-/workspace/market-sentinel-cloudflare-ai. See docs/RELEASE_0_6_3.md and inspect
-actual deployment status before claiming it is published. It adds a chart-first
-home, coverage ring, source-aware public trade activity, provider telemetry,
-one-click market selection, chart zoom/pan/reset and expandable visible depth.
-It also adds plain-language public trader trade cards: token, direction, entry,
-size, open versus closed profit/loss, actual fill values/fees, and honest missing
-fields. Four views replace the wide size-change table. No backend or
-trading-authority changes are needed for this UI release.
+App https://market.getlevelupskillz.com
+Repo https://github.com/LevelUpSkillz/market-sentinel-ai
 
-Preserve existing plain-language navigation, six-step Show me how tutorial,
-trade suggestions from deterministic radar plus public trader profiles, real
-historical charts, on-demand Workers AI explanations / skeptical review /
-English-French / semantic search. Never invent prices, history, activity, wallet
-identities, worldwide rankings or success odds. Historical win rates are not
-follower probabilities. No automatic real trading; every real spot order still
-needs fresh immutable review and exact individual approval. No engineering
-account reads, real test orders or vault rotation.
+I want a premium minimalist futuristic market panel as user-friendly as Coinbase,
+Kraken or Crypto.com, with restrained NASA-style live graphics. Keep plain labels,
+readable mobile charts, a clear next action, tutorial/help, and a strong distinction
+between research, practice and Live Money. Show actual source/freshness everywhere;
+no fake activity, prices, profits, identities, world rankings or success odds.
 
-Next.js/TypeScript on Cloudflare, Python/FastAPI and independent collectors on
-Render, dedicated PostgreSQL. Free only, no paid upgrades or keep-alive tricks.
-Workers Free is confirmed by the user's actual account screenshot. Render Free
-can sleep; current free PG expires November 22, 2026. Complete isolation from
-Sentinel Intelligence. Existing vault-key precedence and credentials must stay
-intact. Never request or print keys or secrets.
+0.6.3 includes chart-focused Home, public trade activity, coverage/connection
+telemetry, market shortcuts, actual historical line/candle zoom/pan/reset,
+expandable visible depth and clear Big Traders cards. Trader views: Open positions,
+Actual executions, Closed trades, Observed changes. Show token, direction, available
+entry/fill price, quantity, USDC value, margin, fees and open versus closed result.
+Historical snapshot changes must not borrow current P&L or invent missing entry
+prices. Closed results exclude funding; previous wins are not my odds of success.
+Existing tutorial, Workers AI, radar, history/autopsies, strategy validation,
+manual practice, real-capital planning, backups and Live Money must stay intact.
 
-Owner Access offers email-code login without forced Cloudflare account redirect;
-its exact owner policy and audience are unchanged. Google friend research login
-is saved but UNRELEASED on feature/supabase-research-access at
-19fcfddac0526eeda25d307df892705cd9ea11e3. Rebase and fully validate separately;
-do not deploy that older branch over current source. Supabase identity only,
-Market roles/data in its own PostgreSQL; friends are research-only.
+Keep Next.js/TypeScript Cloudflare frontend, Python/FastAPI and independent
+collectors on Render, dedicated PostgreSQL. Completely isolated from Sentinel
+Intelligence. FREE ONLY: no paid plans/upgrades/credits or keep-alive tricks.
+Render Free can sleep, so never promise 24/7 monitoring. Current free PostgreSQL
+expires November 22, 2026 at 04:35 UTC; protected export is not permanent offsite
+retention. User screenshot already confirmed Workers Free as the current plan.
 
-The latest automatic-trading question established no new autonomous real-money
-authorization. A practice bot is a future option after validation, not a shipped
-feature. Price glitches can be invalid or unfillable; lows do not imply rebounds.
-Keep the current app easy to understand, run complete release gates, verify
-Cloudflare publication and protected production health, and record exact status.
+Kraken is selected. Only individually approved USD spot IOC limit orders are
+currently authorized: immutable fresh 30-second review, exact typed PLACE THIS
+REAL ORDER, deterministic limits, durable intent and one submission. Unknown
+outcomes must block resends until explicit reconciliation. No autonomous real
+trading, withdrawals, transfers, leverage, borrowing, derivatives or engineering
+real-money test orders. Planning stops are not attached exchange orders. Preserve
+vault-key precedence and credentials; never retrieve, expose, rotate or request
+secrets in chat. Never let AI submit orders or override risk rules.
 
----
+Workers AI is on-demand explanation / skeptical review / English-French /
+meaning-based search over public allowlisted evidence only. Keep persistent
+4/minute and 30/day quotas and logging off; no private account data in prompts.
 
-LATEST CHECKPOINT: 0.6.0 premium UI + Live Money + BBO radar is deployed and verified on application 388ee3fced05513218b93b437bc5e6ad59ecd2ed. Read current main HANDOFF/DELIVERY first. It passed 260 backend checks with actual isolated PG/zero skips and 25 browser checks. Use /#live-money and /#radar. Preserve the separate unfinished Supabase Google/read-only-friend work in /workspace/market-sentinel-premium; the release UI directory is /workspace/market-sentinel-premium-ui. Owner directed publishing the current UI first and continuing auth afterward. Owner reports the Supabase callback redirect was added. Do not call Google auth live until its own role/PKCE/proxy/provider/browser gates pass. No Supabase app data migration or Sentinel code/DB changes; identity only. Friends have research-only access, never owner Kraken/budgets/orders/paper/private history. No paid upgrade, secret sharing, vault rotation or real-money test trade.
+Owner email-code Access sign-in is configured without forced Cloudflare admin
+redirect; exact owner policy/audience remain intact. Google research-only friend
+login is SAVED BUT NOT DEPLOYED on feature/supabase-research-access at
+19fcfddac0526eeda25d307df892705cd9ea11e3. Rebase onto current UI and run all
+OAuth/PKCE/proxy/revocation/viewer gates before deployment. Supabase identity only;
+Market roles/data remain in Render PG. Friends see markets/radar/public trader
+research only, never owner capital/accounts/orders/paper/private history/settings.
 
-Continue Market Sentinel AI from the current implementation; do not restart with a plan or mockup.
+A question about an automatic bot did not authorize automatic real-money trading.
+A validated automatic PRACTICE bot is possible future work, not shipped. Glitches
+may be invalid or unfillable; all-time lows do not guarantee a rebound.
 
-Repo: https://github.com/LevelUpSkillz/market-sentinel-ai
-App: https://market.getlevelupskillz.com
-First read current main docs/HANDOFF.md and docs/DELIVERY.md, then inspect actual refs, code, tests, deployments and logs. Preserve newer work.
-
-The 0.5.0 source milestone integrates secure own-account Kraken linking and individually approved real USD spot IOC limit orders, plus protected backup export/offline recovery. Read HANDOFF.md for exact source and deployment/test status. It preserves 0.4.1 live charts, plain-language trader actions, wallet navigation, mobile/login fixes and owner password OR verified-Access authentication. Do not return to stale local source or assume prepared code is deployed without checking.
-
-I selected Kraken with broad eligible spot markets, not just BTC/ETH/SOL. I want genuine account linking and individually approved trades, not only readiness text. Keys must be entered only in the protected app; never ask for them in chat. A watched public address is not a connected spending wallet. No self-custody wallet signer is implemented. No account was connected or real trade submitted during engineering acceptance.
-
-Preserve restricted encrypted credentials, verified balances/actual fees/pair rules, CRC-fresh executable books, conservative cash/exposure/full-cost risk limits, immutable 30-second review, exact per-order typed confirmation, durable intent before the sole provider POST, persistent nonce/request serialization and unknown-outcome reconciliation with no resend. Restore permanently disables historical execution and preserves the unresolved-order binding without secrets. Do not rotate the server vault key casually.
-
-Keep Next.js/TypeScript on Cloudflare; Python/FastAPI and independent collectors on Render; dedicated PostgreSQL; complete isolation from Sentinel Intelligence. Free plans only: no paid upgrades, subscriptions or keep-alive tricks without new cost approval. Render Free sleeps and cannot promise 24/7 monitoring. Current free PG expires November 22, 2026 at 04:35 UTC; protected export does not provide automatic offsite backups or permanent retention. GitHub stores source; no GitHub Actions deployment/CI.
-
-No autonomous trades, withdrawals, borrowing, leverage, derivatives or real-money acceptance tests. No keys, secrets, seeds or recovery phrases in chat/source/browser storage/logs. No fabricated market data, identities, trades, historical profits, worldwide rankings or success odds. Public trader histories and reported ROI are not follower probabilities. Radar GO is paper eligibility, real-capital risk PASS is arithmetic, and passing tests proves no profitability. Actual Kraken transaction fees still apply.
-
-Continue the evidence-based mission: broad legitimate market coverage, public trader/whale actions and past-history analysis, realistic independent copyability, explainable rejection, forensics, permanent evidence/autopsies within real storage limits, causal walk-forward validation, paper experiments, portfolio controls and mobile alerts. Validate full release gates using isolated PostgreSQL and browser checks before promotion, verify actual production without impersonating owner sessions, and update HANDOFF/DELIVERY with implemented/tested/deployed/blocked status. Review qualified Canadian/Québec and provider rights before commercialization or third-party execution. Work autonomously and give concise progress updates.
+Latest release passed 273 backend checks with actual isolated PostgreSQL / zero
+skips and 38 Chromium tests, type/build/AI/schema/audit gates, real public probes
+and protected production checks. These tests prove no profitability. Work
+autonomously, give concise updates, validate meaningful behavior, verify the
+actual published source and save an accurate checkpoint. Avoid asking me to
+repeat already answered questions or making paid changes without authorization.

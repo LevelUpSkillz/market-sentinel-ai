@@ -1,89 +1,140 @@
-# Market Sentinel AI — continuation checkpoint
+# Market Sentinel AI — current handoff
 
-Updated 2026-10-24. Inspect current repository refs, deployment commits, logs and tests before acting. Preserve newer work; this is not an instruction to roll back.
+Verified October 25, 2026. Inspect current refs before editing; preserve newer work.
 
-## Current milestone — 0.6.0 deployed
+## Published state
 
-Application 388ee3fced05513218b93b437bc5e6ad59ecd2ed is verified live on Cloudflare production 4103d811-df2a-4946-b367-91f8dd7ebfd5 (19:48:41 UTC) and Render dep-dbegl0tg1s2s73fhkj90 (19:44:52 UTC). Preview 20f3b097-e7b0-44d3-82a2-fcc567e86373 passed all 260 backend tests including actual isolated PG with zero skips, 25 Chromium tests, TypeScript/Next, Blueprint/audits and provider probes. External production checks at 19:48:30 UTC verified version 0.6.0, health 200, manual-only execution boundaries, unauthenticated/forged APIs 401 and sign-in302. Read DELIVERY.md and RELEASE_0_6.md.
+- App: https://market.getlevelupskillz.com
+- Repository: https://github.com/LevelUpSkillz/market-sentinel-ai
+- Cloudflare dashboard: terminal **0.6.3**, source `1033c5fa035831bac2cf3490cf94e523d7da6edf`.
+- Production deployment: `1cd76ab6-008f-460b-8bd1-ec307b449ba1`, completed `2026-10-25T03:35:24.158732Z`.
+- Render backend remains **0.6.2**, source `4b768b3ff1c9452a34b2bb4b7027c5db6c977f00`, deployment `dep-dbei4m4s728c73cagdg0`.
+- Current editable source: `/workspace/market-sentinel-cloudflare-ai`.
+- Do not deploy the older premium-ui, premium, release or market-sentinel-ai local directories over current main.
 
-New workspace /workspace/market-sentinel-premium-ui is the verified UI source. A separate /workspace/market-sentinel-premium contains UNRELEASED Google/research-role work. Never copy that whole directory over a release. GitHub release/premium-live-money-v060 head is the deployed 388ee3f...; preserve newer main documentation commits.
+## This release
 
-Live Money is now a primary navigation item: /#live-money, with Overview, Budget & limits, Trade ticket and Connection. Account setup/capital/orders moved out of Settings. The new slate/mint/gold design includes grouped/mobile navigation, plain workflows, actual-source account summaries, pause, bid/ask helper and allowlisted last-50 app order requests. Existing restricted encrypted Kraken setup and exact approval protections are preserved. The owner reports connecting their account; engineering collected no key and submitted no real order.
+The user wants a minimalist, futuristic premium market terminal, as easy to use
+as Coinbase, Kraken or Crypto.com, with restrained NASA-style coverage graphics
+and real live charts. Keep it understandable rather than adding jargon.
 
-Public USD radar now uses BBO ticker events, strategy observed-breakout-v1.1, preserving strict freshness/continuity/baseline/risk limits. Actual observation list, ten-bin progress and validated-complete five-minute observed moves explain warmup. GO remains paper-only. New production scans during warmup observed approximately 242–258 USD markets versus earlier 14–17 trade-triggered scans; these are point-in-time observations, not a guarantee of coverage or advantage. Duplicate old chart/history polling was removed; real sampled live chart remains. Test failures were corrected; no financial checks were bypassed.
+0.6.3 provides a chart-focused Home, consistent dark/mint design across sections,
+source-aware actual public trade tape, fresh-book coverage ring and connection
+telemetry. Detailed market shortcuts switch the chart without account reads.
+Historical line/candlestick charts support client-side zoom/pan/reset and
+keyboard/pointer crosshairs; data gaps remain gaps. Expandable visible depth
+shows actual buy/sell orders and notional balance, never a success probability.
+Home shows up to two trade ideas, with advanced tools available separately.
 
-## Active next milestone — Supabase Google research invitations (NOT deployed)
+Big Traders now has clear cards in four views: Open positions, Actual executions,
+Closed trades and Observed changes. They name the token and long/short direction,
+show available entry/fill price, token quantity, USDC position/execution values,
+margin, fees and results. Open gains/losses are explicitly not locked in.
+Completed-cycle results are after trading fees but before funding. Historical
+snapshot changes never borrow current prices or P&L. Missing average prices in
+old closed summaries remain unavailable. The cards filter by token/address and
+link to wallet details. All values are public-provider evidence, not owner orders.
 
-User requested Google sign-in and explicitly chose friends viewing live markets, radar and public trader research only. Then explicitly directed Supabase for this option only. Keep Next.js Cloudflare / Python Render / dedicated PostgreSQL, free only, isolated from Sentinel Intelligence. Use existing Supabase identity broker only; do not move market data, invite permissions or exchange secrets into Supabase. Existing Sentinel callback/RPC/RLS code was read to understand identity and was not modified. No Supabase management connector is available. Owner reports adding only https://market-research.getlevelupskillz.com/api/auth/google/callback to the existing project's redirect allowlist; keep original Site URL/redirects unchanged.
+No backend, collector, auth proxy, credential vault, database or trade-authority
+configuration changed for this frontend release. No Render action is required.
 
-New research hostname is attached to the same Pages project with a new CNAME, keeping the owner hostname/Access app untouched. Do not configure the earlier considered Cloudflare OTP/Google IdP approach: no provider/app/policy was created for it. Use Supabase PKCE and separate HttpOnly research-only sessions; always recheck exact-email active/revoked/expired membership server-side. Google identity can never grant owner/Kraken authority. Public research must redact owner account/capital/paper/risk inputs, labels and private history; deny every mutation for viewers. Owner password and Access continue independently.
+## Verified acceptance
 
-Prepared local files in /workspace/market-sentinel-premium include members.py, google_auth.py, log_safety.py, app/config/access wiring, eight synthetic research-auth tests (pass locally), research-login.tsx/members-panel.tsx, read-only UI role guards and proxy cookie/redirect support. Latest local backend result 268 run/262 pass/6 isolated-PG skips. FULL cloud/browser acceptance for this new auth is pending. No production Google login or real friend access has been verified. Public project URL/publishable key are in existing Sentinel wrangler configuration and are not service-role/provider secrets. Never read or copy Sentinel service-role, Google client secret, private app data or credentials. New login uses only Supabase /auth/v1/authorize, /token and /user; no database/RPC queries.
+273 backend tests passed with actual isolated PostgreSQL and ZERO skips;
+38 Chromium browser tests passed. Includes phone/tablet/desktop widths
+320/390/768/1440, chart navigation without invented samples or account reads,
+stale-feed handling, trader P&L distinctions and existing Kraken approval /
+unknown-outcome no-resend safety contracts. Generated Worker types, TypeScript,
+Next build, AI mock contracts, Blueprint schema, real public market/trader/history
+probes and dependency audits passed. Actual Kraken and Hyperliquid history probes
+returned 180 candles each. Dependency audits found no known vulnerabilities.
+Protected production probes returned HTTP 200 health and HTTP 401 anonymous /
+forged APIs, with individual approval required, autonomous trading false and
+withdrawals false. Owner sign-in offered an HTTP 200 login rather than forced
+Cloudflare administration. No owner session, key or real order was used.
 
-Next: finish/test role UI, single-use encrypted PKCE, revocation, separate session audience/environment, callback cookie/Location forwarding and query redaction, public provider readiness, origin checks, restore exclusions and owner/guest isolation; save a separate checkpoint branch, preview everything, then deploy only after acceptance. Merge env updates must preserve the Kraken vault. Supabase org has a visible quota warning; do not upgrade or promise unlimited free auth. Durable DB expiry remains independent.
+The first preview's single failing assertion matched help text instead of a live
+status list; it was corrected without weakening freshness. The revised preview
+and final production acceptance passed. Design captures are labeled synthetic
+fixtures, never inserted into production. Passing tests does not prove profits.
 
-## Prior 0.5 implementation and constraints
+## Existing features to preserve
 
-Version 0.5.0 integrates secure own-account Kraken linking, individually approved real USD spot IOC limit orders and protected research backup download. Application source is b23fb6c559ff28c60ff683ecdad98af3bdf0d6a8. It includes current main’s owner-password OR verified-Access authentication, mobile/login fixes and 0.4.1 live chart work. The release branch is release/kraken-account-v050; it was promoted using a main expected-SHA lease. Do not return to the stale local checkout or overwrite newer branches.
+Plain-language Home / Prices / Trade Ideas / Big Traders / Live Money navigation,
+More tools, six-step Show me how tutorial, actual live observations and historical
+charts, broad searchable legitimate market listings, deterministic USD spot radar,
+public Hyperliquid wallet positions/actions/available fills, separate historical
+results and unvalidated follower odds, opportunity history/autopsies, walk-forward
+strategy lab, manual practice trades, real-capital risk planning, encrypted Kraken
+linking, individually approved spot orders and protected research backup export.
 
-Release acceptance: 256 Python tests passed with zero skips, including actual ephemeral PostgreSQL nonce/advisory-lock, accounting and backup/restore checks; 21 Chromium checks; TypeScript/Next.js build, Blueprint schema, dependency audits and real public provider probes. Successful preview 33b91f87-0515-4142-a2cd-4c541f1e17b9 completed at 04:51:53 UTC. The first preview stopped before tests because the runner default Python could not install the build-only pgserver wheel; .python-version now pins 3.12.14. No failing security check was bypassed.
+Cloudflare Workers AI is on-demand explanation, skeptical review, English/French
+and meaning-based idea search. Fixed model `@cf/meta/llama-3.2-3b-instruct`;
+embeddings `@cf/baai/bge-small-en-v1.5`; public allowlisted evidence only, no
+account balances, keys, private budgets or order-capable model tools. Persistent
+application quota 4/minute and 30/day; dedicated AI Gateway logging off. Actual
+user screenshot confirmed Workers Free; do not ask them again. Never let AI
+invent prices/odds, override deterministic limits or submit trades.
 
-Render deployment dep-dbe3jkvb9u1s73c2ec7g reached live at 04:54:41 UTC on that exact source. Cloudflare production 02f1e365-d4f1-4e26-8c1d-c1879775b0ac succeeded at 04:57:09 UTC on the same source. External checks at 04:56:54 UTC verified version 0.5.0, ready/live HTTP 200 and manual-only boundaries, unauthenticated/forged direct/proxy HTTP 401 and sign-in HTTP 302. See DELIVERY.md. Passing tests never proves provider-private acceptance, trading profitability or predictive advantage.
+## Security and cost decisions
 
-## Account connection and execution boundaries
+Next.js/TypeScript stays on Cloudflare, FastAPI/Python and independent collectors
+on Render, dedicated PostgreSQL. No migration of backend/data to Cloudflare or
+Supabase. Sentinel Intelligence is a separate project: do not modify it.
+**FREE ONLY**: no paid plans, credits, upgrades, duplicate services or artificial
+keep-alive traffic. Render Free can sleep; never promise 24/7 monitoring. Current
+free PostgreSQL expires November 22, 2026 at 04:35 UTC. Backup export is not
+permanent offsite retention. Exchange transaction fees can still apply.
 
-The user chose Kraken and explicitly requested genuine account linking and individually approved own-account trades; a readiness screen alone was insufficient. Broad eligible spot markets are intended, not just BTC/ETH/SOL. No account key was collected, no account was connected and no real order was submitted during engineering acceptance. The owner must link through Live Money → Connection after signing in. Never ask for credentials in chat.
+The user chose Kraken and individually approved USD spot IOC limit orders.
+No autonomous real trading, withdrawals, transfers, leverage, borrowing,
+derivative execution, self-custody signer or real-money engineering tests.
+Every real order requires a fresh immutable 30-second review and exact typed
+`PLACE THIS REAL ORDER`; deterministic balance/fee/liquidity/region/portfolio
+checks, durable intent and one submission apply. Unknown outcomes block resends
+until explicit reconciliation. Planning stops/targets are not attached exchange
+orders. Owner reports their Kraken connection; never retrieve or expose it.
 
-Implemented in kraken.py/kraken_account.py and protected app routes:
+Preserve vault precedence: existing KRAKEN_VAULT_KEY, fallback
+MARKET_SENTINEL_VAULT_20261024. Do not read values or rotate keys casually.
+KRAKEN_LIVE_ENABLED is true for individually approved spot capability only.
+Never request API secrets, seeds, passwords or recovery phrases in chat.
 
-- Fixed-host signed REST, dedicated restricted-key verification, actual BalanceEx/open orders/positions, country/pair identity, actual tick/lot/minimum and account fees. All unknown/funding/withdrawal permissions are rejected. A read-only key can link without trading authority; owner confirms regional/account eligibility.
-- Credentials use Fernet in the dedicated database, with a separate server-only Render vault. No browser storage, source, response/error/audit/backup secret reflection. Same-origin authentication and shared PostgreSQL rate limits protect account and backup routes.
-- Durable per-key monotonic nonce and local/PostgreSQL advisory serialization across overlapping instances. No retries of signed submission.
-- Only observed Kraken USD spot books with current CRC verification are eligible. Core books plus six selected extra markets are supported; eligible native spot catalogue is broader. Every nonzero account holding needs verified USD valuation. Unknown/unsupported portfolios fail closed.
-- Immutable 30-second validation-only preview, exact typed PLACE THIS REAL ORDER confirmation, current profile/fee/balance/market checks, emergency stop and active-order blocker. Final send rechecks expiry/profile/connection/stop/current risk after acquiring request locks.
-- Intent commits before the sole IOC AddOrder. Duplicate approvals cannot resend completed/unknown orders. Transport/deadline/duplicate or uncertain outcomes stay blocked until manual reconciliation. Empty bounded history is never proof of failure. Inspect actual fills and fees directly in Kraken.
-- No protective stop is placed. Full buy cost plus fee reserve counts as at-risk. Hard limits 500 USD order/asset and 2,500 USD correlated exposure; lower owner cash/risk/daily limits apply. Real-capital and UTC-day P&L remain owner-declared and require daily/24-hour reconfirmation. Open orders, borrowing/margin and unverifiable exposure block orders.
-- Disconnect removes the cipher without canceling exchange orders. Restore permanently disables old execution, preserves txids/unresolved blocker and a nonsecret original-key binding; only the original dedicated key can reconnect to reconcile that order.
+## Authentication and unreleased work
 
-Server configuration was merge-updated only on Market Sentinel API: new MARKET_SENTINEL_VAULT_20261024 and KRAKEN_LIVE_ENABLED=true. No values belong in documentation or source. An existing KRAKEN_VAULT_KEY has precedence and was not changed. Never rotate either key casually. Render secrets are the source of truth for these omitted Blueprint keys; Blueprint sync must preserve them. No secrets are configured on Cloudflare. Enabled capability is not a connected account or a placed trade.
+Owner Access app `06cba819-2920-4f77-bed3-d2ba9215b0cb` now offers email-code
+login with forced auto-redirect disabled. Exact owner email policy and audience
+were preserved; original Cloudflare-account login remains an alternative. No
+other Sentinel Access app was changed.
 
-There is no self-custody wallet signer/spending connector, withdrawal/transfer, leverage, derivative or autonomous execution. A watched public address is observation, not ownership verification or spending authority. Do not merge the separate futures-readiness branch into this spot workflow without review. No paid upgrade or real-money acceptance trade is authorized.
+Google research-only invitations are SAVED BUT NOT DEPLOYED on
+`feature/supabase-research-access`, commit
+`19fcfddac0526eeda25d307df892705cd9ea11e3`. It is based on older source and
+must be carefully rebased/merged and fully tested, never copied over current UI.
+Supabase project `scftnhmrdxrysvnofcyd` is identity-only; Market roles/data stay
+in dedicated Render PostgreSQL. Owner reports adding only
+https://market-research.getlevelupskillz.com/api/auth/google/callback to its
+redirect allowlist. Friends may view markets/radar/public trader research ONLY;
+never owner balances, budgets, paper/private history, settings or mutations.
+Google identity must not confer owner/trading permissions. Full OAuth/PKCE,
+revocation, proxy cookie/redirect and viewer-boundary gates remain necessary.
+The Supabase organization has a quota warning; no automatic upgrade.
 
-## Established application
+The user's automatic-bot question did not authorize automatic real trading.
+A validated automatic PRACTICE bot is possible future work, not implemented.
+Price glitches can be invalid/unfillable; all-time lows do not predict rebounds.
+No worldwide verified best-trader ranking, complete every-token/on-chain coverage,
+independently proven profitable strategy or validated follower probabilities is
+claimed. Coinbase research remains restricted pending provider-use permission;
+ChangeNOW needs separate business API configuration/permission. Review Canadian /
+Québec requirements and data rights before commercial signals or third-party execution.
 
-- Cloudflare Next.js/TypeScript dashboard, Render FastAPI with independent supervised collectors and dedicated PostgreSQL. Never modify Sentinel Intelligence.
-- Source-aware global catalogue and delayed aggregate search, Kraken native spot ticker coverage and Hyperliquid native perpetual quotes; quote currencies/instruments remain distinct. No provider covers every token.
-- Kraken CRC32 books, Hyperliquid books/trades/context, reconnection, stale rejection, sequencing/clock checks and lock-based collector handoff. Broad catalogue prices are not fill prices; selected detailed books are required.
-- Deterministic opportunity finder → skeptic → risk → decision; visible-depth fees/latency, explainable rejections and factual forensic memory.
-- Paper accounting/idempotency/costs/limits, opportunity autopsies, causal walk-forward lab with embargo and benchmarks. Paper radar GO permits an experiment; real-capital risk PASS does not establish a trading edge.
-- Live sampled charts freeze verified values on staleness and break across outages. Mobile wallet actions show reported asset/size/direction/entry, plain-language rejection and actual address navigation.
-- Public Hyperliquid candidate directory is experimental: bounded background feed, 100 retained candidates, six-hour cache and dated selection cohorts. Available reported historical fills/cycles, up to ten public watched wallets and independent forward follower observations. No worldwide-best or real-identity claim. ROI units/redistribution rights remain unverified. Success odds stay hidden/null until actual held-out validation and freshness pass; sample count alone is insufficient.
-- Owner password session OR independently verified Cloudflare Access JWT; Origin checks, database rate limits/audit, emergency stop, optional private ntfy mobile delivery. No real mobile delivery was sent for acceptance.
-- Settings backup export uses consistent PG read-only snapshot, 16 MiB/100k journal/10k state bounds, checksums/counts, secret/session/nonce exclusions. Offline restore only to empty isolated development/test databases, forced stop/profile reconfirmation and suppressed old alert deliveries. Actual disposable PG recovery passed; no production archive has been downloaded or stored offsite automatically.
+## Infrastructure identifiers
 
-## Fixed infrastructure and costs
-
-Free plans only. Never add paid services/subscriptions/workers, upgrade compute/database, or create artificial keep-alive traffic without new cost approval. Render Free sleeps; no 24/7 monitoring/protective execution guarantee. PostgreSQL expires November 22, 2026 at 04:35 UTC; protected export does not extend retention. Durable free replacement/offsite archive remains an owner setup priority.
-
-- App https://market.getlevelupskillz.com ; repo https://github.com/LevelUpSkillz/market-sentinel-ai (user temporarily made it public; no secrets).
-- Cloudflare account f11da4c37ab8e27585d927a2c3cef02d; Pages market-sentinel-ai, production main, root frontend, bash ../scripts/cloudflare-build.sh, output out. Separate owner Access app. Automatic previews disabled; manual preview POST works. Logs need size:10000 and may publish only near completion.
-- Render workspace tea-db64u6h42hec73atqvng; API srv-dbdg71jrjlhs73d6cprg, https://market-sentinel-ai-api.onrender.com ; Free Ohio, Python 3.12.14, backend root, one Uvicorn, /health/ready.
-- Dedicated PG16 dpg-dbde83ks728c73bku27g-a; external access closed, internal Blueprint binding. Blueprint exs-dbdg49t9fdbs73b16nsg. Do not create duplicates or add unsupported Free maxShutdownDelaySeconds.
-- Render advertises autoDeploy yes/commit but public-Git-URL pushes have not triggered deployment reliably. The environment update triggered the current exact-source build. Inspect active deploys before any new trigger; do not duplicate them.
-- GitHub is source storage only; no GitHub Actions CI/deployment. Cloudflare performs all release checks and dashboard deployment; Render builds Python. Build-only ephemeral pgserver is not a migration of the backend/database to Cloudflare.
-
-## Next priorities
-
-1. Verify actual final production state in DELIVERY.md, then let the owner link their own restricted Kraken key in protected Settings. Do not claim the account is connected until provider verification succeeds. No seed phrases or keys in chat.
-2. Preserve actual order intent/reconciliation and archive recovery evidence. Download a protected production backup and retain it outside source before the database expires; no automatic/offsite backup is claimed. Larger histories need a reviewed paged/streaming archive beyond current bounds.
-3. Observe real public data and improve risk-adjusted trader evaluation using cash-flow-aware complete histories and point-in-time cohorts. Do not fabricate predictive odds, silently promote unvalidated strategies or label suspicions manipulation.
-4. Obtain qualified Canadian/Québec advice before commercialization, third-party account linking or broader execution. Coinbase remains disabled for research-use restrictions; ChangeNOW awaits separate business key/use approval. Own-account API keys do not require Kraken partner OAuth approval.
-5. Chain-wide whale discovery, worldwide verified rankings, validated liquidation cascade/forecasting models, advanced cross-asset risk and complete multi-phase mission remain unfinished. Avoid claiming otherwise.
-
-## Working cautions
-
-Previous 0.5 workspace: /workspace/market-sentinel-release. Current source/workspaces are recorded above. /workspace/market-sentinel-ai is a stale checkout and must not be bulk-added or pushed. Current refs were reconstructed through exact remote files and combined without overwriting newer main. Connected GitHub create-tree/commit/update-ref tools use expected-SHA leases. Shell HTTP proxy was unavailable; connectors and Cloudflare runners worked. Never dump credential environments.
-
-Plain local command: PYTHONPATH=backend python -m unittest discover -s backend/tests -q. Local result was 256 run/250 pass/6 PG skips; authoritative Cloudflare gate ran all 256 with no skips against ephemeral PG. Never use production for tests. Frontend dependencies are absent locally; Cloudflare runs TypeScript/Next/Chromium. Build scripts/check_deployed_auth.py makes bounded read-only production/auth probes. No owner session is impersonated to inspect private JSON.
-
-Keep this checkpoint current after verification. Documentation-only commits may use [CF-Pages-Skip] [skip render] to avoid redundant deploys; distinguish later documentation head from the actual deployed application SHA. Continue autonomously within authorized free private-owner research/paper/planning/manual-spot scope, with concise progress updates and truthful limits.
+Cloudflare account f11da4c37ab8e27585d927a2c3cef02d; Pages market-sentinel-ai.
+Render workspace tea-db64u6h42hec73atqvng; Free web service
+srv-dbdg71jrjlhs73d6cprg; dedicated Free PostgreSQL
+dpg-dbde83ks728c73bku27g-a. Backend
+https://market-sentinel-ai-api.onrender.com. Cloudflare hosts the frontend;
+GitHub is source storage, not an additional deployment host. Docs-only commits
+can use `[CF-Pages-Skip] [skip render]` to avoid redundant builds.

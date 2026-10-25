@@ -1,9 +1,8 @@
 # 0.6.3 — Minimal market terminal
 
-Status: revised candidate ready for preview acceptance. Not yet published.
-First preview passed 273 backend tests and 35/36 browser tests. Its sole
-failure was a test matching explanatory help text instead of a status readout;
-the assertion now scopes the actual status list. No runtime fault was hidden.
+Status: DEPLOYED. Production `1cd76ab6-008f-460b-8bd1-ec307b449ba1` completed `2026-10-25T03:35:24.158732Z` on `1033c5fa035831bac2cf3490cf94e523d7da6edf`.
+Acceptance: 273 backend tests / actual isolated PG / zero skips; 38 browser tests, all other release gates PASS.
+
 Base: verified Cloudflare production 0.6.2, source
 593884370bc75346fcaf2ecd3dfeae1024793660, deployment
 0eaa7633-2526-41bc-b0df-88bcb2dc5935. Render remains on 0.6.2,
