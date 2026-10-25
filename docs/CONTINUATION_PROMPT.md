@@ -16,7 +16,10 @@ A new FRONTEND-ONLY 0.6.3 candidate is being prepared in
 actual deployment status before claiming it is published. It adds a chart-first
 home, coverage ring, source-aware public trade activity, provider telemetry,
 one-click market selection, chart zoom/pan/reset and expandable visible depth.
-No backend or trading-authority changes are needed for this UI release.
+It also adds plain-language public trader trade cards: token, direction, entry,
+size, open versus closed profit/loss, actual fill values/fees, and honest missing
+fields. Four views replace the wide size-change table. No backend or
+trading-authority changes are needed for this UI release.
 
 Preserve existing plain-language navigation, six-step Show me how tutorial,
 trade suggestions from deterministic radar plus public trader profiles, real

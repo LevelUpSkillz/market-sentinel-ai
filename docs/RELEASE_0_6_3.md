@@ -1,6 +1,9 @@
 # 0.6.3 — Minimal market terminal
 
-Status: implementation ready for preview acceptance. Not yet published.
+Status: revised candidate ready for preview acceptance. Not yet published.
+First preview passed 273 backend tests and 35/36 browser tests. Its sole
+failure was a test matching explanatory help text instead of a status readout;
+the assertion now scopes the actual status list. No runtime fault was hidden.
 Base: verified Cloudflare production 0.6.2, source
 593884370bc75346fcaf2ecd3dfeae1024793660, deployment
 0eaa7633-2526-41bc-b0df-88bcb2dc5935. Render remains on 0.6.2,
@@ -34,3 +37,14 @@ and browser tests plus new 320/390/768/1440px navigation, actual-data chart
 zoom/pan/reset and stale-feed/coverage checks. Screenshots use labeled synthetic
 fixtures only. No real account, key or order is used for acceptance. Free plans
 remain unchanged; no always-on monitoring claim or automatic real trading.
+
+Public trader clarification requested during implementation: replaces the
+wide action-change table with four views (Open positions, Actual executions,
+Closed trades, Observed changes). Cards name the token and direction, show
+available average entry / fill price, native token quantity, position value,
+margin, execution value, fees and provider-sourced result with USDC units.
+Open gains/losses are distinguished from completed net gains/losses before
+funding. Historical size-change events never borrow current P&L or prices.
+Missing closed-cycle average prices stay unavailable; actual fills remain
+separate. Token/address filtering and wallet links use existing authenticated
+public-research endpoints only; no backend or account mutation is introduced.

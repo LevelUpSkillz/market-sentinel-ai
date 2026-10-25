@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { JournalRecord, Trader } from './types';
+import TraderTradeDetails from './trader-trade-details';
 
 type ReportedWindow = {pnl:string|null;roi_pct:string|null;roi_raw?:string|null;volume:string|null};
 type Candidate = {
@@ -25,7 +26,7 @@ type Directory = {
   selection_basis:string;
 };
 type ObservedEvent = JournalRecord & {observed_at?:number;side?:string|null;timing?:string;confidence?:string};
-type Props = {auth:boolean;online:boolean;now:number;events:JournalRecord[];traders:Trader[];onTrack:(address:string,label:string)=>Promise<void>};
+type Props = {auth:boolean;online:boolean;now:number;events:JournalRecord[];traders:Trader[];onTrack:(address:string,label:string)=>Promise<void>;onInspectWallet?:(address:string)=>void};
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE || '';
 const date = (value:number|null|undefined) => value!=null&&Number.isFinite(value)?new Date(value*1000).toLocaleString():'Unavailable';
@@ -45,7 +46,7 @@ function direction(before:string|undefined,after:string|undefined,reported:strin
   return 'Direction unavailable';
 }
 
-export default function TraderDiscovery({auth,online,now,events,traders,onTrack}:Props){
+export default function TraderDiscovery({auth,online,now,events,traders,onTrack,onInspectWallet}:Props){
   const [query,setQuery]=useState(''),[search,setSearch]=useState(''),[page,setPage]=useState(1);
   const [data,setData]=useState<Directory|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(''),[loading,setLoading]=useState(false),[connected,setConnected]=useState(false);
   const sequence=useRef(0);
@@ -99,20 +100,7 @@ export default function TraderDiscovery({auth,online,now,events,traders,onTrack}
       <div className="evidence-metrics" style={{marginBottom:0}}><div><small>Monitored public addresses</small><strong>{auth?tracked.length:'—'}{auth?' / 10':''}</strong></div><div><small>Saved action observations shown</small><strong>{auth?actions.length:'—'}</strong></div></div>
     </div>
     {!auth?<div className="empty"><h3>Sign in to investigate trader actions</h3><p>The directory and your private watchlist load through the authenticated API. No trader metrics or positions are invented.</p></div>:<>
-      <div className="wallet-details" style={{paddingTop:0,paddingBottom:12}}><span className="eyebrow">OBSERVED ACTION FEED</span><h3>What monitored wallets changed</h3><p>Position rounds take approximately 30 seconds at full watchlist capacity. Changes are observed between polls; their exact execution time and execution prices are unknown.</p></div>
-      {actions.length?<div className="table-scroll"><table><thead><tr><th>Observed action / direction</th><th>Wallet</th><th>Position size change</th><th>Observed time / source</th><th>Review at observation</th></tr></thead><tbody>{actions.map(event=>{
-        const observedAt=event.observed_at??event.recorded_at;
-        const recent=online&&receivedRecently(observedAt,now);
-        return <tr key={event.id}><td><strong>{event.coin||'Asset unavailable'} · {event.action||'Change observed'}</strong><small className="source-detail">{direction(event.before_size,event.after_size,event.side)}</small><span className={'badge '+(recent?'live':'stale')}>{recent?'recent observation':'historical observation'}</span></td><td><strong>{event.address?names.get(event.address.toLowerCase())||'Public wallet':'Wallet unavailable'}</strong>{event.address&&<code className="source-detail" title={event.address}>{short(event.address)}</code>}</td><td>{n(event.before_size,8)} → {n(event.after_size,8)}<small className="source-detail">native position units</small></td><td>{date(observedAt)}<small className="source-detail">{event.source||'Source unavailable'}<br/>{event.timing||'Exact execution time is unknown.'}</small></td><td><span className={'badge '+(event.analysis?.decision||'unavailable').toLowerCase()}>{event.analysis?.decision||'UNAVAILABLE'} · HISTORICAL</span><small className="source-detail">Review at {date(observedAt)}. Any current entry requires fresh market and risk checks.</small>{event.analysis?.reasons?.slice(0,2).map((reason,index)=><small className="source-detail" key={index}>{reason}</small>)}</td></tr>;
-      })}</tbody></table></div>:<div className="empty"><h3>{tracked.length?'Waiting for a subsequent position change':'Track a public address to observe its actions'}</h3><p>The first position snapshot is a baseline. Openings, increases, reductions, reversals and closures appear only when later public snapshots show a change.</p></div>}
-      {tracked.some(trader=>trader.snapshot)&&<details className="wallet-details"><summary style={{cursor:'pointer'}}>Current monitored-position previews</summary><p>Snapshot receipt age is shown below. An observation is not proof of a new entry, a complete portfolio or an executable copy trade.</p>{tracked.filter(trader=>trader.snapshot).map(trader=>{
-        const snapshot=trader.snapshot!;
-        const recent=online&&receivedRecently(snapshot.received_at,now);
-        return <article key={trader.address} style={{padding:'16px 0',borderTop:'1px solid var(--line)'}}><div className="action-heading"><div><strong>{trader.label}</strong><small className="source-detail" title={trader.address}>{short(trader.address)}</small></div><span className={'badge '+(recent?'live':'stale')}>{recent?'recent snapshot':'stale snapshot'}</span></div>
-          {snapshot.positions.length?<div className="table-scroll"><table><thead><tr><th>Asset / direction</th><th>Observed position</th><th>Provider average entry</th></tr></thead><tbody>{snapshot.positions.slice(0,3).map(position=><tr key={position.coin}><td>{position.coin} · {Number(position.szi)>0?'long':Number(position.szi)<0?'short':'flat'}</td><td>{n(position.szi,8)} native units</td><td>{n(position.entryPx,8)} provider quote units</td></tr>)}</tbody></table>{snapshot.positions.length>3&&<small>{snapshot.positions.length-3} additional public positions in the full wallet investigation below.</small>}</div>:<p>No current public positions were returned in this snapshot.</p>}
-          <small>Source: {snapshot.source} · received {date(snapshot.received_at)} ({age(snapshot.received_at,now)}) · provider time {date(snapshot.source_at)}</small>
-        </article>;
-      })}</details>}
+      <TraderTradeDetails traders={tracked} events={events} online={online} now={now} onWallet={onInspectWallet}/>
       <div className="panel-head" style={{borderTop:'1px solid var(--line)'}}><div><span className="eyebrow">EXPERIMENTAL PUBLIC PROVIDER DIRECTORY</span><h3 style={{fontSize:16,fontWeight:500}}>Discover addresses to investigate</h3></div><input className="search-input" aria-label="Search public trader candidates" placeholder="Provider label or public address…" value={query} onChange={event=>setQuery(event.target.value)} maxLength={100}/></div>
       <div className="wallet-details"><p>Leaderboard metrics are reported by the provider and may be incomplete, delayed or affected by deposits, withdrawals, selection and survivorship bias. Following a reported winner does not establish profitable execution for you.</p>{directory&&<small>{directory.total.toLocaleString('en-US')} matching provider candidates · showing {directory.traders.length} on this page · {loading?'refreshing':'directory '+directory.status.replaceAll('_',' ')}{!online||!connected?' · refresh unavailable':''}</small>}</div>
       {error&&<div className="hosting-note" role="status" style={{margin:'0 20px 18px'}}>{error} Monitored action evidence remains separate from this provider directory.</div>}

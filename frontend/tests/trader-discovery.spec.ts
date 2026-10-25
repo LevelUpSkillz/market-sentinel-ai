@@ -98,8 +98,10 @@ test('synthetic public candidates can be searched and tracked without turning re
   await candidate.getByRole('button',{name:'Track actions',exact:true}).click();
   await expect(candidate.getByRole('button',{name:'Tracking actions',exact:true})).toBeDisabled();
   expect(state.posts).toEqual([{address:ADDRESS,label:LABEL}]);
-  const observed=panel.getByRole('row').filter({hasText:'XRP · increased'});
+  await panel.getByRole('button',{name:'Observed changes',exact:false}).click();
+  const observed=panel.getByRole('article',{name:'XRP observed increased',exact:true});
   await expect(observed.getByText('recent observation',{exact:true})).toBeVisible();
+  await observed.getByText('Review at observation',{exact:true}).click();
   await expect(observed.getByText('NO-GO · HISTORICAL',{exact:true})).toBeVisible();
   await expect(observed).toContainText('1 → 1.25');
   await expect(observed).toContainText('SYNTHETIC POSITION POLL');
@@ -116,8 +118,10 @@ test('provider directory failure retains dated metrics while old wallet actions 
   await page.goto('/');
   await smartMoney(page);
   const panel=page.getByRole('region',{name:'Trader Actions'});
-  const observed=panel.getByRole('row').filter({hasText:'XRP · increased'});
+  await panel.getByRole('button',{name:'Observed changes',exact:false}).click();
+  const observed=panel.getByRole('article',{name:'XRP observed increased',exact:true});
   await expect(observed.getByText('recent observation',{exact:true})).toBeVisible();
+  await observed.getByText('Review at observation',{exact:true}).click();
   await expect(panel.locator('.signal-card').filter({hasText:LABEL}).getByText('0.125',{exact:true})).toBeVisible();
   state.directoryFailure=true;
   await page.clock.fastForward(61000);
