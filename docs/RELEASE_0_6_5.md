@@ -23,6 +23,9 @@ refresh while decorative motion is paused. Canvas is capped at 30/24 fps and
 No new provider fetches, automatic balance requests, account mutations, order
 behavior, backend/database/collector configuration, paid resources or dependencies.
 Existing owner-only data boundaries and explicit Kraken approvals stay intact.
+The capital instrument is omitted from the active trade-ticket subview to keep
+exact order review readable; it remains on the Live Money overview/budget/link
+views. Emergency stop also suppresses any practice-GO count in the new display.
 
 New model contracts cover real-depth/currency/stale-data boundaries, wallet links,
 recorded-only forensic values and virtual-account basis. Browser acceptance adds
