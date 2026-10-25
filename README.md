@@ -4,10 +4,11 @@ Private cryptocurrency investigation, paper trading, real-capital planning and i
 
 ## Current published release
 
-Terminal 0.6.3 is live at https://market.getlevelupskillz.com . See
+Flight Deck 0.6.4 is live at https://market.getlevelupskillz.com . See
 [delivery](docs/DELIVERY.md) and [current handoff](docs/HANDOFF.md) for exact
-source/deployment status, free-plan limits and continuing work. The release adds
-a minimal chart-focused interface, actual public trade/source telemetry,
+source/deployment status, free-plan limits and continuing work. The release adds a large animated orbital globe, star field, radar sweeps,
+illuminated mission-control panels and an FX switch over
+the simple chart-focused interface, actual public trade/source telemetry,
 historical chart zoom/pan/reset and clear public trader entry/amount/result cards.
 Open versus closed P&L stays explicit; missing values are never invented.
 

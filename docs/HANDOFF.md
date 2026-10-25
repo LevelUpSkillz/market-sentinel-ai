@@ -6,16 +6,37 @@ Verified October 25, 2026. Inspect current refs before editing; preserve newer w
 
 - App: https://market.getlevelupskillz.com
 - Repository: https://github.com/LevelUpSkillz/market-sentinel-ai
-- Cloudflare dashboard: terminal **0.6.3**, source `1033c5fa035831bac2cf3490cf94e523d7da6edf`.
-- Production deployment: `1cd76ab6-008f-460b-8bd1-ec307b449ba1`, completed `2026-10-25T03:35:24.158732Z`.
+- Cloudflare dashboard: flight deck **0.6.4**, source `4404948b11dd76ddb17cb382b4dd3c808f1b6c24`.
+- Production deployment: `6171079a-4c5b-4d26-b01f-97f88b102bf7`, completed `2026-10-25T03:58:31.497916Z`.
 - Render backend remains **0.6.2**, source `4b768b3ff1c9452a34b2bb4b7027c5db6c977f00`, deployment `dep-dbei4m4s728c73cagdg0`.
 - Current editable source: `/workspace/market-sentinel-cloudflare-ai`.
 - Do not deploy the older premium-ui, premium, release or market-sentinel-ai local directories over current main.
 
 ## This release
 
+
+The user explicitly rejected the previous design as too restrained and requested
+prominent futuristic animation. 0.6.4 adds a large rotating projected wireframe
+globe, orbiting lights/HUD rings, moving star field/perspective grid, radar sweeps,
+cyan-blue illuminated panels and transitions. Mobile places the orbital display
+first. Decorative motion is labeled and never represents fabricated financial
+activity, geographic provider locations, worldwide coverage or prediction.
+Actual provider badges and source/freshness checks remain independent.
+
+A top-bar FX switch pauses/resumes ornamentation and saves only that preference.
+OS reduced motion is respected; hidden pages stop motion and the globe stops
+when offscreen. Canvas is capped at 30 fps desktop / 24 fps mobile and 1.5 DPR.
+No external assets, new dependencies, paid services or backend/config changes.
+The animation tests verify real canvas-pixel changes, pause stability, preference
+persistence, reduced motion and hidden-page behavior, with no account reads or
+order writes. Initial paused-state reporting was corrected without weakening
+checks. Final production passed all 273 backend / real isolated PG / zero skips
+and 41 Chromium tests plus the existing release gates. See RELEASE_0_6_4.md.
+
+### Previous terminal foundation retained
+
 The user wants a minimalist, futuristic premium market terminal, as easy to use
-as Coinbase, Kraken or Crypto.com, with restrained NASA-style coverage graphics
+as Coinbase, Kraken or Crypto.com, with prominent animated NASA-style orbital graphics
 and real live charts. Keep it understandable rather than adding jargon.
 
 0.6.3 provides a chart-focused Home, consistent dark/mint design across sections,
@@ -41,7 +62,7 @@ configuration changed for this frontend release. No Render action is required.
 ## Verified acceptance
 
 273 backend tests passed with actual isolated PostgreSQL and ZERO skips;
-38 Chromium browser tests passed. Includes phone/tablet/desktop widths
+41 Chromium browser tests passed. Includes phone/tablet/desktop widths
 320/390/768/1440, chart navigation without invented samples or account reads,
 stale-feed handling, trader P&L distinctions and existing Kraken approval /
 unknown-outcome no-resend safety contracts. Generated Worker types, TypeScript,

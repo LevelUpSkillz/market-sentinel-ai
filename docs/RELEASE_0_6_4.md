@@ -1,6 +1,13 @@
 # 0.6.4 — Animated orbital mission control
 
-Status: candidate awaiting release acceptance. Not yet deployed.
+Status: DEPLOYED. Production `6171079a-4c5b-4d26-b01f-97f88b102bf7` completed `2026-10-25T03:58:31.497916Z`
+on source `4404948b11dd76ddb17cb382b4dd3c808f1b6c24`. Backend remains 0.6.2 unchanged.
+
+Acceptance: 273 backend tests with actual isolated PostgreSQL and zero skips;
+41 Chromium tests; app/Worker types and builds; AI contracts; Blueprint; audits
+with zero known vulnerabilities; actual public providers/history; protected
+production health/authentication checks. Canonical Cloudflare source verified.
+Initial paused-canvas state marker corrected; tests were not weakened.
 
 The user asked for a substantially more futuristic NASA-style interface with
 prominent motion. This frontend-only release adds an animated projected
