@@ -6,15 +6,38 @@ Verified October 25, 2026. Inspect current refs before editing; preserve newer w
 
 - App: https://market.getlevelupskillz.com
 - Repository: https://github.com/LevelUpSkillz/market-sentinel-ai
-- Cloudflare dashboard: spatial command **0.7.0**, source `515258dc37ecf9c8f4e98dd0a81b36cc4c47a2f9`.
-- Production deployment: `959e6cef-3416-4fa9-9f03-7b455f7d351d`, completed `2026-10-25T05:08:08.434101Z`.
+- Cloudflare dashboard: Graphite Edition **0.7.1**, source `7b47e1c1ae632b60f6727d45be5ee317056ef384`.
+- Production deployment: `72de68b5-380e-466a-a450-d51066c6827b`, completed `2026-10-25T05:19:41.485466Z`.
 - Render backend remains **0.6.2**, source `4b768b3ff1c9452a34b2bb4b7027c5db6c977f00`, deployment `dep-dbei4m4s728c73cagdg0`.
 - Current editable source: `/workspace/market-sentinel-cloudflare-ai`.
 - Do not deploy the older premium-ui, premium, release or market-sentinel-ai local directories over current main.
 
 
 
-## Latest — Spatial Command 0.7.0, across every section
+A source-based professional readiness review is saved in
+[PROFESSIONAL_READINESS.md](PROFESSIONAL_READINESS.md). It records current gaps
+and acceptance criteria; no additional features or paid resources were deployed.
+
+## Latest — Graphite Edition 0.7.1
+
+User says the cyan/violet neon palette looks too AI-generated and wants a
+different palette. Preserve the actual 3D/radar transformation across all pages,
+but use warm graphite surfaces, mineral ivory text and muted copper accents.
+Sage and terracotta encode actual up/buy/healthy versus down/sell/problem states.
+No blue/purple wash, chromatic headline gradient or glowing card borders.
+The existing full CSS cascade, canvas, historical SVG, icon and browser/manifest
+theme are recolored. Less bloom/background distraction; existing scene geometry,
+rotation, market/depth modes, flat/grid/expand, FX and accessibility stay intact.
+Fewer per-level depth labels avoid mobile overlap; full values remain in inspector.
+
+Color-only work plus the small label-density correction: no new tests added;
+existing full release gate passes 273 backend / isolated PostgreSQL / zero skips
+and 47 Chromium tests, types/build/contracts/provider/history/schema/audit/auth.
+Key text/button contrast checked at 6.95–14.83:1. Final synthetic design captures
+reviewed and canonical source verified. No data, model, account, provider, AI,
+authorization, execution, vault, backend, collector, database, plan or cost change.
+
+## Previous 0.7.0 — Spatial Command across every section
 
 The user rejected 0.6.5's restrained previews and explicitly requested a REAL
 transformation, 3D market visuals, radar screens and layered graphics, NOT just

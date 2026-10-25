@@ -4,9 +4,10 @@ Private cryptocurrency investigation, paper trading, real-capital planning and i
 
 ## Current published release
 
-Spatial Command 0.7.0 is live at https://market.getlevelupskillz.com . See
+Graphite Edition 0.7.1 is live at https://market.getlevelupskillz.com . See
 [delivery](docs/DELIVERY.md) and [current handoff](docs/HANDOFF.md) for exact
-source/deployment status, free-plan limits and continuing work. The release rebuilds
+source/deployment status, free-plan limits and continuing work. The release uses warm graphite, ivory and muted copper throughout the interface
+and graphics, with sage/terracotta for direction and status. It preserves
 3D market graphics and premium panels across the application: interactive radar,
 extruded order-book terrain, public-wallet constellations, recorded-event stages,
 validation bands and a gold Live Money approval shield. Home is an actual market

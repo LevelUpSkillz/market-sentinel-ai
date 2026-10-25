@@ -1,6 +1,8 @@
 # 0.7.1 — Graphite Edition
 
-Prepared; production verification pending.
+DEPLOYED: `72de68b5-380e-466a-a450-d51066c6827b` completed `2026-10-25T05:19:41.485466Z`
+on source `7b47e1c1ae632b60f6727d45be5ee317056ef384`. Existing acceptance: 273 backend tests / real isolated
+PostgreSQL / zero skips; 47 Chromium tests and all release gates. Canonical verified.
 
 User finds cyan/violet neon too AI-generated. New direction: warm graphite,
 mineral white, muted copper, sage up/buy/healthy states and terracotta down/sell/

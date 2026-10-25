@@ -1,13 +1,18 @@
-# Published delivery — Market Sentinel AI Spatial Command 0.7.0
+# Published delivery — Market Sentinel AI Graphite Edition 0.7.1
 
 Live: https://market.getlevelupskillz.com
-Cloudflare production `959e6cef-3416-4fa9-9f03-7b455f7d351d` completed `2026-10-25T05:08:08.434101Z`
-on source `515258dc37ecf9c8f4e98dd0a81b36cc4c47a2f9`. Render backend remains 0.6.2.
+Cloudflare production `72de68b5-380e-466a-a450-d51066c6827b` completed `2026-10-25T05:19:41.485466Z`
+on source `7b47e1c1ae632b60f6727d45be5ee317056ef384`. Render backend remains 0.6.2.
 
-Rebuilt the spatial renderer, data stages and interface ACROSS the application:
+New palette throughout: warm graphite surfaces, ivory text and muted copper
+accents; sage/terracotta for direction and status. Removed cyan/violet wash,
+chromatic headline gradient and excess bloom. Historical SVG, canvas, icon and
+browser theme match. Fewer per-level depth labels reduce mobile clutter.
+
+Preserved the spatial renderer, data stages and interface ACROSS the application:
 3D liquidity prisms, layered radar dial, particle core, public wallet constellation,
 recorded-event lanes, projected validation bands, virtual-capital torus, gold
-approval shield and systems stack. Brighter cyan/violet, larger numbers, new
+approval shield and systems stack. Larger numbers, consistent warm colors,
 panel/card/navigation/chart treatment. Pointer rotation, flat/grid and expanded
 visuals; accessible selectors and explicit FX/reduced-motion controls.
 

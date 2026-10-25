@@ -2,9 +2,9 @@ Continue Market Sentinel AI from its CURRENT implementation. Do not restart,
 produce only a plan, or overwrite newer source with an older checkout.
 
 First read current main docs/HANDOFF.md and docs/DELIVERY.md, then inspect actual
-refs, source, tests and deployments. Current published dashboard is spatial command
-0.7.0 on Cloudflare, source 515258dc37ecf9c8f4e98dd0a81b36cc4c47a2f9, production 959e6cef-3416-4fa9-9f03-7b455f7d351d, completed
-2026-10-25T05:08:08.434101Z. Backend remains 0.6.2 on Render source
+refs, source, tests and deployments. Current published dashboard is Graphite Edition
+0.7.1 on Cloudflare, source 7b47e1c1ae632b60f6727d45be5ee317056ef384, production 72de68b5-380e-466a-a450-d51066c6827b, completed
+2026-10-25T05:19:41.485466Z. Backend remains 0.6.2 on Render source
 4b768b3ff1c9452a34b2bb4b7027c5db6c977f00. Use
 /workspace/market-sentinel-cloudflare-ai if this workspace exists; old premium,
 premium-ui, release and market-sentinel-ai directories are stale.
@@ -110,3 +110,15 @@ Radar / Order book modes, observed-market selection and readable sourced prices.
 Do not revert to subtle small wireframes or only add another thin glow layer.
 Keep clear language, readable order review, real evidence, source aging, reduced
 motion and all existing security/trading/cost boundaries. No extra account reads.
+
+
+LATEST PALETTE CORRECTION: the neon cyan/violet palette looks too AI-generated.
+0.7.1 Graphite Edition replaces it throughout the app with warm charcoal/graphite,
+mineral ivory and muted copper, and sage/terracotta for meaningful market/status
+states. Keep the real-data 3D/radar visuals, geometry and interactions across ALL
+pages. Avoid reintroducing cyan/purple washes, gradient headline text or excess
+bloom. Current theme also covers SVG/canvas, icon and browser chrome. The smaller
+number of per-level depth labels avoids mobile overlap; values stay in inspector.
+Existing full 273 backend / real PG / zero skips and 47 browser gates passed.
+No new tests were needed for the reversible palette correction; all existing
+safety/freshness/interaction checks stay. No new paid services or account reads.
